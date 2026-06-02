@@ -1,0 +1,19 @@
+[
+  {
+    "id": "monster-1780396331102",
+    "name": "Dual Blade Ravager",
+    "type": "monster",
+    "cardType": "Monster",
+    "description": "This monster cannot change battle position, unless by the effect of another card.",
+    "art": "Dual Blade Ravager.png",
+    "triggers": [
+      "LOCKED"
+    ],
+    "level": 1,
+    "attribute": "dark",
+    "family": "demon",
+    "rarity": "common",
+    "attack": 750,
+    "defense": 350
+  }
+]

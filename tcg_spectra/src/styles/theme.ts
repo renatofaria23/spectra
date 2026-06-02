@@ -1,0 +1,58 @@
+import { createTheme } from '@mantine/core';
+import {
+  Blue_1, Blue_2, Blue_3, Blue_4, Blue_5, Blue_6, Blue_7, Black_1, White_1, Black_4_40, Black_7_80, Black_6_70, Black_5_50,
+  Orange_8, Orange_7, Orange_6, Orange_5, Orange_4, Orange_3, Orange_2, Orange_1, Fire_1, Fire_2,
+  Water_1, Water_2, Water_3, Water_4, Water_5, Water_6, Water_7, Teal_3, Teal_2,
+  Beige_8, Beige_7, Beige_6, Beige_5, Brown_5, Brown_4, Brown_3, Brown_2, Earth_1, Earth_2,
+  Air_1, Air_2, Blue_9, Blue_8, Blue_12, Blue_13,
+  Light_1, Light_2, Light_3, Light_4, Light_5, Light_6, Orange_2 as Orange_2Light, Orange_1 as Orange_1Light, Water_7 as Water_7Light,
+  Purple_3, Purple_4, Purple_5, Purple_6, Purple_7, Purple_8, Dark_1, Dark_2, Dark_3, Dark_4, Dark_5, Dark_6,
+} from '../styles/Colors';
+
+const Card_Shadow_5 = "rgba(0, 0, 0, 0.4)";
+
+export const theme = createTheme({
+  colors: {
+    'game-dark': [Blue_1, Blue_2, Blue_3, Blue_4, Blue_5, Blue_6, Blue_7, White_1, Black_4_40, Black_1],
+    'game-fire': [Orange_8, Orange_7, Orange_6, Orange_5, Orange_4, Orange_3, Orange_2, Orange_1, Fire_1, Fire_2],
+    'game-water': [Water_1, Water_2, Water_3, Water_4, Water_5, Water_6, Teal_3, Teal_2, Blue_9, Water_7],
+    'game-earth': [Beige_8, Beige_7, Beige_6, Beige_5, Brown_5, Brown_4, Brown_3, Brown_2, Earth_1, Earth_2],
+    'game-air': [Air_1, Air_2, Blue_9, Blue_8, Blue_12, Blue_13, Orange_5, Light_6, Light_4, White_1],
+    'game-light': [Light_1, Light_2, Light_3, Light_4, Light_5, Light_6, Orange_2Light, Orange_1Light, Water_7Light, White_1],
+    'game-dark-attr': [Dark_1, Dark_2, Dark_3, Dark_4, Dark_5, Dark_6, Purple_3, Black_7_80, Black_6_70, Black_5_50],
+  },
+
+  primaryColor: 'game-dark',
+
+  fontFamily: 'Lora, system-ui, sans-serif',
+
+  fontSizes: {
+    xs: '10px',
+    sm: '12px',
+    md: '14px',
+    lg: '16px',
+    xl: '20px',
+  },
+
+  radius: {
+    xs: '2px',
+    sm: '4px',
+    md: '8px',
+    lg: '12px',
+    xl: '16px',
+  },
+
+  spacing: {
+    xs: '4px',
+    sm: '8px',
+    md: '12px',
+    lg: '16px',
+    xl: '24px',
+    xxl: '32px',
+  },
+
+  other: {
+    cardBorderRadius: '12px',
+    cardShadow: Card_Shadow_5,
+  },
+});

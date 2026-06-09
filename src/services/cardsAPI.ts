@@ -1,4 +1,5 @@
 import cardsData from '../data/cards.json';
+import { regenerateAllDescriptions } from '../logic/DescriptionEngine';
 
 declare global {
   interface Window {
@@ -38,6 +39,17 @@ export const saveCards = async (cards: any[]): Promise<boolean> => {
     return result.success;
   }
   return false;
+};
+
+export const migrateCardDescriptions = async (): Promise<void> => {
+  try {
+    const cards = await readCards();
+    const migrated = regenerateAllDescriptions(cards);
+    const hasChanges = migrated.some((c, i) => c.description !== cards[i]?.description);
+    if (hasChanges && isElectron()) {
+      await saveCards(migrated);
+    }
+  } catch { /* ignore migration errors */ }
 };
 
 export const saveArt = async (filename: string, data: string): Promise<boolean> => {

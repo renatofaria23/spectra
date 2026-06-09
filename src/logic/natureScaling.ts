@@ -1,14 +1,13 @@
 import { NATURES } from '../types/constants';
-
 import type { Nature } from '../types/constants';
 
 export interface NatureScaling {
-  fire: { atkBonus: number; monstersCount: number };
-  earth: { hpBonus: number; monstersCount: number };
-  water: { hpRegenBonus: number; monstersCount: number };
-  air: { extraActions: number; monstersCount: number };
-  light: { drawBonus: number; monstersCount: number };
-  dark: { wardBonus: number; monstersCount: number };
+  fire: { damageBonus: number; numinaCount: number };
+  earth: { hpBonus: number; numinaCount: number };
+  water: { hpRegenBonus: number; numinaCount: number };
+  air: { extraSummons: number; numinaCount: number };
+  light: { manaGainBonus: number; maxManaBonus: number; numinaCount: number };
+  dark: { handSizeBonus: number; numinaCount: number };
 }
 
 export interface Card {
@@ -19,60 +18,67 @@ export interface Card {
   [key: string]: unknown;
 }
 
-export const calculateNatureScaling = (monsterCards: Card[]): NatureScaling => {
+export const calculateNatureScaling = (deckCards: Card[]): NatureScaling => {
   const scaling: NatureScaling = {
-    fire: { atkBonus: 0, monstersCount: 0 },
-    earth: { hpBonus: 0, monstersCount: 0 },
-    water: { hpRegenBonus: 0, monstersCount: 0 },
-    air: { extraActions: 0, monstersCount: 0 },
-    light: { drawBonus: 0, monstersCount: 0 },
-    dark: { wardBonus: 0, monstersCount: 0 },
+    fire: { damageBonus: 0, numinaCount: 0 },
+    earth: { hpBonus: 0, numinaCount: 0 },
+    water: { hpRegenBonus: 0, numinaCount: 0 },
+    air: { extraSummons: 0, numinaCount: 0 },
+    light: { manaGainBonus: 0, maxManaBonus: 0, numinaCount: 0 },
+    dark: { handSizeBonus: 0, numinaCount: 0 },
   };
 
-  monsterCards.forEach((card) => {
+  deckCards.forEach((card) => {
     const attribute = card.attribute?.toLowerCase() as Nature | undefined;
     if (!attribute || !scaling[attribute]) return;
 
-    scaling[attribute].monstersCount += 1;
+    scaling[attribute].numinaCount += 1;
   });
 
-  scaling.fire.atkBonus = scaling.fire.monstersCount * 10;
+  scaling.fire.damageBonus = scaling.fire.numinaCount * 2;
 
-  scaling.earth.hpBonus = scaling.earth.monstersCount * 50;
+  scaling.earth.hpBonus = scaling.earth.numinaCount * 50;
 
-  scaling.water.hpRegenBonus = scaling.water.monstersCount * 10;
+  scaling.water.hpRegenBonus = scaling.water.numinaCount * 10;
 
-  scaling.air.extraActions = Math.floor(scaling.air.monstersCount / 10);
+  scaling.air.extraSummons = Math.floor(scaling.air.numinaCount / 10);
 
-  scaling.light.drawBonus = Math.floor(scaling.light.monstersCount / 80);
+  scaling.light.manaGainBonus = scaling.light.numinaCount * 2;
+  scaling.light.maxManaBonus = scaling.light.numinaCount * 20;
 
-  scaling.dark.wardBonus = Math.floor(scaling.dark.monstersCount / 80);
+  scaling.dark.handSizeBonus = Math.floor(scaling.dark.numinaCount / 5);
 
   return scaling;
 };
 
-export const applyNatureScaling = (monster: Card, scaling: NatureScaling): { boostedAttack: number; boostedDefense: number } => {
-  const attribute = monster.attribute?.toLowerCase() as Nature | undefined;
-  let boostedAttack = monster.baseAttack || 0;
-  let boostedDefense = monster.baseDefense || 0;
+export const calculateTotalMaxHP = (baseHP: number, scaling: NatureScaling): number => {
+  return baseHP + scaling.earth.hpBonus;
+};
 
-  if (attribute === 'fire' && scaling.fire) {
-    boostedAttack += scaling.fire.atkBonus;
+export const calculateHPRegeneration = (scaling: NatureScaling): number => {
+  return scaling.water.hpRegenBonus;
+};
+
+export const calculateMaxSummons = (scaling: NatureScaling): number => {
+  return 1 + scaling.air.extraSummons;
+};
+
+export const calculateMaxMana = (baseMaxMana: number, scaling: NatureScaling): number => {
+  return baseMaxMana + scaling.light.maxManaBonus;
+};
+
+export const calculateManaGain = (baseManaGain: number, scaling: NatureScaling): number => {
+  return baseManaGain + scaling.light.manaGainBonus;
+};
+
+export const calculateMaxHandSize = (baseHandSize: number, scaling: NatureScaling, isOpponent: boolean = false): number => {
+  const bonus = scaling.dark.handSizeBonus;
+  if (isOpponent) {
+    return Math.max(1, baseHandSize - bonus);
   }
-
-  return { boostedAttack, boostedDefense };
+  return baseHandSize + bonus;
 };
 
-export const calculateTotalHP = (baseHP: number, monsterCards: Card[]): number => {
-  const earthMonsters = monsterCards.filter(
-    (card) => card.attribute?.toLowerCase() === 'earth'
-  ).length;
-  return baseHP + earthMonsters * 50;
-};
-
-export const calculateHPRegeneration = (monsterCards: Card[]): number => {
-  const waterMonsters = monsterCards.filter(
-    (card) => card.attribute?.toLowerCase() === 'water'
-  ).length;
-  return waterMonsters * 10;
+export const calculateDamageBonus = (scaling: NatureScaling): number => {
+  return scaling.fire.damageBonus;
 };

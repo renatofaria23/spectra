@@ -24,7 +24,7 @@ export const theme = createTheme({
 
   primaryColor: 'game-dark',
 
-  fontFamily: 'Lora, system-ui, sans-serif',
+  fontFamily: 'Cormorant Upright, Lora, system-ui, sans-serif',
 
   fontSizes: {
     xs: '10px',

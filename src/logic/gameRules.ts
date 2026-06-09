@@ -65,13 +65,13 @@ export const checkHandCapacity = (handSize: number): {
   return { isOverCapacity, discardRequired };
 };
 
-export const checkFieldCapacity = (fieldMonsterCount: number): {
+export const checkFieldCapacity = (fieldNumenCount: number): {
   isFull: boolean;
   available: number;
 } => {
-  const MAX_FIELD_MONSTERS = 5;
-  const isFull = fieldMonsterCount >= MAX_FIELD_MONSTERS;
-  const available = Math.max(0, MAX_FIELD_MONSTERS - fieldMonsterCount);
+  const MAX_FIELD_NUMENS = 5;
+  const isFull = fieldNumenCount >= MAX_FIELD_NUMENS;
+  const available = Math.max(0, MAX_FIELD_NUMENS - fieldNumenCount);
 
   return { isFull, available };
 };
@@ -97,23 +97,23 @@ export const checkWinCondition = (playerHP: number, opponentHP: number): {
   return { hasWinner: false, winner: null };
 };
 
-export const validateMonsterSummon = (
-  monster: unknown,
-  fieldMonsterCount: number,
+export const validateNumenSummon = (
+  numen: unknown,
+  fieldNumenCount: number,
   tributes: number,
   canNormalSummon: boolean
 ): { valid: boolean; reason: string } => {
-  const { isFull } = checkFieldCapacity(fieldMonsterCount);
+  const { isFull } = checkFieldCapacity(fieldNumenCount);
 
   if (isFull) {
-    return { valid: false, reason: 'Field monster zone full' };
+    return { valid: false, reason: 'Field numen zone full' };
   }
 
   if (!canNormalSummon) {
     return { valid: false, reason: 'Normal summon already used this turn' };
   }
 
-  const level = (monster as any)?.level || 1;
+  const level = (numen as any)?.level || 1;
   const required = getTributeRequirement(level);
   if (tributes < required) {
     return {

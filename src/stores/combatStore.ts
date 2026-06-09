@@ -1,27 +1,27 @@
 import { create } from 'zustand';
-import { resolveBattlePhase, resetMonsterStats, type Attack } from '../logic/combatResolver';
-import { isLegendaryQuestComplete, updateQuestProgress } from '../logic/legendarySystem';
+import { resolveBattlePhase, resetNumenStats, type Attack } from '../logic/combatResolver';
+import { isMythicQuestComplete, updateQuestProgress } from '../logic/mythicSystem';
 
 export interface CombatInteraction {
   attackerId: string;
   targetId: string | null;
   spentATK: number;
   decreaseDealt: number;
-  killedMonster: boolean;
+  killedNumen: boolean;
   error?: string;
 }
 
 export interface BattleResultSummary {
   totalDecrease: number;
-  destroyedMonsters: { monsterId: string; destroyedBy: string }[];
+  destroyedNumina: { numenId: string; destroyedBy: string }[];
   interactions: CombatInteraction[];
   validationErrors: string[];
 }
 
 export interface QuestProgressTracker {
-  legendaryId: string;
+  mythicId: string;
   wardsActivated: number;
-  monstersDestroyed: number;
+  numinaDestroyed: number;
   decreaseDealt: number;
   cardsDrawn: number;
   customProgress: Record<string, unknown>;
@@ -37,15 +37,15 @@ type CombatState = {
   questProgress: Record<string, QuestProgressTracker>;
 
   startBattlePhase: () => void;
-  selectAttacker: (monsterId: string) => void;
-  selectTarget: (monsterId: string) => void;
+  selectAttacker: (numenId: string) => void;
+  selectTarget: (numenId: string) => void;
   addAttackToSequence: (attack: Attack) => void;
   removeAttackFromSequence: (index: number) => void;
   clearAttackSequence: () => void;
   resolveBattle: (attackSequence: Attack[]) => void;
   endBattlePhase: () => void;
-  updateQuestProgress: (legendaryId: string, eventType: string, amount?: number) => void;
-  clearQuestProgress: (legendaryId: string) => void;
+  updateQuestProgress: (mythicId: string, eventType: string, amount?: number) => void;
+  clearQuestProgress: (mythicId: string) => void;
   resetCombat: () => void;
 
   isBattlePhaseActive: () => boolean;
@@ -54,8 +54,8 @@ type CombatState = {
   getAttackSequence: () => Attack[];
   getBattleResults: () => BattleResultSummary | null;
   getCombatLog: () => CombatInteraction[];
-  getQuestProgress: (legendaryId: string) => QuestProgressTracker | undefined;
-  isLegendaryQuestReady: (legendaryId: string, progress: QuestProgressTracker) => boolean;
+  getQuestProgress: (mythicId: string) => QuestProgressTracker | undefined;
+  isMythicQuestReady: (mythicId: string, progress: QuestProgressTracker) => boolean;
 };
 
 export const useCombatStore = create<CombatState>((set, get) => ({
@@ -74,9 +74,9 @@ export const useCombatStore = create<CombatState>((set, get) => ({
       battleResults: null,
     }),
 
-  selectAttacker: (monsterId: string) => set({ selectedAttacker: monsterId }),
+  selectAttacker: (numenId: string) => set({ selectedAttacker: numenId }),
 
-  selectTarget: (monsterId: string) => set({ selectedTarget: monsterId }),
+  selectTarget: (numenId: string) => set({ selectedTarget: numenId }),
 
   addAttackToSequence: (attack: Attack) =>
     set((state) => ({
@@ -109,12 +109,12 @@ export const useCombatStore = create<CombatState>((set, get) => ({
       attackSequence: [],
     }),
 
-  updateQuestProgress: (legendaryId: string, eventType: string, amount = 1) =>
+  updateQuestProgress: (mythicId: string, eventType: string, amount = 1) =>
     set((state) => {
-      const current = state.questProgress[legendaryId] || {
-        legendaryId,
+      const current = state.questProgress[mythicId] || {
+        mythicId,
         wardsActivated: 0,
-        monstersDestroyed: 0,
+        numinaDestroyed: 0,
         decreaseDealt: 0,
         cardsDrawn: 0,
         customProgress: {},
@@ -125,15 +125,15 @@ export const useCombatStore = create<CombatState>((set, get) => ({
       return {
         questProgress: {
           ...state.questProgress,
-          [legendaryId]: updated,
+          [mythicId]: updated,
         },
       };
     }),
 
-  clearQuestProgress: (legendaryId: string) =>
+  clearQuestProgress: (mythicId: string) =>
     set((state) => ({
       questProgress: Object.fromEntries(
-        Object.entries(state.questProgress).filter(([key]) => key !== legendaryId)
+        Object.entries(state.questProgress).filter(([key]) => key !== mythicId)
       ),
     })),
 
@@ -158,10 +158,10 @@ export const useCombatStore = create<CombatState>((set, get) => ({
 
   getCombatLog: () => get().combatLog,
 
-  getQuestProgress: (legendaryId: string) => get().questProgress[legendaryId],
+  getQuestProgress: (mythicId: string) => get().questProgress[mythicId],
 
-  isLegendaryQuestReady: (legendaryId: string, progress: QuestProgressTracker) => {
+  isMythicQuestReady: (mythicId: string, progress: QuestProgressTracker) => {
     if (!progress) return false;
-    return isLegendaryQuestComplete(progress, progress);
+    return isMythicQuestComplete(progress, progress);
   },
 }));

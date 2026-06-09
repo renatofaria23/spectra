@@ -1,22 +1,23 @@
 import React, { useEffect } from 'react';
 import { Box, Text, Select, NumberInput, Button, TextInput, Group, Checkbox } from '@mantine/core';
 import { Dropzone } from '@mantine/dropzone';
-import { IconPlus, IconDeviceFloppy, IconPhoto, IconUpload } from '@tabler/icons-react';
+import { IconPlus, IconDeviceFloppy, IconPhoto, IconUpload, IconX } from '@tabler/icons-react';
 import colors from '../styles/Colors';
 import { CardTemplate, type CardData } from '../components/Card/CardTemplate';
 import { ConditionalTrigger, PassiveTrigger, isConditionalTrigger, isPassiveTrigger } from '../logic/Triggers';
 import type { TriggerEntry } from '../logic/Triggers';
 import type { EffectEntry } from '../logic/Effects';
 import { useNavigate, useParams } from 'react-router-dom';
-import { readCards, saveCards, saveArt, readArt } from '../services/cardsAPI';
+import { readCards, saveCards, saveArt, readArt, addCard } from '../services/cardsAPI';
 import { useCardEditor } from '../hooks/useCardEditor';
-import EffectParamInputs from '../components/CardEditor/EffectParamInputs';
+import EffectParamInputs, { OtherwiseEffectInputs } from '../components/CardEditor/EffectParamInputs';
 import {
   triggerTypeOptions,
   activeTriggerOptions,
   passiveTriggerOptions,
   attackTargetOptions,
-  effectTargetOptions,
+  getAttackTargetOptions,
+  getEffectTargetOptions,
   effectOptions,
   familyOptions,
   rarityOptions,
@@ -25,6 +26,10 @@ import {
   inputStyles,
   isAttackTrigger,
   isPassiveValue,
+  effectSupportsOwnTarget,
+  isDirectValueTarget,
+  isNonAttackTrigger,
+  getEffectTargetLabel,
   type CardTypeOption,
   type EffectSlot,
 } from '../logic/CardEditorOptions';
@@ -39,16 +44,19 @@ function triggersToSlots(triggers: TriggerEntry[]): EffectSlot[] {
       const slot: EffectSlot = { trigger: t.trigger };
       if (t.attackTarget) slot.attackTarget = t.attackTarget;
       if (t.effectTarget) slot.effectTarget = t.effectTarget;
-      if (t.effect) slot.effect = t.effect;
+      if (t.effects) slot.effects = t.effects;
+      if ((t as any).effect) slot.effect = (t as any).effect;
       return slot;
     }
     return { trigger: (t as any).trigger as ConditionalTrigger };
   });
 }
 
-export const CardEdit = () => {
+export const CardEditor = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
+
+  const isEditMode = !!id;
 
   const editor = useCardEditor();
 
@@ -69,16 +77,22 @@ export const CardEdit = () => {
     selectedActiveTriggers,
     selectedAttackTarget, setSelectedAttackTarget,
     selectedEffectTarget, setSelectedEffectTarget,
-    selectedEffects,
+    selectedEffectType,
     effectParams, setEffectParams,
+    pendingEffects,
     effectSlots, setEffectSlots,
     buildPreviewCard,
     handleTriggerTypeChange,
     toggleActiveTrigger,
-    toggleEffect,
+    handleEffectSelect,
+    addEffectToPending,
+    removePendingEffect,
     addEffectToSlot,
     removeEffectSlot,
     setArtFilename,
+    isEffectComplete,
+    whenTarget, setWhenTarget,
+    whenCondition, setWhenCondition,
   } = editor;
 
   useEffect(() => {
@@ -101,7 +115,7 @@ export const CardEdit = () => {
           }
         }
 
-        if (card.type === 'monster') {
+        if (card.type === 'numen') {
           setLevel(card.level ?? '');
           setAttribute(card.attribute || 'dark');
           setFamily(card.family || '');
@@ -124,41 +138,76 @@ export const CardEdit = () => {
   }, [id, navigate]);
 
   const hasAnyActiveAttackTrigger = Array.from(selectedActiveTriggers).some(t => isAttackTrigger(t as ConditionalTrigger));
+  const allTriggersNonAttack = Array.from(selectedActiveTriggers).every(t => isNonAttackTrigger(t as ConditionalTrigger));
+  const hasWhenTrigger = Array.from(selectedActiveTriggers).includes(ConditionalTrigger.WHEN);
+  const currentTrigger = selectedActiveTriggers.size === 1 ? Array.from(selectedActiveTriggers)[0] as ConditionalTrigger : undefined;
+  const dynamicAttackTargetOptions = currentTrigger ? getAttackTargetOptions(currentTrigger) : attackTargetOptions;
+  const dynamicEffectTargetOptions = getEffectTargetOptions(currentTrigger, selectedEffectType ?? undefined, cardType);
+  const hideSecondaryEffectTarget = selectedEffectType === EffectType.INCREASE || selectedEffectType === EffectType.DECREASE
+    ? isDirectValueTarget(selectedEffectTarget)
+    : false;
 
   const handleSave = async () => {
-    if (!name || !cardType || !id) return;
+    if (!name || !cardType) return;
 
-    const cards = await readCards();
-    const updatedCard = {
-      id,
-      name,
-      type: cardType,
-      cardType: cardType.charAt(0).toUpperCase() + cardType.slice(1),
-      description: editor.previewDescription,
-      art: artFilename,
-      triggers: editor.previewTriggers,
-      ...(cardType === 'monster' ? {
-        level: level || 1,
-        attribute,
-        ...(family ? { family } : {}),
-        ...(rarity ? { rarity } : {}),
-        attack: attack || 0,
-        defense: defense || 0,
-      } : {
-        ...(rarity ? { rarity } : {}),
-        mana: mana || 0,
-      }),
-    };
+    if (isEditMode && id) {
+      const cards = await readCards();
+      const updatedCard = {
+        id,
+        name,
+        type: cardType,
+        cardType: cardType.charAt(0).toUpperCase() + cardType.slice(1),
+        description: editor.previewDescription,
+        art: artFilename,
+        triggers: editor.previewTriggers,
+        ...(cardType === 'numen' ? {
+          level: level || 1,
+          attribute,
+          ...(family ? { family } : {}),
+          ...(rarity ? { rarity } : {}),
+          attack: attack || 0,
+          defense: defense || 0,
+        } : {
+          ...(rarity ? { rarity } : {}),
+          mana: mana || 0,
+        }),
+      };
 
-    const updated = cards.map((c: any) => (c.id === id ? updatedCard : c));
-    await saveCards(updated);
-    navigate('/card-list');
+      const updated = cards.map((c: any) => (c.id === id ? updatedCard : c));
+      await saveCards(updated);
+      navigate('/card-list');
+    } else {
+      const newId = `${cardType}-${Date.now()}`;
+      const newCard = {
+        id: newId,
+        name,
+        type: cardType,
+        cardType: cardType.charAt(0).toUpperCase() + cardType.slice(1),
+        description: editor.previewDescription,
+        art: artFilename,
+        triggers: editor.previewTriggers,
+        ...(cardType === 'numen' ? {
+          level: level || 1,
+          attribute,
+          ...(family ? { family } : {}),
+          ...(rarity ? { rarity } : {}),
+          attack: attack || 0,
+          defense: defense || 0,
+        } : {
+          ...(rarity ? { rarity } : {}),
+          mana: mana || 0,
+        }),
+      };
+
+      await addCard(newCard);
+      navigate('/card-list');
+    }
   };
 
   const basicInputsSection = (
     <>
       <Text c={colors.Black_1} size="xl" fw={700}>
-        Card Edit
+        {isEditMode ? 'Card Edit' : 'Card Creation'}
       </Text>
 
       <Select
@@ -176,7 +225,7 @@ export const CardEdit = () => {
         styles={inputStyles}
       />
 
-      {cardType === 'monster' ? (
+      {cardType === 'numen' ? (
         <>
           <Select
             data={familyOptions}
@@ -276,10 +325,10 @@ export const CardEdit = () => {
     </>
   );
 
-  const effectsInputsSection = (
+  const effectTypeTriggersSection = (
     <>
       <Text c={colors.Black_1} size="md" fw={600}>
-        Add Effect
+        Add Effect - Type
       </Text>
 
       <Select
@@ -317,49 +366,120 @@ export const CardEdit = () => {
         </Box>
       )}
 
-      {triggerType === 'active' && hasAnyActiveAttackTrigger && (
+      {triggerType === 'active' && hasAnyActiveAttackTrigger && !allTriggersNonAttack && (
         <Select
-          data={attackTargetOptions}
+          data={dynamicAttackTargetOptions}
           value={selectedAttackTarget}
-          onChange={(val) => setSelectedAttackTarget(val as 'player' | 'monster' | 'self' | 'allied_monster' | null)}
+          onChange={(val) => setSelectedAttackTarget(val as 'player' | 'numen' | 'allied_numen' | 'anything' | null)}
           label="Attack Target"
           styles={inputStyles}
         />
       )}
 
-      {triggerType === 'active' && (
+      {triggerType === 'active' && hasWhenTrigger && (
+        <>
+          <TextInput
+            placeholder="What (e.g. opponent's card, allied numen)..."
+            value={whenTarget}
+            onChange={(e) => setWhenTarget(e.target.value)}
+            label="When - What"
+            styles={inputStyles}
+          />
+          <TextInput
+            placeholder="When what (e.g. is removed from their deck)..."
+            value={whenCondition}
+            onChange={(e) => setWhenCondition(e.target.value)}
+            label="When - Condition"
+            styles={inputStyles}
+          />
+        </>
+      )}
+
+    </>
+  );
+
+  const effectsDropdownSection = (
+    <>
+      {triggerType === 'active' && selectedActiveTriggers.size > 0 && (
         <Select
-          data={effectTargetOptions}
+          data={effectOptions}
+          value={selectedEffectType ?? null}
+          onChange={(val) => handleEffectSelect(val as EffectType | null)}
+          label="Select Effect"
+          styles={inputStyles}
+        />
+      )}
+
+      {triggerType === 'active' && selectedEffectType && selectedEffectType !== EffectType.DRAW && selectedEffectType !== EffectType.SCRY && selectedEffectType !== EffectType.SUMMON && (
+        <Select
+          data={dynamicEffectTargetOptions}
           value={selectedEffectTarget}
-          onChange={(val) => setSelectedEffectTarget(val as 'self' | 'attack_target' | 'allied_monster' | 'enemy_monster' | 'all_allied_monsters' | 'all_enemy_monsters' | 'opponent_hp' | 'opponent_hand' | 'opponent_deck' | 'opponent_graveyard' | 'opponent_exile' | 'player_hp' | 'player_hand' | 'player_deck' | 'player_graveyard' | 'player_exile' | null)}
+          onChange={(val) => setSelectedEffectTarget(val as any)}
           label="Effect Target"
           styles={inputStyles}
         />
       )}
 
-      {triggerType === 'active' && (
-        <Box style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', width: '100%' }}>
-          <Text c={colors.Black_1} size="sm" fw={600}>
-            Effects (select one or more)
-          </Text>
-          {effectOptions.map(option => (
-            <Checkbox
-              key={option.value}
-              label={option.label}
-              checked={selectedEffects.has(option.value as EffectType)}
-              onChange={() => toggleEffect(option.value as EffectType)}
-              styles={{ label: { color: colors.Black_1 } }}
-            />
-          ))}
-        </Box>
+
+      {triggerType === 'active' && selectedEffectType && (
+        <EffectParamInputs
+          selectedEffect={selectedEffectType}
+          effectParams={effectParams}
+          setEffectParams={setEffectParams}
+          effectTarget={selectedEffectTarget}
+        />
       )}
 
-      {triggerType === 'active' && selectedEffects.size > 0 && (
-        <EffectParamInputs
-          selectedEffect={Array.from(selectedEffects)[0] || ''}
+      {triggerType === 'active' && selectedEffectType && (
+        <OtherwiseEffectInputs
           effectParams={effectParams}
           setEffectParams={setEffectParams}
         />
+      )}
+
+      {triggerType === 'active' && selectedEffectType && (
+        <Button
+          leftSection={<IconPlus size={16} />}
+          onClick={addEffectToPending}
+          disabled={!isEffectComplete()}
+          styles={{ root: { backgroundColor: colors.Orange_5, '&:hover': { backgroundColor: colors.Orange_4 } } }}
+        >
+          Add to Pending
+        </Button>
+      )}
+
+      {triggerType === 'active' && pendingEffects.length > 0 && (
+        <Box style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', width: '100%' }}>
+          <Text c={colors.Black_1} size="sm" fw={600}>
+            Pending Effects
+          </Text>
+          {pendingEffects.map((p, index) => (
+            <Box
+              key={index}
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '8px 12px',
+                backgroundColor: colors.Gray_6,
+                borderRadius: '4px',
+                border: `1px solid ${colors.Gray_5}`,
+              }}
+            >
+              <Text c={colors.White_1} size="xs" fw={500}>
+                {p.effect.effect}{p.effectTarget ? ` → ${getEffectTargetLabel(p.effectTarget)}` : ''}
+              </Text>
+              <Button
+                size="xs"
+                leftSection={<IconX size={12} />}
+                onClick={() => removePendingEffect(index)}
+                styles={{ root: { backgroundColor: colors.Red_8, '&:hover': { backgroundColor: colors.Red_7 }, padding: '2px 8px' } }}
+              >
+                Remove
+              </Button>
+            </Box>
+          ))}
+        </Box>
       )}
 
       <Button
@@ -368,11 +488,11 @@ export const CardEdit = () => {
         disabled={
           triggerType === 'passive'
             ? !selectedPassiveTrigger
-            : selectedActiveTriggers.size === 0 || selectedEffects.size === 0
+            : selectedActiveTriggers.size === 0 || pendingEffects.length === 0
         }
         styles={{ root: { backgroundColor: colors.Blue_5, '&:hover': { backgroundColor: colors.Blue_4 } } }}
       >
-        Add Effect
+        Add Effect with Trigger
       </Button>
 
       <Button
@@ -381,7 +501,7 @@ export const CardEdit = () => {
         disabled={!name || !cardType}
         styles={{ root: { backgroundColor: colors.Green_6, '&:hover': { backgroundColor: colors.Green_5 } } }}
       >
-        Save Changes
+        {isEditMode ? 'Save Changes' : 'Save Card'}
       </Button>
 
       <Box style={{ marginTop: '1rem' }}>
@@ -428,7 +548,15 @@ export const CardEdit = () => {
               }}
             >
               <Text c={colors.White_1} size="sm" fw={600}>
-                {slot.trigger} {slot.attackTarget ? `(attack: ${slot.attackTarget})` : ''} {slot.effectTarget ? `(effect: ${slot.effectTarget})` : ''} → {slot.effect ? `${slot.effect.effect}` : ''}
+                {(() => {
+                  const effectsList = slot.effects || (slot.effect ? [slot.effect] : []);
+                  const effectsText = effectsList.map((e: EffectEntry) => {
+                    const ownTarget = (e as any).effectTarget;
+                    const targetLabel = ownTarget ? getEffectTargetLabel(ownTarget) : '';
+                    return targetLabel ? `${e.effect} → ${targetLabel}` : e.effect;
+                  }).join(', ');
+                  return `${slot.trigger} ${slot.attackTarget ? `(attack: ${slot.attackTarget})` : ''} → ${effectsText || 'no effects'}`;
+                })()}
               </Text>
               <Button
                 size="xs"
@@ -458,11 +586,8 @@ export const CardEdit = () => {
         height: '100vh',
         boxSizing: 'border-box',
         background: `linear-gradient(135deg, ${colors.Blue_8} 0%, ${colors.Blue_12} 100%)`,
-        overflow: 'hidden',
       }}
     >
-      <Box />
-
       <Box
         style={{
           display: 'flex',
@@ -492,7 +617,23 @@ export const CardEdit = () => {
           msOverflowStyle: 'none',
         }}
       >
-        {effectsInputsSection}
+        {effectTypeTriggersSection}
+      </Box>
+
+      <Box
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '0.2rem',
+          padding: '1rem 1.5rem',
+          alignItems: 'flex-start',
+          justifyContent: 'center',
+          overflowY: 'auto',
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none',
+        }}
+      >
+        {effectsDropdownSection}
       </Box>
 
       <Box
@@ -517,10 +658,8 @@ export const CardEdit = () => {
       >
         <CardTemplate card={buildPreviewCard()} size="lg" artImage={artImage} />
       </Box>
-
-      <Box />
     </Box>
   );
 };
 
-export default CardEdit;
+export default CardEditor;

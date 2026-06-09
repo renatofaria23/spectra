@@ -7,4 +7,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   saveArt: ({ filename, data }) => ipcRenderer.invoke('art:save', { filename, data }),
   readArt: (filename) => ipcRenderer.invoke('art:read', filename),
   listArt: () => ipcRenderer.invoke('art:list'),
+  readDecks: () => ipcRenderer.invoke('decks:read'),
+  saveDecks: (decks) => ipcRenderer.invoke('decks:save', decks),
 });

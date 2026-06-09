@@ -187,6 +187,18 @@ export const Dark_4 = Purple_8;
 export const Dark_5 = Purple_10;
 export const Dark_6 = Gray_9;
 
+export const Rite_1 = Green_10;
+export const Rite_2 = Green_9;
+export const Rite_3 = Green_8;
+export const Rite_4 = Green_7;
+export const Rite_5 = Green_6;
+
+export const Ward_1 = Red_13;
+export const Ward_2 = Red_12;
+export const Ward_3 = Red_11;
+export const Ward_4 = Red_10;
+export const Ward_5 = Red_9;
+
 export default {
   White_1, White_1_50, White_1_20,
   Beige_1, Beige_2, Beige_3, Beige_4, Beige_5, Beige_6, Beige_7, Beige_8, Beige_1_50,
@@ -205,10 +217,14 @@ export default {
   Air_1, Air_2, Air_3, Air_4, Air_5, Air_6, Air_7,
   Light_1, Light_2, Light_3, Light_4, Light_5, Light_6, Light_7, Light_8,
   Dark_1, Dark_2, Dark_3, Dark_4, Dark_5, Dark_6,
+  Rite_1, Rite_2, Rite_3, Rite_4, Rite_5,
+  Ward_1, Ward_2, Ward_3, Ward_4, Ward_5,
   FireTheme: [Fire_1, Fire_2, Fire_3, Fire_4, Fire_5, Fire_6, Fire_7, Fire_8],
   WaterTheme: [Water_1, Water_2, Water_3, Water_4, Water_5, Water_6, Water_7, Water_8, Water_9],
   EarthTheme: [Earth_1, Earth_2, Earth_3, Earth_4, Earth_5, Earth_6, Earth_7, Earth_8],
   AirTheme: [Air_1, Air_2, Air_3, Air_4, Air_5, Air_6, Air_7],
   LightTheme: [Light_1, Light_2, Light_3, Light_4, Light_5, Light_6, Light_7, Light_8],
   DarkTheme: [Dark_1, Dark_2, Dark_3, Dark_4, Dark_5, Dark_6],
+  RiteTheme: [Rite_1, Rite_2, Rite_3, Rite_4, Rite_5],
+  WardTheme: [Ward_1, Ward_2, Ward_3, Ward_4, Ward_5],
 };

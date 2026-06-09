@@ -1,25 +1,18 @@
-export interface Monster {
+import { PassiveTrigger, hasPassiveTrigger } from './Triggers';
+import type { NatureScaling } from './natureScaling';
+
+export interface Numen {
   id: string;
+  name: string;
   baseAttack: number;
   baseDefense: number;
-  attributeBonus?: number;
-  position?: 'attack' | 'defense';
+  currentAttack: number;
+  currentDefense: number;
+  position: 'attack' | 'defense' | 'face_down';
   justSummoned?: boolean;
-}
-
-export interface SpentMonster {
-  attackerId: string;
-  monsterId: string;
-  spentATK: number;
-  targetId: string | null;
-  decreaseDealt: number;
-  killedMonster: boolean;
-}
-
-export interface Attack {
-  attacker: Monster;
-  targetMonster: Monster | null;
-  spentATK: number;
+  hasAttacked?: boolean;
+  triggers?: string[];
+  [key: string]: unknown;
 }
 
 export interface CombatInteraction {
@@ -27,191 +20,340 @@ export interface CombatInteraction {
   targetId: string | null;
   spentATK: number;
   decreaseDealt: number;
-  killedMonster: boolean;
+  killedNumen: boolean;
+  overflowDamage: number;
+  mutualDestruction: boolean;
   error?: string;
 }
 
-const calculateDecrease = (attackerSpentATK: number, targetDefense: number): number => {
-  if (targetDefense === 0) {
-    return attackerSpentATK;
-  }
+export interface BattleResult {
+  totalOverflowDamage: number;
+  destroyedNumina: { numenId: string; destroyedBy: string }[];
+  destroyedAttackers: string[];
+  interactions: CombatInteraction[];
+  validationErrors: string[];
+}
 
-  if (attackerSpentATK > targetDefense) {
-    return attackerSpentATK - targetDefense;
-  }
+export interface Attack {
+  attackerId: string;
+  targetId: string | null;
+}
 
-  return 0;
+export interface BattleResultSummary {
+  totalDecrease: number;
+  destroyedNumina: { numenId: string; destroyedBy: string }[];
+  interactions: CombatInteraction[];
+  validationErrors: string[];
+}
+
+const hasTrigger = (numen: Numen, trigger: PassiveTrigger): boolean => {
+  return hasPassiveTrigger(numen, trigger);
 };
 
-export const resolveAttack = (
-  attacker: Monster,
-  target: Monster | null,
-  attackValue: number,
-  spentMonsters: SpentMonster[] = []
-): {
-  decreaseDealt: number;
-  killedMonster: boolean;
-  newSpentMonsters: SpentMonster[];
-  error?: string;
-} => {
-  const maxATK = attacker.baseAttack + (attacker.attributeBonus || 0);
-
-  if (attackValue > maxATK) {
-    return {
-      decreaseDealt: 0,
-      killedMonster: false,
-      error: 'Attack value exceeds max ATK',
-      newSpentMonsters: spentMonsters,
-    };
-  }
-
-  const targetDefense = target ? target.baseDefense : 0;
-  const decreaseDealt = calculateDecrease(attackValue, targetDefense);
-
-  let killedMonster = false;
-  if (target && decreaseDealt > 0) {
-    killedMonster = true;
-  }
-
-  spentMonsters.push({
-    attackerId: attacker.id,
-    monsterId: attacker.id,
-    spentATK: attackValue,
-    targetId: target?.id || null,
-    decreaseDealt,
-    killedMonster,
-  });
-
+const restoreNumenStats = (numen: Numen): Numen => {
   return {
-    decreaseDealt,
-    killedMonster,
-    newSpentMonsters: spentMonsters,
+    ...numen,
+    currentAttack: numen.baseAttack,
+    currentDefense: numen.baseDefense,
   };
 };
 
-export const resolveBattlePhase = (attackSequence: Attack[]): {
-  totalDecrease: number;
-  destroyedMonsters: { monsterId: string; destroyedBy: string }[];
-  interactions: CombatInteraction[];
-  validationErrors: string[];
-} => {
-  const results: ReturnType<typeof resolveBattlePhase> = {
-    totalDecrease: 0,
-    destroyedMonsters: [],
+export const resolveGroupAttack = (
+  attackers: Numen[],
+  defender: Numen,
+  defenderNatureScaling: NatureScaling
+): BattleResult => {
+  const result: BattleResult = {
+    totalOverflowDamage: 0,
+    destroyedNumina: [],
+    destroyedAttackers: [],
     interactions: [],
     validationErrors: [],
   };
 
-  const usedAttackers = new Set<string>();
+  const defenderInAttackPos = defender.position === 'attack';
+  const defenderStat = defenderInAttackPos ? defender.currentAttack : defender.currentDefense;
 
-  attackSequence.forEach((attack) => {
-    const { attacker, targetMonster, spentATK } = attack;
+  let remainingDefenderStat = defenderStat;
+  let currentDefender = { ...defender };
 
-    if (usedAttackers.has(attacker.id)) {
-      results.validationErrors.push(
-        `Monster ${attacker.id} already attacked this turn`
-      );
-      return;
-    }
+  for (const attacker of attackers) {
+    const attackerATK = attacker.currentAttack;
+    const damageBonus = defenderNatureScaling.fire.damageBonus;
+    const totalATK = attackerATK + damageBonus;
 
-    if (attacker.justSummoned) {
-      results.validationErrors.push(
-        `Monster ${attacker.id} was just summoned, cannot attack`
-      );
-      return;
-    }
+    if (totalATK > remainingDefenderStat) {
+      const overflow = totalATK - remainingDefenderStat;
+      currentDefender = { ...currentDefender, currentDefense: 0, currentAttack: 0 };
 
-    const attackResult = resolveAttack(
-      attacker,
-      targetMonster,
-      spentATK,
-      []
-    );
-
-    if (attackResult.error) {
-      results.validationErrors.push(attackResult.error!);
-      return;
-    }
-
-    const interaction: CombatInteraction = {
-      attackerId: attacker.id,
-      targetId: targetMonster?.id || null,
-      spentATK,
-      decreaseDealt: attackResult.decreaseDealt,
-      killedMonster: attackResult.killedMonster,
-    };
-
-    results.totalDecrease += interaction.decreaseDealt;
-    results.interactions.push(interaction);
-
-    if (interaction.killedMonster) {
-      results.destroyedMonsters.push({
-        monsterId: targetMonster?.id || '',
-        destroyedBy: attacker.id,
+      result.interactions.push({
+        attackerId: attacker.id,
+        targetId: defender.id,
+        spentATK: attackerATK,
+        decreaseDealt: 0,
+        killedNumen: true,
+        overflowDamage: overflow,
+        mutualDestruction: false,
       });
+
+      result.destroyedNumina.push({ numenId: defender.id, destroyedBy: attacker.id });
+      result.totalOverflowDamage += overflow;
+
+      if (hasTrigger(currentDefender, PassiveTrigger.RELENTLESS)) {
+        currentDefender = restoreNumenStats(currentDefender);
+        const newRemaining = defenderInAttackPos ? currentDefender.currentAttack : currentDefender.currentDefense;
+        remainingDefenderStat = newRemaining;
+      } else {
+        remainingDefenderStat = 0;
+      }
+
+      attackers.forEach((a) => {
+        a.currentAttack = 0;
+      });
+
+      break;
+    } else if (totalATK === remainingDefenderStat) {
+      result.interactions.push({
+        attackerId: attacker.id,
+        targetId: defender.id,
+        spentATK: attackerATK,
+        decreaseDealt: 0,
+        killedNumen: true,
+        overflowDamage: 0,
+        mutualDestruction: true,
+      });
+
+      result.destroyedNumina.push({ numenId: defender.id, destroyedBy: attacker.id });
+      attackers.forEach((aId) => {
+        result.destroyedAttackers.push(attacker.id);
+      });
+
+      attackers.forEach((a) => {
+        a.currentAttack = 0;
+      });
+
+      if (hasTrigger(currentDefender, PassiveTrigger.RELENTLESS)) {
+        currentDefender = restoreNumenStats(currentDefender);
+      }
+
+      remainingDefenderStat = 0;
+
+      break;
+    } else {
+      remainingDefenderStat -= totalATK;
+
+      result.interactions.push({
+        attackerId: attacker.id,
+        targetId: defender.id,
+        spentATK: attackerATK,
+        decreaseDealt: 0,
+        killedNumen: false,
+        overflowDamage: 0,
+        mutualDestruction: false,
+      });
+
+      attackers.forEach((a) => {
+        a.currentAttack = 0;
+      });
+
+      if (hasTrigger(currentDefender, PassiveTrigger.RELENTLESS)) {
+        currentDefender = restoreNumenStats(currentDefender);
+        const newRemaining = defenderInAttackPos ? currentDefender.currentAttack : currentDefender.currentDefense;
+        remainingDefenderStat = newRemaining;
+      }
     }
+  }
 
-    usedAttackers.add(attacker.id);
-  });
-
-  return results;
+  return result;
 };
 
-export const resetMonsterStats = (monsters: Monster[]): Monster[] => {
-  return monsters.map((monster) => ({
-    ...monster,
-    currentAttack: monster.baseAttack,
-    currentDefense: monster.baseDefense,
-    hasAttacked: false,
-    justSummoned: false,
-  }));
+export const resolveSoloAttack = (
+  attacker: Numen,
+  defender: Numen | null,
+  defenderNatureScaling: NatureScaling
+): BattleResult => {
+  const result: BattleResult = {
+    totalOverflowDamage: 0,
+    destroyedNumina: [],
+    destroyedAttackers: [],
+    interactions: [],
+    validationErrors: [],
+  };
+
+  if (!defender) {
+    const damageBonus = defenderNatureScaling.fire.damageBonus;
+    const totalATK = attacker.currentAttack + damageBonus;
+
+    result.interactions.push({
+      attackerId: attacker.id,
+      targetId: null,
+      spentATK: attacker.currentAttack,
+      decreaseDealt: 0,
+      killedNumen: false,
+      overflowDamage: totalATK,
+      mutualDestruction: false,
+    });
+
+    result.totalOverflowDamage = totalATK;
+    attacker.currentAttack = 0;
+
+    return result;
+  }
+
+  const defenderInAttackPos = defender.position === 'attack';
+  const defenderStat = defenderInAttackPos ? defender.currentAttack : defender.currentDefense;
+  const damageBonus = defenderNatureScaling.fire.damageBonus;
+  const totalATK = attacker.currentAttack + damageBonus;
+
+  if (totalATK > defenderStat) {
+    const overflow = totalATK - defenderStat;
+
+    result.interactions.push({
+      attackerId: attacker.id,
+      targetId: defender.id,
+      spentATK: attacker.currentAttack,
+      decreaseDealt: 0,
+      killedNumen: true,
+      overflowDamage: overflow,
+      mutualDestruction: false,
+    });
+
+    result.destroyedNumina.push({ numenId: defender.id, destroyedBy: attacker.id });
+    result.totalOverflowDamage = overflow;
+    attacker.currentAttack = 0;
+  } else if (totalATK === defenderStat) {
+    result.interactions.push({
+      attackerId: attacker.id,
+      targetId: defender.id,
+      spentATK: attacker.currentAttack,
+      decreaseDealt: 0,
+      killedNumen: true,
+      overflowDamage: 0,
+      mutualDestruction: true,
+    });
+
+    result.destroyedNumina.push({ numenId: defender.id, destroyedBy: attacker.id });
+    result.destroyedAttackers.push(attacker.id);
+    attacker.currentAttack = 0;
+  } else {
+    result.interactions.push({
+      attackerId: attacker.id,
+      targetId: defender.id,
+      spentATK: attacker.currentAttack,
+      decreaseDealt: 0,
+      killedNumen: false,
+      overflowDamage: 0,
+      mutualDestruction: false,
+    });
+
+    attacker.currentAttack = 0;
+  }
+
+  return result;
 };
 
-export const canMonsterAttack = (
-  monster: Monster,
-  isFreshlyPlaced: boolean,
-  hasAlreadyAttacked: boolean,
-  extraActions: number = 0
+export const canNumenAttack = (
+  numen: Numen,
+  maxSummons: number
 ): { canAttack: boolean; reason: string } => {
-  if (monster.position === 'defense') {
-    return { canAttack: false, reason: 'Monster in defense position' };
+  if (numen.position === 'defense') {
+    return { canAttack: false, reason: 'Numen in defense position' };
   }
 
-  if (isFreshlyPlaced) {
+  if (hasTrigger(numen, PassiveTrigger.STUNNED)) {
+    return { canAttack: false, reason: 'Numen is stunned' };
+  }
+
+  if (numen.justSummoned && !hasTrigger(numen, PassiveTrigger.CELERITY)) {
     return { canAttack: false, reason: 'Freshly summoned, cannot attack this turn' };
-  }
-
-  const maxAttacks = 1 + extraActions;
-  if (hasAlreadyAttacked && maxAttacks <= 1) {
-    return { canAttack: false, reason: 'Monster already attacked this turn' };
   }
 
   return { canAttack: true, reason: '' };
 };
 
-export const calculateAirfury = (airMonsterCount: number): number => {
-  return Math.floor(airMonsterCount / 10);
+export const canNumenGroupAttack = (numen: Numen): boolean => {
+  if (hasTrigger(numen, PassiveTrigger.RECLUSE)) {
+    return false;
+  }
+  return true;
 };
 
-export const shouldDestroyDefender = (decreaseOverflow: number): boolean => {
-  return decreaseOverflow > 0;
+export const mustNumenGroupAttack = (numen: Numen): boolean => {
+  return hasTrigger(numen, PassiveTrigger.LEGION);
 };
 
-export const calculateTotalBattleDecrease = (combatInteractions: CombatInteraction[]): number => {
-  return combatInteractions.reduce((total, interaction) => {
-    return total + (interaction.decreaseDealt || 0);
-  }, 0);
+export const resetNumenStats = (numina: Numen[]): Numen[] => {
+  return numina.map((numen) => ({
+    ...numen,
+    currentAttack: numen.baseAttack,
+    currentDefense: numen.baseDefense,
+    hasAttacked: false,
+    justSummoned: false,
+  }));
 };
 
-export interface BattleResults {
-  totalDecrease: number;
-  destroyedMonsters: { monsterId: string; destroyedBy: string }[];
-  interactions: CombatInteraction[];
-}
+export const getTargetableDefenders = (
+  allDefenders: Numen[],
+  attackers: Numen[]
+): Numen[] => {
+  const challengeNumen = allDefenders.find((n) => hasTrigger(n, PassiveTrigger.CHALLENGE));
+  if (challengeNumen) {
+    return [challengeNumen];
+  }
 
-export const getLegacyBattleResults = (results: ReturnType<typeof resolveBattlePhase>): Partial<BattleResults> => {
-  return {
-    totalDecrease: results.totalDecrease,
-    destroyedMonsters: results.destroyedMonsters,
+  return allDefenders.filter((n) => {
+    if (hasTrigger(n, PassiveTrigger.VEILED)) {
+      const visibleCount = allDefenders.filter((d) => !hasTrigger(d, PassiveTrigger.VEILED)).length;
+      if (visibleCount === 0) {
+        return true;
+      }
+      return false;
+    }
+    return true;
+  });
+};
+
+export const resolveBattlePhase = (
+  attackSequence: Attack[],
+  fieldNumina: Numen[] = []
+): BattleResultSummary => {
+  const summary: BattleResultSummary = {
+    totalDecrease: 0,
+    destroyedNumina: [],
+    interactions: [],
+    validationErrors: [],
   };
+
+  for (const attack of attackSequence) {
+    const attacker = fieldNumina.find((n) => n.id === attack.attackerId);
+    if (!attacker) {
+      summary.validationErrors.push(`Attacker ${attack.attackerId} not found`);
+      continue;
+    }
+
+    const { canAttack, reason } = canNumenAttack(attacker, fieldNumina.length);
+    if (!canAttack) {
+      summary.validationErrors.push(`${attacker.name} cannot attack: ${reason}`);
+      continue;
+    }
+
+    const defender = attack.targetId ? fieldNumina.find((n) => n.id === attack.targetId) ?? null : null;
+
+    const defaultScaling: NatureScaling = {
+      fire: { damageBonus: 0, numinaCount: 0 },
+      air: { extraSummons: 0, numinaCount: 0 },
+      earth: { hpBonus: 0, numinaCount: 0 },
+      water: { hpRegenBonus: 0, numinaCount: 0 },
+      light: { manaGainBonus: 0, maxManaBonus: 0, numinaCount: 0 },
+      dark: { handSizeBonus: 0, numinaCount: 0 },
+    };
+
+    const result = resolveSoloAttack(attacker, defender, defaultScaling);
+    summary.interactions.push(...result.interactions);
+    summary.destroyedNumina.push(...result.destroyedNumina);
+    summary.totalDecrease += result.totalOverflowDamage;
+    summary.validationErrors.push(...result.validationErrors);
+  }
+
+  return summary;
 };

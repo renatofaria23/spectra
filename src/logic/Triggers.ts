@@ -1,13 +1,12 @@
 export enum PassiveTrigger {
-  PROVOCATION = "PROVOCATION",
+  CHALLENGE = "CHALLENGE",
   VEILED = "VEILED",
-  HASTE = "HASTE",
-  LIFELINK = "LIFELINK",
+  CELERITY = "CELERITY",
   STUNNED = "STUNNED",
   NULLIFY = "NULLIFY",
   LOCKED = "LOCKED",
   RECLUSE = "RECLUSE",
-  PACKER = "PACKER",
+  LEGION = "LEGION",
   RELENTLESS = "RELENTLESS"
 }
 
@@ -23,9 +22,9 @@ export enum ConditionalTrigger {
   AFTER_ATTACK = "AFTER_ATTACK",
   BEFORE_ATTACK = "BEFORE_ATTACK",
   WHEN_ATTACKED = "WHEN_ATTACKED",
-  ARRIVAL = "ARRIVAL",
-  LAST_BREATH = "LAST_BREATH",
-  WOUNDED = "WOUNDED"
+  DECREE = "DECREE",
+  TESTAMENT = "TESTAMENT",
+  WHEN = "WHEN"
 }
 
 export interface CounterTrigger {
@@ -46,31 +45,61 @@ export interface AbsorbTrigger {
   value: number;
 }
 
-export type AttackTarget = 'player' | 'monster' | 'self' | 'allied_monster';
+export type AttackTarget = 'player' | 'numen' | 'allied_numen' | 'anything';
 
 export type EffectTarget =
   | 'self'
   | 'attack_target'
-  | 'allied_monster'
-  | 'enemy_monster'
-  | 'all_allied_monsters'
-  | 'all_enemy_monsters'
+  | 'any_card'
+  | 'all_cards'
+  | 'any_numen'
+  | 'any_magic'
+  | 'any_rite'
+  | 'any_ward'
+  | 'allied_numen'
+  | 'enemy_numen'
+  | 'all_allied_numina'
+  | 'all_enemy_numina'
+  | 'global_allied_numina'
+  | 'global_enemy_numina'
+  | 'allied_non_mythic_numen'
+  | 'enemy_non_mythic_numen'
+  | 'all_allied_non_mythic_numina'
+  | 'all_enemy_non_mythic_numina'
+  | 'global_allied_non_mythic_numina'
+  | 'global_enemy_non_mythic_numina'
+  | 'allied_magic'
+  | 'enemy_magic'
+  | 'all_allied_magics'
+  | 'all_enemy_magics'
+  | 'allied_rite'
+  | 'enemy_rite'
+  | 'all_allied_rites'
+  | 'all_enemy_rites'
+  | 'allied_ward'
+  | 'enemy_ward'
+  | 'all_allied_wards'
+  | 'all_enemy_wards'
   | 'opponent_hp'
   | 'opponent_hand'
   | 'opponent_deck'
   | 'opponent_graveyard'
   | 'opponent_exile'
+  | 'opponent_mana'
   | 'player_hp'
   | 'player_hand'
   | 'player_deck'
   | 'player_graveyard'
-  | 'player_exile';
+  | 'player_exile'
+  | 'player_mana';
 
 export interface ConditionalTriggerEffect {
   trigger: ConditionalTrigger;
   attackTarget?: AttackTarget;
   effectTarget?: EffectTarget;
-  effect: any;
+  effects: any[];
+  whenTarget?: string;
+  whenCondition?: string;
 }
 
 export type TriggerEntry =
@@ -82,6 +111,11 @@ export type TriggerEntry =
 
 export function isPassiveTrigger(entry: TriggerEntry): entry is PassiveTrigger {
   return typeof entry === "string";
+}
+
+export function hasPassiveTrigger(card: { triggers?: string[] }, trigger: PassiveTrigger): boolean {
+  if (!card.triggers) return false;
+  return card.triggers.includes(trigger);
 }
 
 export function isCounterTrigger(entry: TriggerEntry): entry is CounterTrigger {
@@ -97,18 +131,16 @@ export function isAbsorbTrigger(entry: TriggerEntry): entry is AbsorbTrigger {
 }
 
 export function isConditionalTrigger(entry: TriggerEntry): entry is ConditionalTriggerEffect {
-  return typeof entry === "object" && "trigger" in entry && "effect" in entry;
+  return typeof entry === "object" && "trigger" in entry && ("effects" in entry || "effect" in entry);
 }
 
 export function handlePassiveTrigger(trigger: PassiveTrigger) {
   switch (trigger) {
-    case PassiveTrigger.PROVOCATION:
+    case PassiveTrigger.CHALLENGE:
       return;
     case PassiveTrigger.VEILED:
       return;
-    case PassiveTrigger.HASTE:
-      return;
-    case PassiveTrigger.LIFELINK:
+    case PassiveTrigger.CELERITY:
       return;
     case PassiveTrigger.STUNNED:
       return;
@@ -118,7 +150,7 @@ export function handlePassiveTrigger(trigger: PassiveTrigger) {
       return;
     case PassiveTrigger.RECLUSE:
       return;
-    case PassiveTrigger.PACKER:
+    case PassiveTrigger.LEGION:
       return;
     case PassiveTrigger.RELENTLESS:
       return;
@@ -146,11 +178,11 @@ export function handleConditionalTrigger(trigger: ConditionalTriggerEffect) {
       return;
     case ConditionalTrigger.WHEN_ATTACKED:
       return;
-    case ConditionalTrigger.ARRIVAL:
+    case ConditionalTrigger.DECREE:
       return;
-    case ConditionalTrigger.LAST_BREATH:
+    case ConditionalTrigger.TESTAMENT:
       return;
-    case ConditionalTrigger.WOUNDED:
+    case ConditionalTrigger.WHEN:
       return;
   }
 }

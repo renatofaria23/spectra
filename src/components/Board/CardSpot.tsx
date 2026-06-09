@@ -115,7 +115,6 @@ export const CardSpot = React.memo(
             justifyContent: 'center',
             cursor: handleClick ? 'pointer' : 'default',
             border: `1px solid ${isSelected ? effectiveSelectedBorder : borderColor}`,
-            overflow: 'hidden',
             ...positionStyle,
             ...dimensions,
             transition: 'all 0.15s ease-out',

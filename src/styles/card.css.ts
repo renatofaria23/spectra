@@ -8,7 +8,6 @@ export const cardContainer = style({
   width: '100%',
   aspectRatio: '3/4',
   borderRadius: '12px',
-  overflow: 'hidden',
   boxShadow: Black_4_40,
   cursor: 'pointer',
   transition: 'all 0.3s ease',
@@ -27,25 +26,25 @@ export const cardBody = style({
   padding: '8px',
   backgroundColor: Blue_5,
   color: White_1,
-  overflow: 'hidden',
   display: 'flex',
   flexDirection: 'column',
   justifyContent: 'space-between',
 });
 
 export const cardTitle = style({
-  fontSize: '12px',
+  fontSize: '14px',
+  lineHeight: '110%',
   fontWeight: 'bold',
   marginBottom: '4px',
   textOverflow: 'ellipsis',
   whiteSpace: 'nowrap',
-  overflow: 'hidden',
 });
 
 export const cardStats = style({
   display: 'flex',
   justifyContent: 'space-between',
-  fontSize: '10px',
+  fontSize: '12px',
+  lineHeight: '110%',
   fontWeight: 'bold',
 });
 
@@ -56,11 +55,12 @@ export const cardBadge = style({
   padding: '2px 6px',
   backgroundColor: Beige_5,
   color: Orange_3,
-  fontSize: '10px',
+  fontSize: '12px',
+  lineHeight: '110%',
   borderRadius: '4px',
 });
 
-export const legendaryBadge = style({
+export const mythicBadge = style({
   backgroundColor: Orange_3,
   color: Black_1,
 });

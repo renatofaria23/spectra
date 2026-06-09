@@ -16,7 +16,7 @@ export const Field = React.memo(() => {
   };
 
   const gradientColors = {
-    monster: [colors.Orange_9, colors.Orange_10],
+    numen: [colors.Orange_9, colors.Orange_10],
     extraDeck: [colors.Gray_7, colors.Gray_8],
     special: [colors.Green_4, colors.Green_5],
     exile: [colors.Purple_9, colors.Purple_10],
@@ -33,7 +33,7 @@ export const Field = React.memo(() => {
   };
 
   const zoneOverrides = {
-    monster: { backgroundColor: colors.Orange_1 },
+    numen: { backgroundColor: colors.Orange_1 },
     extraDeck: { backgroundColor: colors.Gray_1 },
     special: { backgroundColor: colors.Green_1 },
     exile: { backgroundColor: colors.Purple_1 },
@@ -76,7 +76,7 @@ const row2m = [
 
 const row1m = [
   createSpot('Extra Deck'),
-  ...Array.from({ length: 5 }, () => createSpot('Monster Zone', 'monster')),
+  ...Array.from({ length: 5 }, () => createSpot('Numen Zone', 'numen')),
   createSpot('Exile'),
 ];
 
@@ -86,7 +86,7 @@ const row3m = [
 
 const row1 = [
   createSpot('Exile'),
-  ...Array.from({ length: 5 }, () => createSpot('Monster Zone', 'monster')),
+  ...Array.from({ length: 5 }, () => createSpot('Numen Zone', 'numen')),
   createSpot('Extra Deck'),
 ];
 

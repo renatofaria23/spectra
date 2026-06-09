@@ -1,32 +1,32 @@
 import { validateCardRequirements } from './deckConstraints';
 
-export interface LegendaryQuestTracker {
-  legendaryId: string;
+export interface MythicQuestTracker {
+  mythicId: string;
   wardsActivated: number;
-  monstersDestroyed: number;
+  numinaDestroyed: number;
   decreaseDealt: number;
   cardsDrawn: number;
   customProgress: Record<string, unknown>;
 }
 
-export const initializeLegendaryTracker = (legendaryId: string): LegendaryQuestTracker => {
+export const initializeMythicTracker = (mythicId: string): MythicQuestTracker => {
   return {
-    legendaryId,
+    mythicId,
     wardsActivated: 0,
-    monstersDestroyed: 0,
+    numinaDestroyed: 0,
     decreaseDealt: 0,
     cardsDrawn: 0,
     customProgress: {},
   };
 };
 
-export const isLegendaryQuestComplete = (legendary: unknown, tracker: LegendaryQuestTracker): boolean => {
-  if (!(legendary as any).isLegendary || !(legendary as any).legendaryQuest) {
+export const isMythicQuestComplete = (mythic: unknown, tracker: MythicQuestTracker): boolean => {
+  if (!(mythic as any).isMythic || !(mythic as any).mythicQuest) {
     return false;
   }
 
-  const legendaryCard = legendary as any;
-  const activationConditions = legendaryCard.legendaryQuest?.activationConditions;
+  const mythicCard = mythic as any;
+  const activationConditions = mythicCard.mythicQuest?.activationConditions;
 
   if (!activationConditions) {
     return false;
@@ -34,7 +34,7 @@ export const isLegendaryQuestComplete = (legendary: unknown, tracker: LegendaryQ
 
   for (const [condition, required] of Object.entries(activationConditions)) {
     const numericRequired = typeof required === 'number' ? Number(required) : 0;
-    const current = tracker[condition as keyof LegendaryQuestTracker];
+    const current = tracker[condition as keyof MythicQuestTracker];
     if (current === undefined || Number(current) < numericRequired) {
       return false;
     }
@@ -43,15 +43,15 @@ export const isLegendaryQuestComplete = (legendary: unknown, tracker: LegendaryQ
   return true;
 };
 
-export const updateQuestProgress = (tracker: LegendaryQuestTracker, eventType: string, amount: number = 1): LegendaryQuestTracker => {
+export const updateQuestProgress = (tracker: MythicQuestTracker, eventType: string, amount: number = 1): MythicQuestTracker => {
   const updated = { ...tracker };
 
   switch (eventType) {
     case 'wardActivated':
       updated.wardsActivated += amount;
       break;
-    case 'monsterDestroyed':
-      updated.monstersDestroyed += amount;
+    case 'numenDestroyed':
+      updated.numinaDestroyed += amount;
       break;
     case 'decreaseDealt':
       updated.decreaseDealt += amount;
@@ -66,39 +66,39 @@ export const updateQuestProgress = (tracker: LegendaryQuestTracker, eventType: s
   return updated;
 };
 
-export const getLegendarySummonEligibility = (deck: unknown[], activeLegendaries: any[] = []): {
+export const getMythicSummonEligibility = (deck: unknown[], activeMythics: any[] = []): {
   available: any[];
   ineligible: any[];
   reasons: Record<string, string>;
 } => {
-  const activeIds = new Set<string>(activeLegendaries.map((l) => l.id));
+  const activeIds = new Set<string>(activeMythics.map((l) => l.id));
 
   const available: any[] = [];
   const ineligible: any[] = [];
   const reasons: Record<string, string> = {};
 
-  (deck as Array<any>).forEach((legendaryCard) => {
-    if (activeIds.has(legendaryCard.id)) {
-      ineligible.push(legendaryCard);
-      reasons[legendaryCard.id] = 'Already active on field';
+  (deck as Array<any>).forEach((mythicCard) => {
+    if (activeIds.has(mythicCard.id)) {
+      ineligible.push(mythicCard);
+      reasons[mythicCard.id] = 'Already active on field';
       return;
     }
 
     const validationResult = validateCardRequirements(
       deck as import('./deckConstraints').Card[],
-      [legendaryCard.id]
+      [mythicCard.id]
     );
 
-    if (!validationResult.canSummon[legendaryCard.id]) {
-      ineligible.push(legendaryCard);
-      const missing = validationResult.missingRequirements[legendaryCard.id];
-      reasons[legendaryCard.id] = Array.isArray(missing)
+    if (!validationResult.canSummon[mythicCard.id]) {
+      ineligible.push(mythicCard);
+      const missing = validationResult.missingRequirements[mythicCard.id];
+      reasons[mythicCard.id] = Array.isArray(missing)
         ? missing.join(', ')
         : 'Unknown requirements';
       return;
     }
 
-    available.push(legendaryCard);
+    available.push(mythicCard);
   });
 
   return { available, ineligible, reasons };
@@ -111,31 +111,31 @@ export const getKryokScalingBuff = (wardsRemoved: number): { darkBonus: number; 
   };
 };
 
-export const checkLegendaryConstraint = (legendary: any, action: string): { allowed: boolean; reason: string } => {
-  const constraints = legendary.legendaryQuest?.specialConstraints || [];
+export const checkMythicConstraint = (mythic: any, action: string): { allowed: boolean; reason: string } => {
+  const constraints = mythic.mythicQuest?.specialConstraints || [];
 
   if (action === 'changePosition') {
     if (constraints.includes('cannotChangePosition')) {
-      return { allowed: false, reason: 'This legendary cannot change position' };
+      return { allowed: false, reason: 'This mythic cannot change position' };
     }
   }
 
   if (action === 'destroy') {
     if (constraints.includes('cannotBeDestroyed')) {
-      return { allowed: false, reason: 'This legendary cannot be destroyed' };
+      return { allowed: false, reason: 'This mythic cannot be destroyed' };
     }
   }
 
-  if (action === 'banish') {
-    if (constraints.includes('cannotBeBanished')) {
-      return { allowed: false, reason: 'This legendary cannot be banished' };
+  if (action === 'exile') {
+    if (constraints.includes('cannotBeExiled')) {
+      return { allowed: false, reason: 'This mythic cannot be exiled' };
     }
   }
 
   return { allowed: true, reason: '' };
 };
 
-export const getLegendaryTributeCost = (legendary: any): number => {
+export const getMythicTributeCost = (mythic: any): number => {
   const tributes: Record<number, number> = {
     1: 0,
     2: 0,
@@ -149,12 +149,12 @@ export const getLegendaryTributeCost = (legendary: any): number => {
     10: 5,
   };
 
-  return tributes[legendary.level || 0] || 0;
+  return tributes[mythic.level || 0] || 0;
 };
 
-export const activateLegendary = (tracker: LegendaryQuestTracker): {
+export const activateMythic = (tracker: MythicQuestTracker): {
   activated: boolean;
-  tracker: LegendaryQuestTracker;
+  tracker: MythicQuestTracker;
 } => {
   const isActive = 'isActive' in tracker && !!tracker.isActive;
 
@@ -168,9 +168,9 @@ export const activateLegendary = (tracker: LegendaryQuestTracker): {
   };
 };
 
-export const deactivateLegendary = (tracker: LegendaryQuestTracker): {
+export const deactivateMythic = (tracker: MythicQuestTracker): {
   deactivated: boolean;
-  tracker: LegendaryQuestTracker;
+  tracker: MythicQuestTracker;
 } => {
   const updated = { ...tracker, isActive: false };
 

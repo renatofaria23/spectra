@@ -3,20 +3,24 @@ export enum EffectType {
   SCRY = "SCRY",
   DESTROY = "DESTROY",
   EXILE = "EXILE",
-  STUN = "STUN",
+  PETRIFY = "PETRIFY",
   DECREASE = "DECREASE",
   LOCK = "LOCK",
   INCREASE = "INCREASE",
-  SHIELD = "SHIELD",
   ETHEREAL = "ETHEREAL",
   FIND = "FIND",
   CHOOSE_ONE = "CHOOSE_ONE",
-  ADD_TRIGGER = "ADD_TRIGGER"
+  ADD_TRIGGER = "ADD_TRIGGER",
+  SUMMON = "SUMMON",
+  COPY = "COPY",
+  ADD = "ADD",
+  RETURN = "RETURN"
 }
 
 export interface DrawEffect {
   effect: EffectType.DRAW;
   count: number;
+  target?: "player" | "opponent" | "both";
 }
 
 export interface ScryEffect {
@@ -27,52 +31,61 @@ export interface ScryEffect {
 
 export interface DestroyEffect {
   effect: EffectType.DESTROY;
-  targetType: "monster" | "another_monster" | "spell" | "ward" | "all" | "all_opponent_monsters" | "all_opponent_face_up_monsters" | "all_opponent_face_down_monsters" | "all_opponent_face_up_magics" | "all_opponent_face_down_magics" | "attacking_monsters" | "defending_monsters";
+  count?: number;
+  effectTarget?: string;
 }
 
 export interface ExileEffect {
   effect: EffectType.EXILE;
-  targetType: "monster" | "another_monster" | "spell" | "ward" | "all" | "all_opponent_monsters" | "all_opponent_face_up_monsters" | "all_opponent_face_down_monsters" | "all_opponent_face_up_magics" | "all_opponent_face_down_magics" | "attacking_monsters" | "defending_monsters";
+  count?: number;
+  effectTarget?: string;
 }
 
-export interface StunEffect {
-  effect: EffectType.STUN;
+export interface PetrifyEffect {
+  effect: EffectType.PETRIFY;
   turns: number;
+  effectTarget?: string;
 }
 
 export interface DecreaseEffect {
   effect: EffectType.DECREASE;
-  target: "atk" | "def" | "hp";
+  target: "atk" | "def" | "hp" | "mana";
   amount: number;
+  duration: "temporary" | "permanent" | "while_on_field";
+  durationTurns?: number;
+  effectTarget?: string;
 }
 
 export interface LockEffect {
   effect: EffectType.LOCK;
   count?: number;
-  turns: number;
+  duration: "temporary" | "permanent" | "while_on_field";
+  turns?: number;
+  effectTarget?: string;
 }
 
 export interface IncreaseEffect {
   effect: EffectType.INCREASE;
-  target: "atk" | "def" | "hp";
+  target: "atk" | "def" | "hp" | "mana";
   amount: number;
+  duration: "temporary" | "permanent" | "while_on_field";
+  durationTurns?: number;
+  effectTarget?: string;
 }
 
-export interface ShieldEffect {
-  effect: EffectType.SHIELD;
-  attacks: number;
-}
 
 export interface EtherealEffect {
   effect: EffectType.ETHEREAL;
   count: number;
-  type: "spell" | "ward" | "both";
+  type: "rite" | "ward" | "both";
+  effectTarget?: string;
 }
 
 export interface FindEffect {
   effect: EffectType.FIND;
   count: number;
   source: "deck" | "graveyard" | "exile";
+  effectTarget?: string;
 }
 
 export interface ChooseOneEffect {
@@ -84,22 +97,75 @@ export interface AddTriggerEffect {
   effect: EffectType.ADD_TRIGGER;
   trigger_type: string;
   duration: number;
+  effectTarget?: string;
+}
+
+export interface SummonCriteria {
+  name?: string;
+  level?: number;
+  levelMin?: number;
+  levelMax?: number;
+  atk?: number;
+  atkMin?: number;
+  atkMax?: number;
+  def?: number;
+  defMin?: number;
+  defMax?: number;
+  families?: string[];
+  excludeFamilies?: string[];
+  natures?: string[];
+  excludeNatures?: string[];
+  rarities?: string[];
+  excludeRarities?: string[];
+}
+
+export interface SummonEffect {
+  effect: EffectType.SUMMON;
+  from: "player_deck" | "player_hand" | "player_graveyard" | "player_exile" | "opponent_deck" | "opponent_hand" | "opponent_graveyard" | "opponent_exile";
+  criteria: SummonCriteria;
+  count: number;
+  effectTarget?: string;
+}
+
+export interface CopyEffect {
+  effect: EffectType.COPY;
+  copyTarget: string;
+  destination: string;
+  count: number;
+  effectTarget?: string;
+}
+
+export interface AddEffect {
+  effect: EffectType.ADD;
+  destination: "player_deck" | "opponent_deck" | "player_graveyard" | "opponent_graveyard" | "player_exile" | "opponent_exile" | "player_hand" | "opponent_hand";
+  count: number;
+  effectTarget?: string;
+}
+
+export interface ReturnEffect {
+  effect: EffectType.RETURN;
+  destination: "hand" | "deck";
+  count?: number;
+  effectTarget?: string;
 }
 
 export type EffectEntry =
-  | DrawEffect
-  | ScryEffect
-  | DestroyEffect
-  | ExileEffect
-  | StunEffect
-  | DecreaseEffect
-  | LockEffect
-  | IncreaseEffect
-  | ShieldEffect
-  | EtherealEffect
-  | FindEffect
-  | ChooseOneEffect
-  | AddTriggerEffect;
+  | (DrawEffect & { otherwise?: boolean; otherwise_effect?: EffectEntry })
+  | (ScryEffect & { otherwise?: boolean; otherwise_effect?: EffectEntry })
+  | (DestroyEffect & { otherwise?: boolean; otherwise_effect?: EffectEntry })
+  | (ExileEffect & { otherwise?: boolean; otherwise_effect?: EffectEntry })
+  | (PetrifyEffect & { otherwise?: boolean; otherwise_effect?: EffectEntry })
+  | (DecreaseEffect & { otherwise?: boolean; otherwise_effect?: EffectEntry })
+  | (LockEffect & { otherwise?: boolean; otherwise_effect?: EffectEntry })
+  | (IncreaseEffect & { otherwise?: boolean; otherwise_effect?: EffectEntry })
+  | (EtherealEffect & { otherwise?: boolean; otherwise_effect?: EffectEntry })
+  | (FindEffect & { otherwise?: boolean; otherwise_effect?: EffectEntry })
+  | (ChooseOneEffect & { otherwise?: boolean; otherwise_effect?: EffectEntry })
+  | (AddTriggerEffect & { otherwise?: boolean; otherwise_effect?: EffectEntry })
+  | (SummonEffect & { otherwise?: boolean; otherwise_effect?: EffectEntry })
+  | (CopyEffect & { otherwise?: boolean; otherwise_effect?: EffectEntry })
+  | (AddEffect & { otherwise?: boolean; otherwise_effect?: EffectEntry })
+  | (ReturnEffect & { otherwise?: boolean; otherwise_effect?: EffectEntry });
 
 export function isDrawEffect(entry: EffectEntry): entry is DrawEffect {
   return entry.effect === EffectType.DRAW;
@@ -117,8 +183,8 @@ export function isExileEffect(entry: EffectEntry): entry is ExileEffect {
   return entry.effect === EffectType.EXILE;
 }
 
-export function isStunEffect(entry: EffectEntry): entry is StunEffect {
-  return entry.effect === EffectType.STUN;
+export function isPetrifyEffect(entry: EffectEntry): entry is PetrifyEffect {
+  return entry.effect === EffectType.PETRIFY;
 }
 
 export function isDecreaseEffect(entry: EffectEntry): entry is DecreaseEffect {
@@ -131,10 +197,6 @@ export function isLockEffect(entry: EffectEntry): entry is LockEffect {
 
 export function isIncreaseEffect(entry: EffectEntry): entry is IncreaseEffect {
   return entry.effect === EffectType.INCREASE;
-}
-
-export function isShieldEffect(entry: EffectEntry): entry is ShieldEffect {
-  return entry.effect === EffectType.SHIELD;
 }
 
 export function isEtherealEffect(entry: EffectEntry): entry is EtherealEffect {
@@ -153,6 +215,22 @@ export function isAddTriggerEffect(entry: EffectEntry): entry is AddTriggerEffec
   return entry.effect === EffectType.ADD_TRIGGER;
 }
 
+export function isSummonEffect(entry: EffectEntry): entry is SummonEffect {
+  return entry.effect === EffectType.SUMMON;
+}
+
+export function isCopyEffect(entry: EffectEntry): entry is CopyEffect {
+  return entry.effect === EffectType.COPY;
+}
+
+export function isAddEffect(entry: EffectEntry): entry is AddEffect {
+  return entry.effect === EffectType.ADD;
+}
+
+export function isReturnEffect(entry: EffectEntry): entry is ReturnEffect {
+  return entry.effect === EffectType.RETURN;
+}
+
 export function handleEffect(entry: EffectEntry) {
   switch (entry.effect) {
     case EffectType.DRAW:
@@ -163,15 +241,13 @@ export function handleEffect(entry: EffectEntry) {
       return;
     case EffectType.EXILE:
       return;
-    case EffectType.STUN:
+    case EffectType.PETRIFY:
       return;
     case EffectType.DECREASE:
       return;
     case EffectType.LOCK:
       return;
     case EffectType.INCREASE:
-      return;
-    case EffectType.SHIELD:
       return;
     case EffectType.ETHEREAL:
       return;
@@ -180,6 +256,14 @@ export function handleEffect(entry: EffectEntry) {
     case EffectType.CHOOSE_ONE:
       return;
     case EffectType.ADD_TRIGGER:
+      return;
+    case EffectType.SUMMON:
+      return;
+    case EffectType.COPY:
+      return;
+    case EffectType.ADD:
+      return;
+    case EffectType.RETURN:
       return;
   }
 }

@@ -5,7 +5,7 @@ import { calculateNatureScaling, type Card } from '../logic/natureScaling';
 export interface DeckCard extends Card {
   id: string;
   name: string;
-  type: 'monster' | 'spell' | 'ward';
+  type: 'numen' | 'rite' | 'ward';
 }
 
 type DeckStoreState = {
@@ -63,8 +63,8 @@ export const useDeckStore = create<DeckStoreState>((set, get) => ({
       const validation = validateDeckComposition(newDeck);
       const stats = getDeckStats(newDeck);
       const requirements = calculateDeckRequirements(newDeck);
-      const monsters = newDeck.filter((c) => c.type === 'monster');
-      const scaling = calculateNatureScaling(monsters as any);
+      const numina = newDeck.filter((c) => c.type === 'numen');
+      const scaling = calculateNatureScaling(numina as any);
 
       return {
         currentDeck: newDeck,
@@ -81,8 +81,8 @@ export const useDeckStore = create<DeckStoreState>((set, get) => ({
       const validation = validateDeckComposition(newDeck);
       const stats = getDeckStats(newDeck);
       const requirements = calculateDeckRequirements(newDeck);
-      const monsters = newDeck.filter((c) => c.type === 'monster');
-      const scaling = calculateNatureScaling(monsters as any);
+      const numina = newDeck.filter((c) => c.type === 'numen');
+      const scaling = calculateNatureScaling(numina as any);
 
       return {
         currentDeck: newDeck,
@@ -98,8 +98,8 @@ export const useDeckStore = create<DeckStoreState>((set, get) => ({
       const validation = validateDeckComposition(cards);
       const stats = getDeckStats(cards);
       const requirements = calculateDeckRequirements(cards);
-      const monsters = cards.filter((c) => c.type === 'monster');
-      const scaling = calculateNatureScaling(monsters as any);
+      const numina = cards.filter((c) => c.type === 'numen');
+      const scaling = calculateNatureScaling(numina as any);
 
       return {
         currentDeck: cards,

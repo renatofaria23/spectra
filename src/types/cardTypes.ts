@@ -1,17 +1,17 @@
-import { NATURES, MONSTER_FAMILIES, POSITIONS, SPELL_TYPES, WARD_TYPES, RARITY } from './constants';
+import { NATURES, NUMEN_FAMILIES, POSITIONS, RITE_TYPES, WARD_TYPES, RARITY } from './constants';
 
 export const CARD_TYPE = {
-  monster: 'monster' as const,
-  spell: 'spell' as const,
+  numen: 'numen' as const,
+  rite: 'rite' as const,
   ward: 'ward' as const,
 } as const;
 
 export type CardType = typeof CARD_TYPE[keyof typeof CARD_TYPE];
 
 export type Nature = typeof NATURES[keyof typeof NATURES];
-export type MonsterFamily = typeof MONSTER_FAMILIES[keyof typeof MONSTER_FAMILIES];
+export type NumenFamily = typeof NUMEN_FAMILIES[keyof typeof NUMEN_FAMILIES];
 export type Position = typeof POSITIONS[keyof typeof POSITIONS];
-export type SpellType = typeof SPELL_TYPES[keyof typeof SPELL_TYPES];
+export type RiteType = typeof RITE_TYPES[keyof typeof RITE_TYPES];
 export type WardType = typeof WARD_TYPES[keyof typeof WARD_TYPES];
 export type Rarity = typeof RARITY[keyof typeof RARITY];
 
@@ -22,17 +22,17 @@ export interface BaseCard {
   rarity: Rarity;
 };
 
-export interface MonsterCard extends BaseCard {
-  type: 'monster';
+export interface NumenCard extends BaseCard {
+  type: 'numen';
   attribute: Nature;
-  monsterFamily: MonsterFamily;
+  numenFamily: NumenFamily;
   level: number;
   baseAttack: number;
   baseDefense: number;
   effects?: string[];
-  deckRequirements: Record<MonsterFamily, number>;
-  isLegendary?: boolean;
-  legendaryQuest?: {
+  deckRequirements: Record<NumenFamily, number>;
+  isMythic?: boolean;
+  mythicQuest?: {
     deckRequirements: Record<Nature, number>;
     activationConditions: {
       wardsActivated: number;
@@ -41,9 +41,9 @@ export interface MonsterCard extends BaseCard {
   };
 };
 
-export interface SpellCard extends BaseCard {
-  type: 'spell';
-  spellType: 'normal' | 'continuous' | 'equip' | 'quick_play';
+export interface RiteCard extends BaseCard {
+  type: 'rite';
+  riteType: 'normal' | 'continuous' | 'equip' | 'quick_play';
   effects: string[];
 };
 
@@ -53,9 +53,9 @@ export interface WardCard extends BaseCard {
   effects: string[];
 };
 
-export type Card = MonsterCard | SpellCard | WardCard;
+export type Card = NumenCard | RiteCard | WardCard;
 
-export interface LegendaryQuestCondition {
+export interface MythicQuestCondition {
   deckRequirements: Record<Nature, number>;
   activationConditions: {
     wardsActivated: number;
@@ -67,16 +67,16 @@ export interface PlayerState {
   playerId: string;
   currentHP: number;
   maxHP: number;
-  fieldMonsters: MonsterCard[];
-  fieldSpells: (SpellCard | WardCard)[];
+  fieldNumina: NumenCard[];
+  fieldRites: (RiteCard | WardCard)[];
   hand: Card[];
   deck: Card[];
   graveyard: Card[];
-  banished: Card[];
-  monsterPositions: Record<string, Position>;
+  exiled: Card[];
+  numenPositions: Record<string, Position>;
   fatigueDecrease: number;
   attributeCount: Record<Nature, number>;
-  typeCount: Record<MonsterFamily, number>;
+  typeCount: Record<NumenFamily, number>;
 };
 
 export interface BoardState {
@@ -90,8 +90,8 @@ export interface BoardState {
 };
 
 export interface CombatInteraction {
-  attackerMonsterId: string;
-  targetMonsterId: string | null;
+  attackerNumenId: string;
+  targetNumenId: string | null;
   attackValue: number;
   defenseValue: number;
   decreaseDealt: number;

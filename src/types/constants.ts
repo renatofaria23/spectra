@@ -2,14 +2,18 @@ export const GAME_CONSTANTS = {
   MIN_DECK_SIZE: 40,
   MAX_DECK_SIZE: 40,
   MAX_HAND_SIZE: 10,
-  STARTING_HP: 10000,
+  STARTING_HP: 8000,
+  BASE_MAX_HP: 8000,
   STARTING_MANA: 0,
-  MAX_MANA: 500,
+  BASE_MAX_MANA: 1000,
+  BASE_MANA_GAIN: 100,
   FIRST_PLAYER_HAND: 4,
   SECOND_PLAYER_HAND: 6,
   NORMAL_SUMMONS_PER_TURN: 1,
   BASE_HP_REGEN: 100,
   BASE_MANA_REGEN: 50,
+  MAX_NUMEN_SPOTS: 5,
+  MAX_MAGIC_SPOTS: 5,
 };
 
 export const NATURES = {
@@ -23,7 +27,7 @@ export const NATURES = {
 
 type Nature = (typeof NATURES)[keyof typeof NATURES];
 
-export const MONSTER_FAMILIES = {
+export const NUMEN_FAMILIES = {
   DEMON: 'demon' as const,
   DRAGON: 'dragon' as const,
   ANGEL: 'angel' as const,
@@ -33,9 +37,10 @@ export const MONSTER_FAMILIES = {
   BUG: 'bug' as const,
   PLANT: 'plant' as const,
   BEAST: 'beast' as const,
+  GOD: 'god' as const,
 };
 
-type MonsterFamily = (typeof MONSTER_FAMILIES)[keyof typeof MONSTER_FAMILIES];
+type NumenFamily = (typeof NUMEN_FAMILIES)[keyof typeof NUMEN_FAMILIES];
 
 export const POSITIONS = {
   ATTACK: 'attack' as const,
@@ -69,14 +74,14 @@ export const TRIBUTE_REQUIREMENTS: Record<number, number> = {
   10: 5,
 };
 
-export const SPELL_TYPES = {
+export const RITE_TYPES = {
   NORMAL: 'normal' as const,
   CONTINUOUS: 'continuous' as const,
   EQUIP: 'equip' as const,
   QUICK_PLAY: 'quick_play' as const,
 } as const;
 
-type SpellType = (typeof SPELL_TYPES)[keyof typeof SPELL_TYPES];
+type RiteType = (typeof RITE_TYPES)[keyof typeof RITE_TYPES];
 
 export const WARD_TYPES = {
   NORMAL: 'normal' as const,
@@ -88,12 +93,10 @@ type WardType = (typeof WARD_TYPES)[keyof typeof WARD_TYPES];
 
 export const RARITY = {
   COMMON: 'common' as const,
-  UNCOMMON: 'uncommon' as const,
   RARE: 'rare' as const,
-  EPIC: 'epic' as const,
-  LEGENDARY: 'legendary' as const,
+  LEGENDARY: 'mythic' as const,
 } as const;
 
 type Rarity = (typeof RARITY)[keyof typeof RARITY];
 
-export type { Nature, MonsterFamily, Position, Phase, SpellType, WardType, Rarity };
+export type { Nature, NumenFamily, Position, Phase, RiteType, WardType, Rarity };

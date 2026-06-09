@@ -15,6 +15,10 @@ const getCwdCardsPath = () => {
   return path.join(process.cwd(), 'src', 'data', 'cards.json');
 };
 
+const getCwdDecksPath = () => {
+  return path.join(process.cwd(), 'src', 'data', 'decks.json');
+};
+
 const readCards = async () => {
   try {
     const devPath = getCwdCardsPath();
@@ -72,6 +76,30 @@ ipcMain.handle('art:list', async () => {
   } catch {
     return ['placeholder.svg'];
   }
+});
+
+const readDecks = async () => {
+  try {
+    const devPath = getCwdDecksPath();
+    const data = await readFile(devPath, 'utf-8');
+    return JSON.parse(data);
+  } catch {
+    return [];
+  }
+};
+
+const writeDecks = async (decks) => {
+  const devPath = getCwdDecksPath();
+  await writeFile(devPath, JSON.stringify(decks, null, 2), 'utf-8');
+};
+
+ipcMain.handle('decks:read', async () => {
+  return await readDecks();
+});
+
+ipcMain.handle('decks:save', async (_event, decks) => {
+  await writeDecks(decks);
+  return { success: true };
 });
 
 const createWindow = () => {

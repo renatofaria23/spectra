@@ -1,10 +1,10 @@
 [
   {
-    "id": "monster-1780396331102",
+    "id": "numen-1780396331102",
     "name": "Dual Blade Ravager",
-    "type": "monster",
-    "cardType": "Monster",
-    "description": "This monster cannot change battle position, unless by the effect of another card.",
+    "type": "numen",
+    "cardType": "Numen",
+    "description": "<b>Locked</b>",
     "art": "Dual Blade Ravager.png",
     "triggers": [
       "LOCKED"
@@ -13,7 +13,247 @@
     "attribute": "dark",
     "family": "demon",
     "rarity": "common",
-    "attack": 750,
+    "attack": 850,
     "defense": 350
+  },
+  {
+    "id": "numen-1780484116937",
+    "name": "Coelecanth Warrior",
+    "type": "numen",
+    "cardType": "Numen",
+    "description": "<b>Before Attack</b>: Gain 50 ATK permanently and lose 50 DEF permanently.",
+    "art": "Coelecanth Warrior.png",
+    "triggers": [
+      {
+        "trigger": "BEFORE_ATTACK",
+        "effect": {
+          "effect": "INCREASE",
+          "target": "atk",
+          "amount": 50,
+          "duration": "permanent",
+          "effectTarget": "self"
+        },
+        "attackTarget": "anything",
+        "effectTarget": "self"
+      },
+      {
+        "trigger": "BEFORE_ATTACK",
+        "effect": {
+          "effect": "DECREASE",
+          "target": "def",
+          "amount": 50,
+          "duration": "permanent",
+          "effectTarget": "self"
+        },
+        "attackTarget": "anything",
+        "effectTarget": "self"
+      }
+    ],
+    "level": 2,
+    "attribute": "water",
+    "family": "beast",
+    "rarity": "common",
+    "attack": 400,
+    "defense": 600
+  },
+  {
+    "id": "numen-1780484331841",
+    "name": "Strix",
+    "type": "numen",
+    "cardType": "Numen",
+    "description": "<b>Veiled</b>\n<b>Before Attack on a numen</b>: Decrease the attack target's ATK by 150 and decrease the attack target's DEF by 150.",
+    "art": "Strix.png",
+    "triggers": [
+      "VEILED",
+      {
+        "trigger": "BEFORE_ATTACK",
+        "effect": {
+          "effect": "DECREASE",
+          "target": "atk",
+          "amount": 150,
+          "effectTarget": "attack_target"
+        },
+        "attackTarget": "numen",
+        "effectTarget": "attack_target"
+      },
+      {
+        "trigger": "BEFORE_ATTACK",
+        "effect": {
+          "effect": "DECREASE",
+          "target": "def",
+          "amount": 150,
+          "effectTarget": "attack_target"
+        },
+        "attackTarget": "numen",
+        "effectTarget": "attack_target"
+      }
+    ],
+    "level": 4,
+    "attribute": "dark",
+    "family": "beast",
+    "rarity": "rare",
+    "attack": 1300,
+    "defense": 550
+  },
+  {
+    "id": "numen-1780484674920",
+    "name": "Lares",
+    "type": "numen",
+    "cardType": "Numen",
+    "description": "<b>Challenge</b>\n<b>End of Turn</b>: Increase your HP by 100. <b>Testament</b>: Summon 1 <i>Lares</i> from your deck.",
+    "art": "Lares.png",
+    "triggers": [
+      "CHALLENGE",
+      {
+        "trigger": "END_OF_TURN",
+        "effect": {
+          "effect": "INCREASE",
+          "target": "hp",
+          "amount": 100,
+          "effectTarget": "player_hp"
+        },
+        "effectTarget": "player_hp"
+      },
+      {
+        "trigger": "TESTAMENT",
+        "effect": {
+          "effect": "SUMMON",
+          "from": "player_deck",
+          "criteria": {
+            "name": "Lares"
+          },
+          "count": 1,
+          "effectTarget": null
+        }
+      }
+    ],
+    "level": 6,
+    "attribute": "earth",
+    "family": "angel",
+    "rarity": "rare",
+    "attack": 150,
+    "defense": 2350
+  },
+  {
+    "id": "numen-1780490630102",
+    "name": "Camena",
+    "type": "numen",
+    "cardType": "Numen",
+    "description": "<b>End of Turn</b>: Increase your mana by 50.",
+    "art": "Camena.png",
+    "triggers": [
+      {
+        "trigger": "END_OF_TURN",
+        "effect": {
+          "effect": "INCREASE",
+          "target": "atk",
+          "amount": 50,
+          "effectTarget": null
+        },
+        "effectTarget": "player_mana"
+      }
+    ],
+    "level": 2,
+    "attribute": "earth",
+    "family": "angel",
+    "rarity": "common",
+    "attack": 0,
+    "defense": 1000
+  },
+  {
+    "id": "rite-1780504144532",
+    "name": "Beget",
+    "type": "rite",
+    "cardType": "Rite",
+    "description": "<b>Decree</b>: Select an allied numen. Add 2 copies of it into your deck and destroy this card.",
+    "art": "Beget.png",
+    "triggers": [
+      {
+        "trigger": "DECREE",
+        "effects": [
+          {
+            "effect": "ADD",
+            "destination": "player_deck",
+            "count": 2,
+            "effectTarget": "allied_numen"
+          },
+          {
+            "effect": "DESTROY",
+            "count": 1,
+            "effectTarget": "self"
+          }
+        ]
+      }
+    ],
+    "rarity": "common",
+    "mana": 50
+  },
+  {
+    "id": "numen-1780505132774",
+    "name": "Saturn, the Exiled",
+    "type": "numen",
+    "cardType": "Numen",
+    "description": "<b>Celerity</b>, <b>Recluse</b>, <b>Relentless</b>, <b>Veiled</b>\n<b>Decree</b>: Exile all enemy magics. <b>Testament</b>: Exile this card.",
+    "art": "Saturn, the Exiled.png",
+    "triggers": [
+      "CELERITY",
+      "RECLUSE",
+      "RELENTLESS",
+      "VEILED",
+      {
+        "trigger": "DECREE",
+        "effects": [
+          {
+            "effect": "EXILE",
+            "count": 1
+          }
+        ],
+        "effectTarget": "all_enemy_magics"
+      },
+      {
+        "trigger": "TESTAMENT",
+        "effects": [
+          {
+            "effect": "EXILE",
+            "count": 1
+          }
+        ],
+        "effectTarget": "self"
+      }
+    ],
+    "level": 9,
+    "attribute": "dark",
+    "family": "god",
+    "rarity": "mythic",
+    "attack": 2500,
+    "defense": 2500
+  },
+  {
+    "id": "rite-1780517162324",
+    "name": "Void Harvest",
+    "type": "rite",
+    "cardType": "Rite",
+    "description": "<b>End of Turn</b>: Select and exile an enemy numen and decrease your mana by 150.",
+    "art": "Void Harvest.png",
+    "triggers": [
+      {
+        "trigger": "END_OF_TURN",
+        "effects": [
+          {
+            "effect": "EXILE",
+            "count": 1,
+            "effectTarget": "enemy_numen"
+          },
+          {
+            "effect": "DECREASE",
+            "target": "hp",
+            "amount": 150,
+            "effectTarget": "player_mana"
+          }
+        ]
+      }
+    ],
+    "rarity": "common",
+    "mana": 0
   }
 ]

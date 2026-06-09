@@ -62,9 +62,9 @@ const ATTRIBUTE_CONFIGS: Record<string, NatureConfig> = {
   dark: {
     icon: <IconMoon size={24} />,
     iconColor: colors.Dark_6,
-    borderColor: colors.Dark_6,
-    gradientStart: colors.Dark_4,
-    gradientEnd: colors.Dark_5,
+    borderColor: colors.Dark_4,
+    gradientStart: colors.Dark_1,
+    gradientEnd: colors.Dark_2,
   },
 };
 

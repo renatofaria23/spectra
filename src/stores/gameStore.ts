@@ -1,22 +1,19 @@
 import { create } from 'zustand';
-import { PHASES, GAME_CONSTANTS, NATURES } from '../types/constants';
-import { getStartingHandSize, getNextPhase } from '../logic/gameRules';
-import { resetMonsterStats } from '../logic/combatResolver';
-import { calculateNatureScaling, calculateTotalHP, calculateHPRegeneration } from '../logic/natureScaling';
-
-type Nature = (typeof NATURES)[keyof typeof NATURES];
+import { PHASES, GAME_CONSTANTS } from '../types/constants';
+import { getNextPhase } from '../logic/gameRules';
+import {
+  calculateNatureScaling,
+  calculateTotalMaxHP,
+  calculateHPRegeneration,
+  calculateMaxSummons,
+  calculateMaxMana,
+  calculateManaGain,
+  calculateMaxHandSize,
+  type NatureScaling,
+} from '../logic/natureScaling';
 import type { Card } from '../logic/deckConstraints';
 
-interface NatureScaling {
-  fire: { atkBonus: number; monstersCount: number };
-  earth: { hpBonus: number; monstersCount: number };
-  water: { hpRegenBonus: number; monstersCount: number };
-  air: { extraActions: number; monstersCount: number };
-  light: { drawBonus: number; monstersCount: number };
-  dark: { wardBonus: number; monstersCount: number };
-}
-
-export type MonsterPosition = 'attack' | 'defense' | 'face_down';
+export type NumenPosition = 'attack' | 'defense' | 'face_down';
 
 interface PlayerState {
   playerId: string;
@@ -24,18 +21,18 @@ interface PlayerState {
   maxHP: number;
   currentMana: number;
   maxMana: number;
-  fieldMonsters: Card[];
-  fieldSpells: Card[];
+  fieldNumina: Card[];
+  fieldRites: Card[];
+  fieldWards: Card[];
   hand: Card[];
   deck: Card[];
   graveyard: Card[];
-  banished: Card[];
-  monsterPositions: Record<string, MonsterPosition>;
-  fatigueDecrease: number;
-  attributeScaling: NatureScaling;
+  exiled: Card[];
+  numenPositions: Record<string, NumenPosition>;
+  fatigueCount: number;
+  natureScaling: NatureScaling;
   normalSummonsUsed: number;
-  handSize: number;
-  hasAttacked: boolean;
+  maxHandSize: number;
 }
 
 interface GameState {
@@ -47,54 +44,84 @@ interface GameState {
   isFirstTurn: boolean;
   gameActive: boolean;
   winner: string | null;
+  selectedAttackers: string[];
+  selectedDefender: string | null;
 }
-
-const initializePlayerState = (playerId: string, isFirstPlayer: boolean, deck: Card[]): PlayerState => {
-  const startingHP = GAME_CONSTANTS.STARTING_HP;
-  const attributeScaling = calculateNatureScaling(deck.filter((c) => c.type === 'monster'));
-  const totalHP = calculateTotalHP(startingHP, deck.filter((c) => c.type === 'monster'));
-
-  const startingMana = GAME_CONSTANTS.STARTING_MANA || 0;
-  const maxMana = GAME_CONSTANTS.MAX_MANA || 500;
-
-  return {
-    playerId,
-    currentHP: totalHP,
-    maxHP: totalHP,
-    currentMana: startingMana,
-    maxMana: maxMana,
-    fieldMonsters: [],
-    fieldSpells: [],
-    hand: [],
-    deck: [...deck],
-    graveyard: [],
-    banished: [],
-    monsterPositions: {},
-    fatigueDecrease: 0,
-    attributeScaling,
-    normalSummonsUsed: 0,
-    handSize: getStartingHandSize(isFirstPlayer),
-    hasAttacked: false,
-  };
-};
 
 interface CombatStoreState {
   gameState: GameState;
-  combatLog: unknown[];
+  combatLog: string[];
 
   initializeGame: (player1Deck: Card[], player2Deck: Card[]) => void;
-  drawCard: (playerId: string, card: Card) => void;
+  drawCard: (playerId: string) => void;
   discardCard: (playerId: string, cardId: string) => void;
-  summonMonster: (playerId: string, cardId: string, position?: MonsterPosition, tributes?: unknown[]) => void;
+  summonNumen: (playerId: string, cardId: string, position?: NumenPosition, tributes?: string[]) => void;
+  activateRite: (playerId: string, riteId: string) => void;
+  activateWard: (playerId: string, wardId: string) => void;
   changePhase: () => void;
-  takeDecrease: (playerId: string, decrease: number) => void;
+  takeDamage: (playerId: string, damage: number) => void;
   healPlayer: (playerId: string, amount: number) => void;
   endGame: (winnerId: string) => void;
+  selectAttacker: (numenId: string) => void;
+  selectDefender: (numenId: string) => void;
+  clearSelections: () => void;
+  executeAttack: () => void;
+  endTurn: () => void;
+  quitGame: () => void;
 
   getCurrentPlayer: () => PlayerState | null;
   getOpponentPlayer: () => PlayerState | null;
   getGameState: () => GameState;
 }
+
+const shuffleArray = <T,>(array: T[]): T[] => {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const temp = shuffled[i] as T;
+    shuffled[i] = shuffled[j] as T;
+    shuffled[j] = temp;
+  }
+  return shuffled;
+};
+
+const resetNumenStats = (numina: Card[]): Card[] => {
+  return numina.map((numen: Card) => ({
+    ...numen,
+    currentAttack: (numen as any).baseAttack ?? 0,
+    currentDefense: (numen as any).baseDefense ?? 0,
+    hasAttacked: false,
+    justSummoned: false,
+  }));
+};
+
+const initializePlayerState = (playerId: string, _isFirstPlayer: boolean, deck: Card[]): PlayerState => {
+  const numina = deck.filter((c) => c.type === 'numen');
+  const natureScaling = calculateNatureScaling(numina);
+  const totalMaxHP = calculateTotalMaxHP(GAME_CONSTANTS.BASE_MAX_HP, natureScaling);
+  const totalMaxMana = calculateMaxMana(GAME_CONSTANTS.BASE_MAX_MANA, natureScaling);
+  const maxHand = calculateMaxHandSize(GAME_CONSTANTS.MAX_HAND_SIZE, natureScaling, false);
+
+  return {
+    playerId,
+    currentHP: totalMaxHP,
+    maxHP: totalMaxHP,
+    currentMana: 0,
+    maxMana: totalMaxMana,
+    fieldNumina: [],
+    fieldRites: [],
+    fieldWards: [],
+    hand: [],
+    deck: shuffleArray(deck),
+    graveyard: [],
+    exiled: [],
+    numenPositions: {},
+    fatigueCount: 0,
+    natureScaling,
+    normalSummonsUsed: 0,
+    maxHandSize: maxHand,
+  };
+};
 
 export const useGameStore = create<CombatStoreState>((set, get) => ({
   gameState: {
@@ -106,36 +133,64 @@ export const useGameStore = create<CombatStoreState>((set, get) => ({
     isFirstTurn: true,
     gameActive: false,
     winner: null,
+    selectedAttackers: [],
+    selectedDefender: null,
   } as GameState,
 
   combatLog: [],
 
   initializeGame: (player1Deck: Card[], player2Deck: Card[]) => {
+    const p1 = initializePlayerState('player1', true, player1Deck);
+    const p2 = initializePlayerState('player2', false, player2Deck);
+
+    for (let i = 0; i < GAME_CONSTANTS.FIRST_PLAYER_HAND; i++) {
+      if (p1.deck.length > 0) {
+        const card = p1.deck.pop()!;
+        p1.hand.push(card);
+      }
+    }
+    for (let i = 0; i < GAME_CONSTANTS.SECOND_PLAYER_HAND; i++) {
+      if (p2.deck.length > 0) {
+        const card = p2.deck.pop()!;
+        p2.hand.push(card);
+      }
+    }
+
     set({
       gameState: {
-        player1: initializePlayerState('player1', true, player1Deck),
-        player2: initializePlayerState('player2', false, player2Deck),
+        player1: p1,
+        player2: p2,
         currentPlayer: 'player1',
         currentPhase: PHASES.DRAW,
         turnNumber: 1,
         isFirstTurn: true,
         gameActive: true,
         winner: null,
+        selectedAttackers: [],
+        selectedDefender: null,
       },
+      combatLog: ['Game started!'],
     });
   },
 
-  drawCard: (playerId: string, card: Card) => {
+  drawCard: (playerId: string) => {
     set((state: any) => {
       const player = state.gameState[playerId];
-      if (!player) return state;
+      if (!player || player.deck.length === 0) {
+        if (player) {
+          player.fatigueCount += 1;
+          const fatigueDmg = player.fatigueCount * 100;
+          player.currentHP -= fatigueDmg;
+        }
+        return state;
+      }
 
-      const handSize = player.hand.length + 1;
+      const card = player.deck.pop()!;
+      const maxHand = player.maxHandSize;
+      let newHand = [...player.hand, card];
 
-      if (handSize > GAME_CONSTANTS.MAX_HAND_SIZE) {
-        const discardIndex = Math.floor(Math.random() * player.hand.length);
-        const discardedCard = player.hand[discardIndex];
-        player.hand.splice(discardIndex, 1);
+      if (newHand.length > maxHand) {
+        newHand = newHand.slice(0, maxHand);
       }
 
       return {
@@ -143,8 +198,7 @@ export const useGameStore = create<CombatStoreState>((set, get) => ({
           ...state.gameState,
           [playerId]: {
             ...player,
-            hand: [...player.hand, card],
-            handSize: handSize > GAME_CONSTANTS.MAX_HAND_SIZE ? GAME_CONSTANTS.MAX_HAND_SIZE : handSize,
+            hand: newHand,
           },
         },
       };
@@ -156,8 +210,11 @@ export const useGameStore = create<CombatStoreState>((set, get) => ({
       const player = state.gameState[playerId];
       if (!player) return state;
 
-      const card = player.hand.find((c: Card) => c.id === cardId);
-      const newHand = player.hand.filter((c: Card) => c.id !== cardId);
+      const cardIndex = player.hand.findIndex((c: Card) => c.id === cardId);
+      if (cardIndex === -1) return state;
+
+      const card = player.hand[cardIndex];
+      const newHand = player.hand.filter((_: Card, idx: number) => idx !== cardIndex);
 
       return {
         gameState: {
@@ -166,29 +223,43 @@ export const useGameStore = create<CombatStoreState>((set, get) => ({
             ...player,
             hand: newHand,
             graveyard: [...player.graveyard, card],
-            handSize: newHand.length,
           },
         },
       };
     });
   },
 
-  summonMonster: (playerId: string, cardId: string, position = 'attack' as MonsterPosition, tributes = []) => {
+  summonNumen: (playerId: string, cardId: string, position: NumenPosition = 'attack', tributes?: string[]) => {
     set((state: any) => {
       const player = state.gameState[playerId];
       if (!player) return state;
 
-      const card = player.hand.find((c: Card) => c.id === cardId);
-      if (!card || card.type !== 'monster') return state;
+      const cardIndex = player.hand.findIndex((c: Card) => c.id === cardId);
+      if (cardIndex === -1) return state;
 
-      const newHand = player.hand.filter((c: Card) => c.id !== cardId);
-      const monsterInstance = {
+      const card = player.hand[cardIndex];
+      if (!card || card.type !== 'numen') return state;
+
+      if (player.fieldNumina.length >= GAME_CONSTANTS.MAX_NUMEN_SPOTS) return state;
+
+      const newHand = player.hand.filter((_: Card, idx: number) => idx !== cardIndex);
+
+      const level = (card as any).level || 1;
+      const requiredTributes = level >= 3 ? Math.ceil((level - 1) / 2) : 0;
+      if ((tributes?.length || 0) < requiredTributes) return state;
+
+      const numenInstance = {
         ...card,
+        uid: cardId + '_' + Date.now() + '_' + Math.random(),
         justSummoned: true,
-        position,
+        hasAttacked: false,
         currentAttack: card.baseAttack || 0,
         currentDefense: card.baseDefense || 0,
       };
+
+      const tributeNumina = player.fieldNumina.filter(
+        (n: Card) => !tributes?.includes((n as any).uid)
+      );
 
       return {
         gameState: {
@@ -196,10 +267,72 @@ export const useGameStore = create<CombatStoreState>((set, get) => ({
           [playerId]: {
             ...player,
             hand: newHand,
-            fieldMonsters: [...player.fieldMonsters, monsterInstance],
+            fieldNumina: [...tributeNumina, numenInstance],
+            numenPositions: {
+              ...player.numenPositions,
+              [(numenInstance as any).uid]: position,
+            },
             normalSummonsUsed: player.normalSummonsUsed + 1,
           },
         },
+      };
+    });
+  },
+
+  activateRite: (playerId: string, riteId: string) => {
+    set((state: any) => {
+      const player = state.gameState[playerId];
+      if (!player) return state;
+
+      const cardIndex = player.hand.findIndex((c: Card) => c.id === riteId);
+      if (cardIndex === -1) return state;
+
+      const card = player.hand[cardIndex];
+      if (!card || card.type !== 'rite') return state;
+
+      const newHand = player.hand.filter((_: Card, idx: number) => idx !== cardIndex);
+
+      if (player.fieldRites.length >= GAME_CONSTANTS.MAX_MAGIC_SPOTS) return state;
+
+      return {
+        gameState: {
+          ...state.gameState,
+          [playerId]: {
+            ...player,
+            hand: newHand,
+            fieldRites: [...player.fieldRites, card],
+          },
+        },
+        combatLog: [...state.combatLog, `${playerId} activated rite: ${card.name}`],
+      };
+    });
+  },
+
+  activateWard: (playerId: string, wardId: string) => {
+    set((state: any) => {
+      const player = state.gameState[playerId];
+      if (!player) return state;
+
+      const cardIndex = player.hand.findIndex((c: Card) => c.id === wardId);
+      if (cardIndex === -1) return state;
+
+      const card = player.hand[cardIndex];
+      if (!card || card.type !== 'ward') return state;
+
+      const newHand = player.hand.filter((_: Card, idx: number) => idx !== cardIndex);
+
+      if (player.fieldWards.length >= GAME_CONSTANTS.MAX_MAGIC_SPOTS) return state;
+
+      return {
+        gameState: {
+          ...state.gameState,
+          [playerId]: {
+            ...player,
+            hand: newHand,
+            fieldWards: [...player.fieldWards, card],
+          },
+        },
+        combatLog: [...state.combatLog, `${playerId} activated ward: ${card.name}`],
       };
     });
   },
@@ -227,44 +360,53 @@ export const useGameStore = create<CombatStoreState>((set, get) => ({
         currentPlayer: nextPlayer,
         turnNumber: newTurnNumber,
         isFirstTurn: newTurnNumber === 1,
+        selectedAttackers: [],
+        selectedDefender: null,
       };
 
-      if (nextPhase === PHASES.MAIN2 || nextPhase === PHASES.END) {
-        const p1 = (newGameState as any).player1;
-        const p2 = (newGameState as any).player2;
-        if (p1?.fieldMonsters) {
-          p1.fieldMonsters = resetMonsterStats(p1.fieldMonsters);
-        }
-        if (p2?.fieldMonsters) {
-          p2.fieldMonsters = resetMonsterStats(p2.fieldMonsters);
-        }
-      }
-
       if (nextPhase === PHASES.DRAW) {
-        const player1 = newGameState.player1;
-        const player2 = newGameState.player2;
+        const p = nextPlayer === 'player1' ? newGameState.player1 : newGameState.player2;
+        const opp = nextPlayer === 'player1' ? newGameState.player2 : newGameState.player1;
 
-        if (player1) {
-          const p1HPRegen = calculateHPRegeneration(player1.fieldMonsters || []);
-          const totalRegen = GAME_CONSTANTS.BASE_HP_REGEN + p1HPRegen;
-          if (totalRegen > 0) {
-            player1.currentHP = Math.min(GAME_CONSTANTS.STARTING_HP, player1.currentHP + totalRegen);
+        if (p) {
+          p.normalSummonsUsed = 0;
+          p.fieldNumina = resetNumenStats(p.fieldNumina);
+
+          const manaGain = calculateManaGain(GAME_CONSTANTS.BASE_MANA_GAIN, p.natureScaling);
+          p.currentMana = Math.min(p.maxMana, p.currentMana + manaGain);
+
+          const hpRegen = GAME_CONSTANTS.BASE_HP_REGEN + calculateHPRegeneration(p.natureScaling);
+          p.currentHP = Math.min(p.maxHP, p.currentHP + hpRegen);
+
+          if (newGameState.isFirstTurn && nextPlayer === 'player1') {
+          } else if (!newGameState.isFirstTurn) {
+            if (p.deck.length > 0) {
+              const card = p.deck.pop()!;
+              if (p.hand.length < p.maxHandSize) {
+                p.hand.push(card);
+              }
+            } else {
+              p.fatigueCount += 1;
+              p.currentHP -= p.fatigueCount * 100;
+            }
           }
         }
-        if (player2) {
-          const p2HPRegen = calculateHPRegeneration(player2.fieldMonsters || []);
-          const totalRegen = GAME_CONSTANTS.BASE_HP_REGEN + p2HPRegen;
-          if (totalRegen > 0) {
-            player2.currentHP = Math.min(GAME_CONSTANTS.STARTING_HP, player2.currentHP + totalRegen);
-          }
+
+        if (opp) {
+          opp.fieldNumina = resetNumenStats(opp.fieldNumina);
+          const oppManaGain = calculateManaGain(GAME_CONSTANTS.BASE_MANA_GAIN, opp.natureScaling);
+          opp.currentMana = Math.min(opp.maxMana, opp.currentMana + oppManaGain);
+          const oppHpRegen = GAME_CONSTANTS.BASE_HP_REGEN + calculateHPRegeneration(opp.natureScaling);
+          opp.currentHP = Math.min(opp.maxHP, opp.currentHP + oppHpRegen);
         }
 
-        if (nextPlayer === 'player1') {
-          player1!.normalSummonsUsed = 0;
-          player1!.hasAttacked = false;
-        } else {
-          player2!.normalSummonsUsed = 0;
-          player2!.hasAttacked = false;
+        if (p && p.currentHP <= 0) {
+          newGameState.gameActive = false;
+          newGameState.winner = opp?.playerId || (nextPlayer === 'player1' ? 'player2' : 'player1');
+        }
+        if (opp && opp.currentHP <= 0) {
+          newGameState.gameActive = false;
+          newGameState.winner = p?.playerId || (nextPlayer === 'player1' ? 'player1' : 'player2');
         }
       }
 
@@ -272,12 +414,12 @@ export const useGameStore = create<CombatStoreState>((set, get) => ({
     });
   },
 
-  takeDecrease: (playerId: string, decrease: number) => {
+  takeDamage: (playerId: string, damage: number) => {
     set((state: any) => {
       const player = state.gameState[playerId];
       if (!player) return state;
 
-      const newHP = Math.max(0, player.currentHP - decrease);
+      const newHP = Math.max(0, player.currentHP - damage);
 
       return {
         gameState: {
@@ -287,6 +429,7 @@ export const useGameStore = create<CombatStoreState>((set, get) => ({
             currentHP: newHP,
           },
         },
+        combatLog: [...state.combatLog, `${playerId} took ${damage} damage. HP: ${newHP}`],
       };
     });
   },
@@ -317,7 +460,244 @@ export const useGameStore = create<CombatStoreState>((set, get) => ({
         gameActive: false,
         winner: winnerId,
       },
+      combatLog: [...state.combatLog, `Game over! ${winnerId} wins!`],
     }));
+  },
+
+  selectAttacker: (numenId: string) => {
+    set((state: any) => {
+      const selected = state.gameState.selectedAttackers;
+      const idx = selected.indexOf(numenId);
+      let newSelected: string[];
+
+      if (idx >= 0) {
+        newSelected = selected.filter((id: string) => id !== numenId);
+      } else {
+        const cp = state.gameState.currentPlayer;
+        const player = cp === 'player1' ? state.gameState.player1 : state.gameState.player2;
+        const maxSummons = player ? calculateMaxSummons(player.natureScaling) : 1;
+        if (selected.length >= maxSummons) {
+          return state;
+        }
+        newSelected = [...selected, numenId];
+      }
+
+      return {
+        gameState: {
+          ...state.gameState,
+          selectedAttackers: newSelected,
+        },
+      };
+    });
+  },
+
+  selectDefender: (numenId: string) => {
+    set((state: any) => ({
+      gameState: {
+        ...state.gameState,
+        selectedDefender: state.gameState.selectedDefender === numenId ? null : numenId,
+      },
+    }));
+  },
+
+  clearSelections: () => {
+    set((state: any) => ({
+      gameState: {
+        ...state.gameState,
+        selectedAttackers: [],
+        selectedDefender: null,
+      },
+    }));
+  },
+
+  executeAttack: () => {
+    set((state: any) => {
+      const currentPlayer = state.gameState.currentPlayer;
+      const opponentId = currentPlayer === 'player1' ? 'player2' : 'player1';
+      const player = state.gameState[currentPlayer];
+      const opponent = state.gameState[opponentId];
+
+      if (!player || !opponent) return state;
+
+      const attackerIds = state.gameState.selectedAttackers;
+      const defenderUid = state.gameState.selectedDefender;
+
+      if (attackerIds.length === 0) return state;
+
+      const attackers = player.fieldNumina.filter(
+        (n: Card) => attackerIds.includes((n as any).uid)
+      );
+
+      if (attackers.length === 0) return state;
+
+      let log = [...state.combatLog];
+      let newOpponentHP = opponent.currentHP;
+      let newPlayerField = [...player.fieldNumina];
+      let newOpponentField = [...opponent.fieldNumina];
+
+      if (defenderUid) {
+        const defender = newOpponentField.find((n: Card) => (n as any).uid === defenderUid);
+
+        if (defender) {
+          const defenderPos = opponent.numenPositions[defenderUid];
+          const defenderInAttackPos = defenderPos === 'attack';
+          const defenderStat = defenderInAttackPos
+            ? ((defender as any).currentAttack ?? (defender as any).baseAttack ?? 0)
+            : ((defender as any).currentDefense ?? (defender as any).baseDefense ?? 0);
+
+          let totalATK = 0;
+          attackers.forEach((a: Card) => {
+            totalATK += (a as any).currentAttack ?? (a as any).baseAttack ?? 0;
+          });
+
+          const damageBonus = player.natureScaling.fire.damageBonus;
+          totalATK += damageBonus;
+
+          if (totalATK > defenderStat) {
+            const overflow = totalATK - defenderStat;
+            newOpponentField = newOpponentField.filter((n: Card) => (n as any).uid !== defenderUid);
+            newOpponentHP -= overflow;
+            log.push(`${attackers.length} attacker(s) destroyed ${defender.name}. Overflow: ${overflow}`);
+          } else if (totalATK === defenderStat) {
+            newOpponentField = newOpponentField.filter((n: Card) => (n as any).uid !== defenderUid);
+            const attackerUids = attackers.map((a: Card) => (a as any).uid);
+            newPlayerField = newPlayerField.filter((n: Card) => !attackerUids.includes((n as any).uid));
+            log.push(`Mutual destruction! ${defender.name} and ${attackers.length} attacker(s) destroyed.`);
+          } else {
+            log.push(`Attack failed! ${defender.name} defended with ${defenderStat} vs ${totalATK}`);
+          }
+
+          attackers.forEach((a: Card) => {
+            const idx = newPlayerField.findIndex((n: Card) => (n as any).uid === (a as any).uid);
+            if (idx >= 0) {
+              newPlayerField[idx] = { ...newPlayerField[idx], currentAttack: 0, hasAttacked: true };
+            }
+          });
+        } else {
+          let totalATK = 0;
+          attackers.forEach((a: Card) => {
+            totalATK += (a as any).currentAttack ?? (a as any).baseAttack ?? 0;
+          });
+          const damageBonus = player.natureScaling.fire.damageBonus;
+          totalATK += damageBonus;
+          newOpponentHP -= totalATK;
+          log.push(`Direct attack! ${totalATK} damage dealt.`);
+
+          attackers.forEach((a: Card) => {
+            const idx = newPlayerField.findIndex((n: Card) => (n as any).uid === (a as any).uid);
+            if (idx >= 0) {
+              newPlayerField[idx] = { ...newPlayerField[idx], currentAttack: 0, hasAttacked: true };
+            }
+          });
+        }
+      } else {
+        let totalATK = 0;
+        attackers.forEach((a: Card) => {
+          totalATK += (a as any).currentAttack ?? (a as any).baseAttack ?? 0;
+        });
+        const damageBonus = player.natureScaling.fire.damageBonus;
+        totalATK += damageBonus;
+        newOpponentHP -= totalATK;
+        log.push(`Direct attack! ${totalATK} damage dealt.`);
+
+        attackers.forEach((a: Card) => {
+          const idx = newPlayerField.findIndex((n: Card) => (n as any).uid === (a as any).uid);
+          if (idx >= 0) {
+            newPlayerField[idx] = { ...newPlayerField[idx], currentAttack: 0, hasAttacked: true };
+          }
+        });
+      }
+
+      opponent.currentHP = newOpponentHP;
+
+      if (newOpponentHP <= 0) {
+        log.push(`${opponentId} defeated! ${currentPlayer} wins!`);
+        return {
+          gameState: {
+            ...state.gameState,
+            [opponentId]: {
+              ...opponent,
+              currentHP: 0,
+              fieldNumina: newOpponentField,
+            },
+            [currentPlayer]: {
+              ...player,
+              fieldNumina: newPlayerField,
+            },
+            gameActive: false,
+            winner: currentPlayer,
+            selectedAttackers: [],
+            selectedDefender: null,
+          },
+          combatLog: log,
+        };
+      }
+
+      return {
+        gameState: {
+          ...state.gameState,
+          [opponentId]: {
+            ...opponent,
+            currentHP: newOpponentHP,
+            fieldNumina: newOpponentField,
+          },
+          [currentPlayer]: {
+            ...player,
+            fieldNumina: newPlayerField,
+          },
+          selectedAttackers: [],
+          selectedDefender: null,
+        },
+        combatLog: log,
+      };
+    });
+  },
+
+  endTurn: () => {
+    set((state: any) => {
+      const currentPlayer = state.gameState.currentPlayer;
+      const opponentId = currentPlayer === 'player1' ? 'player2' : 'player1';
+      const player = state.gameState[currentPlayer];
+      const opponent = state.gameState[opponentId];
+
+      if (player && player.currentHP <= 0) {
+        return {
+          gameState: {
+            ...state.gameState,
+            gameActive: false,
+            winner: opponent?.playerId || opponentId,
+          },
+          combatLog: [...state.combatLog, `${currentPlayer} has 0 HP. ${opponentId} wins!`],
+        };
+      }
+
+      return {
+        gameState: {
+          ...state.gameState,
+          selectedAttackers: [],
+          selectedDefender: null,
+        },
+      };
+    });
+    get().changePhase();
+  },
+
+  quitGame: () => {
+    set({
+      gameState: {
+        player1: null,
+        player2: null,
+        currentPlayer: 'player1',
+        currentPhase: PHASES.DRAW,
+        turnNumber: 1,
+        isFirstTurn: true,
+        gameActive: false,
+        winner: null,
+        selectedAttackers: [],
+        selectedDefender: null,
+      },
+      combatLog: [],
+    });
   },
 
   getCurrentPlayer: () => {
@@ -336,12 +716,6 @@ export const useGameStore = create<CombatStoreState>((set, get) => ({
   },
 }));
 
-export const checkHandCapacity = (handSize: number): { isOverCapacity: boolean; discardRequired: number } => {
-  const isOverCapacity = handSize > GAME_CONSTANTS.MAX_HAND_SIZE;
-  const discardRequired = Math.max(0, handSize - GAME_CONSTANTS.MAX_HAND_SIZE);
-  return { isOverCapacity, discardRequired };
-};
-
 export const getCurrentPhaseName = (phase: string): string => {
   const phaseNames: Record<string, string> = {
     draw: 'Draw Phase',
@@ -352,11 +726,6 @@ export const getCurrentPhaseName = (phase: string): string => {
     end: 'End Phase',
   };
   return phaseNames[phase as keyof typeof phaseNames] || phase;
-};
-
-export const getCurrentTurn = (turnNumber: number, currentPlayer: string): string => {
-  const playerNames: Record<string, string> = { player1: 'Player 1', player2: 'Player 2' };
-  return `${playerNames[currentPlayer as keyof typeof playerNames]} - Turn ${turnNumber}`;
 };
 
 export default useGameStore;

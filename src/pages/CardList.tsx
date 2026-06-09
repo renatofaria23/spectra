@@ -7,7 +7,7 @@ import { generateDescription } from '../logic/DescriptionEngine';
 import rawCardsData from '../data/cards.json';
 import { Link, useNavigate } from 'react-router-dom';
 import { readCards, deleteCard } from '../services/cardsAPI';
-import { NATURES, MONSTER_FAMILIES } from '../types/constants';
+import { NATURES, NUMEN_FAMILIES } from '../types/constants';
 
 const baseCards: CardData[] = (rawCardsData as any[]).map((raw) => ({
   ...raw,
@@ -45,11 +45,11 @@ export const CardList = () => {
       result = result.filter((card) => card.type === filterType);
     }
 
-    if (filterType === 'monster' && filterNature !== 'all') {
+    if (filterType === 'numen' && filterNature !== 'all') {
       result = result.filter((card) => card.attribute?.toLowerCase() === filterNature);
     }
 
-    if (filterType === 'monster' && filterFamily !== 'all') {
+    if (filterType === 'numen' && filterFamily !== 'all') {
       result = result.filter((card) => card.family?.toLowerCase() === filterFamily);
     }
 
@@ -57,6 +57,32 @@ export const CardList = () => {
       const query = searchQuery.toLowerCase();
       result = result.filter((card) => card.name.toLowerCase().includes(query));
     }
+
+    const typeOrder: Record<string, number> = { numen: 0, rite: 1, ward: 2 };
+
+    result.sort((a, b) => {
+      const typeA = (a.type || '').toLowerCase();
+      const typeB = (b.type || '').toLowerCase();
+      const orderA = typeOrder[typeA] ?? 3;
+      const orderB = typeOrder[typeB] ?? 3;
+      if (orderA !== orderB) return orderA - orderB;
+
+      if (typeA === 'numen') {
+        const natureA = (a.attribute || '').toLowerCase();
+        const natureB = (b.attribute || '').toLowerCase();
+        if (natureA !== natureB) return natureA.localeCompare(natureB);
+
+        const familyA = (a.family || '').toLowerCase();
+        const familyB = (b.family || '').toLowerCase();
+        if (familyA !== familyB) return familyA.localeCompare(familyB);
+
+        const levelA = a.level ?? 0;
+        const levelB = b.level ?? 0;
+        if (levelA !== levelB) return levelA - levelB;
+      }
+
+      return a.name.localeCompare(b.name);
+    });
 
     return result;
   }, [filterType, filterNature, filterFamily, searchQuery, cards]);
@@ -103,14 +129,14 @@ export const CardList = () => {
         <Select
           data={[
             { value: 'all', label: 'All Types' },
-            { value: 'monster', label: 'Monster' },
-            { value: 'spell', label: 'Spell' },
+            { value: 'numen', label: 'Numen' },
+            { value: 'rite', label: 'Rite' },
             { value: 'ward', label: 'Ward' },
           ]}
           value={filterType}
           onChange={(val) => {
             setFilterType(val || 'all');
-            if (val !== 'monster') {
+            if (val !== 'numen') {
               setFilterNature('all');
               setFilterFamily('all');
             }
@@ -127,7 +153,7 @@ export const CardList = () => {
           }}
         />
 
-        {filterType === 'monster' && (
+        {filterType === 'numen' && (
           <>
             <Select
               data={[
@@ -154,7 +180,7 @@ export const CardList = () => {
             <Select
               data={[
                 { value: 'all', label: 'All Families' },
-                ...Object.entries(MONSTER_FAMILIES).map(([key, val]) => ({
+                ...Object.entries(NUMEN_FAMILIES).map(([key, val]) => ({
                   value: val,
                   label: val.charAt(0).toUpperCase() + val.slice(1),
                 })),

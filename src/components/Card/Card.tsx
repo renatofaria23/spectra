@@ -27,7 +27,7 @@ export const Card = React.memo(
   ({ card, onClick, selected = false, showStats = true, size = 'md' }: CardProps) => {
     if (!card) return null;
 
-    const isMonster = (card as any).type === 'monster';
+    const isNumen = (card as any).type === 'numen';
     const isFaceDown = (card as any).position === 'face_down';
 
     if (isFaceDown) {
@@ -43,7 +43,7 @@ export const Card = React.memo(
             alignItems: 'center',
             justifyContent: 'center',
             color: Gray_4,
-            fontSize: '24px',
+             fontSize: '26px',
           }}
         >
           ?
@@ -55,7 +55,7 @@ export const Card = React.memo(
       if (rarity === 'common') return CommonGray_4;
       if (rarity === 'rare') return Blue_3;
       if (rarity === 'epic') return Orange_4;
-      if (rarity === 'legendary') return Orange_3;
+      if (rarity === 'mythic') return Orange_3;
       return CommonGray_4;
     };
 
@@ -72,14 +72,14 @@ export const Card = React.memo(
         <Box
           className="card-image"
           style={{
-            background: isMonster
+            background: isNumen
               ? `linear-gradient(135deg, Blue_7, Blue_5)`
               : 'linear-gradient(135deg, Blue_4, Blue_5)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             color: Gray_5,
-            fontSize: '12px',
+             fontSize: '14px',
           }}
         >
           {((card as any).name || '').length > 0 ? (
@@ -92,7 +92,7 @@ export const Card = React.memo(
         <Box className="card-body" style={{ color: White_1 }}>
           <div className="card-title" style={{ color: White_1 }}>{(card as any).name || 'Unknown Card'}</div>
 
-          {isMonster && showStats && (
+          {isNumen && showStats && (
             <Group justify="space-between" gap="xs">
               <Badge size="xs" color={attrValue}>
                 {ATTRIBUTE_ICONS_OBJ[attrKey] || ATTRIBUTE_ICONS_OBJ['fire']}
@@ -104,26 +104,26 @@ export const Card = React.memo(
             </Group>
           )}
 
-          {!isMonster && showStats && (
-            <div style={{ fontSize: '8px', color: Gray_5 }}>
-              {(card as any).spellType || (card as any).wardType || 'Unknown'}
+          {!isNumen && showStats && (
+            <div style={{ fontSize: '10px', color: Gray_5 }}>
+              {(card as any).riteType || (card as any).wardType || 'Unknown'}
             </div>
           )}
         </Box>
 
         {((card as any).rarity !== undefined) && (
           <Box
-            className={`card-badge ${((card as any) as any).isLegendary ? 'legendary-badge' : ''}`}
+            className={`card-badge ${((card as any) as any).isMythic ? 'mythic-badge' : ''}`}
             style={{
-              backgroundColor: ((card as any) as any).isLegendary ? Orange_3 : rarityColor,
-              color: ((card as any) as any).isLegendary ? Black_1 : White_1,
+              backgroundColor: ((card as any) as any).isMythic ? Orange_3 : rarityColor,
+              color: ((card as any) as any).isMythic ? Black_1 : White_1,
             }}
           >
-            {((card as any) as any).isLegendary ? '★' : String(((card as any).rarity || '').charAt(0).toUpperCase())}
+            {((card as any) as any).isMythic ? '★' : String(((card as any).rarity || '').charAt(0).toUpperCase())}
           </Box>
         )}
 
-        {isMonster && (card as any).level !== undefined && (
+        {isNumen && (card as any).level !== undefined && (
           <Box
             style={{
               position: 'absolute',
@@ -132,7 +132,7 @@ export const Card = React.memo(
               padding: '2px 6px',
               backgroundColor: Beige_5,
               color: Beige_5,
-              fontSize: '10px',
+              fontSize: '12px',
               borderRadius: '4px',
               fontWeight: 'bold',
             }}
@@ -141,7 +141,7 @@ export const Card = React.memo(
           </Box>
         )}
 
-        {isMonster && (card as any).position && (card as any).position !== 'face_down' && (
+        {isNumen && (card as any).position && (card as any).position !== 'face_down' && (
           <Box
             style={{
               position: 'absolute',
@@ -150,7 +150,7 @@ export const Card = React.memo(
               padding: '2px 6px',
   backgroundColor: (card as any).position === 'attack' ? Orange_8 : Teal_2,
               color: White_1,
-              fontSize: '9px',
+              fontSize: '11px',
               borderRadius: '4px',
               fontWeight: 'bold',
             }}

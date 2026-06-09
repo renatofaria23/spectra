@@ -1,8 +1,8 @@
-import { MONSTER_FAMILIES, GAME_CONSTANTS, NATURES } from '../types/constants';
+import { NUMEN_FAMILIES, GAME_CONSTANTS, NATURES } from '../types/constants';
 
 export type Nature = typeof NATURES[keyof typeof NATURES];
 
-export interface LegendaryQuest {
+export interface MythicQuest {
   deckRequirements?: Record<string, number>;
   activationConditions?: Record<string, number>;
   specialConstraints?: string[];
@@ -10,25 +10,25 @@ export interface LegendaryQuest {
 
 export interface Card {
   id: string;
-  type: 'monster' | 'spell' | 'ward';
+  type: 'numen' | 'rite' | 'ward';
   name: string;
   attribute?: Nature;
-  monsterFamily?: string;
+  numenFamily?: string;
   rarity?: string;
   level?: number;
   baseAttack?: number;
   baseDefense?: number;
-  spellType?: string;
+  riteType?: string;
   wardType?: string;
-  isLegendary?: boolean;
-  legendaryQuest?: LegendaryQuest;
+  isMythic?: boolean;
+  mythicQuest?: MythicQuest;
   [key: string]: unknown;
 }
 
 export interface DeckRequirements {
-  monsterFamilies?: Record<string, number>;
+  numenFamilies?: Record<string, number>;
   attributes?: Record<string, number>;
-  spells: number;
+  rites: number;
   wards: number;
   totalRequired: number;
 }
@@ -38,18 +38,11 @@ interface ValidationResult {
   missingRequirements: Record<string, string[]>;
 }
 
-export interface NatureScaling {
-  fire: { atkBonus: number; monstersCount: number };
-  earth: { hpBonus: number; monstersCount: number };
-  water: { hpRegenBonus: number; monstersCount: number };
-  air: { extraActions: number; monstersCount: number };
-  light: { drawBonus: number; monstersCount: number };
-  dark: { wardBonus: number; monstersCount: number };
-}
+export type { NatureScaling } from './natureScaling';
 
 export interface DeckStats {
-  monsterCount: number;
-  spellCount: number;
+  numenCount: number;
+  riteCount: number;
   wardCount: number;
   typeCounts: Record<string, number>;
   attributeCounts: Record<string, number>;
@@ -57,7 +50,7 @@ export interface DeckStats {
 
 export interface BattleResults {
   totalDecrease: number;
-  destroyedMonsters: { monsterId: string; destroyedBy: string }[];
+  destroyedNumina: { numenId: string; destroyedBy: string }[];
   interactions: CombatInteraction[];
 }
 
@@ -66,7 +59,7 @@ export interface CombatInteraction {
   targetId: string | null;
   spentATK: number;
   decreaseDealt: number;
-  killedMonster: boolean;
+  killedNumen: boolean;
   error?: string;
 }
 
@@ -115,35 +108,35 @@ export const validateDeckComposition = (deck: Card[]): {
 
 export const calculateDeckRequirements = (deck: Card[]): DeckRequirements => {
   const requirements: DeckRequirements = {
-    monsterFamilies: {},
+    numenFamilies: {},
     attributes: {},
-    spells: 0,
+    rites: 0,
     wards: 0,
     totalRequired: 0,
   };
 
   deck.forEach((card) => {
-    if (card.type === 'monster' && card.deckRequirements) {
+    if (card.type === 'numen' && card.deckRequirements) {
       Object.entries(card.deckRequirements).forEach(([type, count]) => {
-        requirements.monsterFamilies![type] =
-          (requirements.monsterFamilies![type] || 0) + count;
+        requirements.numenFamilies![type] =
+          (requirements.numenFamilies![type] || 0) + count;
         requirements.totalRequired += count;
       });
     }
 
-    if (card.type === 'spell') {
-      if (card.isLegendary && card.legendaryQuest?.deckRequirements?.spells) {
-        requirements.spells += card.legendaryQuest.deckRequirements.spells;
+    if (card.type === 'rite') {
+      if (card.isMythic && card.mythicQuest?.deckRequirements?.rites) {
+        requirements.rites += card.mythicQuest.deckRequirements.rites;
         requirements.totalRequired +=
-          card.legendaryQuest.deckRequirements.spells;
+          card.mythicQuest.deckRequirements.rites;
       }
     }
 
     if (card.type === 'ward') {
-      if (card.isLegendary && card.legendaryQuest?.deckRequirements?.wards) {
-        requirements.wards += card.legendaryQuest.deckRequirements.wards;
+      if (card.isMythic && card.mythicQuest?.deckRequirements?.wards) {
+        requirements.wards += card.mythicQuest.deckRequirements.wards;
         requirements.totalRequired +=
-          card.legendaryQuest.deckRequirements.wards;
+          card.mythicQuest.deckRequirements.wards;
       }
     }
   });
@@ -151,40 +144,40 @@ export const calculateDeckRequirements = (deck: Card[]): DeckRequirements => {
   return requirements;
 };
 
-export const validateCardRequirements = (deck: Card[], legendaryCardIds: string[]): ValidationResult => {
+export const validateCardRequirements = (deck: Card[], mythicCardIds: string[]): ValidationResult => {
   const canSummon: Record<string, boolean> = {};
   const missingRequirements: Record<string, string[]> = {};
 
   const typeCounts: Record<string, number> = {};
   const attributeCounts: Record<string, number> = {};
-  let spellCount = 0;
+  let riteCount = 0;
   let wardCount = 0;
 
   deck.forEach((card) => {
-    if (card.type === 'monster') {
-      if (card.monsterFamily) {
-        typeCounts[card.monsterFamily] = (typeCounts[card.monsterFamily] || 0) + 1;
+    if (card.type === 'numen') {
+      if (card.numenFamily) {
+        typeCounts[card.numenFamily] = (typeCounts[card.numenFamily] || 0) + 1;
       }
       if (card.attribute) {
         attributeCounts[card.attribute] =
           (attributeCounts[card.attribute] || 0) + 1;
       }
-    } else if (card.type === 'spell') {
-      spellCount += 1;
+    } else if (card.type === 'rite') {
+      riteCount += 1;
     } else if (card.type === 'ward') {
       wardCount += 1;
     }
   });
 
-  legendaryCardIds.forEach((legendaryId) => {
-    const legendary = deck.find((c) => c.id === legendaryId && c.isLegendary);
-    if (!legendary || !legendary.legendaryQuest) {
-      canSummon[legendaryId] = false;
-      missingRequirements[legendaryId] = ['Card not found or not legendary'];
+  mythicCardIds.forEach((mythicId) => {
+    const mythic = deck.find((c) => c.id === mythicId && c.isMythic);
+    if (!mythic || !mythic.mythicQuest) {
+      canSummon[mythicId] = false;
+      missingRequirements[mythicId] = ['Card not found or not mythic'];
       return;
     }
 
-    const { deckRequirements } = legendary.legendaryQuest;
+    const { deckRequirements } = mythic.mythicQuest;
     const missing: string[] = [];
 
     if (deckRequirements) {
@@ -197,9 +190,9 @@ export const validateCardRequirements = (deck: Card[], legendaryCardIds: string[
         }
       });
 
-      if (deckRequirements.spells && spellCount < deckRequirements.spells) {
+      if (deckRequirements.rites && riteCount < deckRequirements.rites) {
         missing.push(
-          `Need ${deckRequirements.spells} spells, have ${spellCount}`
+          `Need ${deckRequirements.rites} rites, have ${riteCount}`
         );
       }
 
@@ -210,8 +203,8 @@ export const validateCardRequirements = (deck: Card[], legendaryCardIds: string[
       }
     }
 
-    canSummon[legendaryId] = missing.length === 0;
-    missingRequirements[legendaryId] = missing;
+    canSummon[mythicId] = missing.length === 0;
+    missingRequirements[mythicId] = missing;
   });
 
   return { canSummon, missingRequirements };
@@ -219,26 +212,26 @@ export const validateCardRequirements = (deck: Card[], legendaryCardIds: string[
 
 export const getDeckStats = (deck: Card[]): DeckStats => {
   const stats: DeckStats = {
-    monsterCount: 0,
-    spellCount: 0,
+    numenCount: 0,
+    riteCount: 0,
     wardCount: 0,
     typeCounts: {},
     attributeCounts: {},
   };
 
   deck.forEach((card) => {
-    if (card.type === 'monster') {
-      stats.monsterCount += 1;
-      if (card.monsterFamily) {
-        stats.typeCounts[card.monsterFamily] =
-          (stats.typeCounts[card.monsterFamily] || 0) + 1;
+    if (card.type === 'numen') {
+      stats.numenCount += 1;
+      if (card.numenFamily) {
+        stats.typeCounts[card.numenFamily] =
+          (stats.typeCounts[card.numenFamily] || 0) + 1;
       }
       if (card.attribute) {
         stats.attributeCounts[card.attribute] =
           (stats.attributeCounts[card.attribute] || 0) + 1;
       }
-    } else if (card.type === 'spell') {
-      stats.spellCount += 1;
+    } else if (card.type === 'rite') {
+      stats.riteCount += 1;
     } else if (card.type === 'ward') {
       stats.wardCount += 1;
     }

@@ -1,7 +1,10 @@
 import { NumberInput, Select, TextInput, MultiSelect, Badge, Group, Button, Checkbox } from '@mantine/core';
 import { IconPlus, IconX } from '@tabler/icons-react';
 import { EffectType } from '../../logic/Effects';
+import type { ForEachConfig } from '../../logic/Effects';
+import colors from '../../styles/Colors';
 import type { EffectTarget } from '../../logic/Triggers';
+import { ConditionalTrigger } from '../../logic/Triggers';
 import {
   statTargetOptions,
   scryDeckOptions,
@@ -17,6 +20,7 @@ import {
   rarityOptions,
   copyTargetTypeOptions,
   addDestinationOptions,
+  getEffectTargetOptions,
 } from '../../logic/CardEditorOptions';
 
 const summonCriteriaTypeOptions = [
@@ -43,6 +47,19 @@ const isNumericCriteria = (type: string) =>
 
 const isMultiSelectCriteria = (type: string) =>
   ['families', 'excludeFamilies', 'natures', 'excludeNatures', 'rarities', 'excludeRarities'].includes(type);
+
+const exileCardTypeCriteria = ['any_numen', 'any_ward', 'any_rite', 'any_magic'];
+
+const isExileCardTypeCriteria = (type: string) =>
+  exileCardTypeCriteria.includes(type);
+
+const exileCriteriaTypeOptions = [
+  ...summonCriteriaTypeOptions,
+  { value: 'any_numen', label: 'Any numen' },
+  { value: 'any_ward', label: 'Any ward' },
+  { value: 'any_rite', label: 'Any spell' },
+  { value: 'any_magic', label: 'Any magic' },
+];
 
 const getCriteriaDataForType = (type: string) => {
   if (['families', 'excludeFamilies'].includes(type)) return familyOptions;
@@ -77,6 +94,10 @@ const getCriteriaLabel = (type: string, value: any): string => {
     const labels = value.map((v: string) => (data.find((o: { value: string; label: string }) => o.value === v)?.label || v));
     return `${prefix}${labels.join(', ')}`;
   }
+  if (type === 'any_numen') return 'Any numen';
+  if (type === 'any_ward') return 'Any ward';
+  if (type === 'any_rite') return 'Any spell';
+  if (type === 'any_magic') return 'Any magic';
   return `${type}: ${value}`;
 };
 
@@ -151,15 +172,62 @@ export default function EffectParamInputs({ selectedEffect, effectParams, setEff
           />
         )
       );
-    case EffectType.EXILE:
-       const ALL_TARGETS: EffectTarget[] = [
+    case EffectType.EXILE: {
+      const exileFromField = effectParams.exileFromField !== false;
+      const ALL_FIELD_TARGETS: EffectTarget[] = [
         'all_allied_numina', 'all_enemy_numina',
         'all_allied_magics', 'all_enemy_magics',
         'all_allied_rites', 'all_enemy_rites',
         'all_allied_wards', 'all_enemy_wards',
       ];
+      if (exileFromField) {
+        return (
+          <>
+            <Checkbox
+              label="From field?"
+              checked={true}
+              onChange={() => setEffectParams(prev => ({ ...prev, exileFromField: false }))}
+              styles={{ label: { color: colors.Black_1 } }}
+            />
+            <Select
+              data={getEffectTargetOptions(undefined, EffectType.EXILE, undefined)}
+              value={effectParams._exileTarget ?? null}
+              onChange={(val) => setEffectParams(prev => ({ ...prev, _exileTarget: val }))}
+              label="Effect Target"
+              styles={inputStyles}
+            />
+            {effectTarget && effectTarget !== 'self' && !ALL_FIELD_TARGETS.includes(effectTarget) && (
+              <NumberInput
+                label="Count"
+                value={effectParams.count}
+                onChange={(val) => setEffectParams(prev => ({ ...prev, count: val }))}
+                min={1}
+                styles={inputStyles}
+              />
+            )}
+          </>
+        );
+      }
+      const exileNonFieldCriteriaReady = effectParams._criteriaType &&
+        (isExileCardTypeCriteria(effectParams._criteriaType) ||
+          (isNumericCriteria(effectParams._criteriaType) && effectParams._criteriaValue !== undefined && effectParams._criteriaValue !== null) ||
+          (effectParams._criteriaType === 'name' && effectParams._criteriaValue) ||
+          (isMultiSelectCriteria(effectParams._criteriaType) && effectParams._criteriaValue && effectParams._criteriaValue.length > 0));
       return (
-        effectTarget && effectTarget !== 'self' && !ALL_TARGETS.includes(effectTarget) && (
+        <>
+          <Checkbox
+            label="From field?"
+            checked={false}
+            onChange={() => setEffectParams(prev => ({ ...prev, exileFromField: true, _exileTarget: undefined, _criteriaType: undefined, _criteriaValue: undefined }))}
+            styles={{ label: { color: colors.Black_1 } }}
+          />
+          <Select
+            data={summonFromOptions}
+            value={effectParams.from}
+            onChange={(val) => setEffectParams(prev => ({ ...prev, from: val }))}
+            label="From"
+            styles={inputStyles}
+          />
           <NumberInput
             label="Count"
             value={effectParams.count}
@@ -167,8 +235,102 @@ export default function EffectParamInputs({ selectedEffect, effectParams, setEff
             min={1}
             styles={inputStyles}
           />
-        )
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <Select
+              data={exileCriteriaTypeOptions}
+              value={effectParams._criteriaType}
+              onChange={(val) => setEffectParams(prev => ({ ...prev, _criteriaType: val, _criteriaValue: undefined }))}
+              label="Criteria Type"
+              styles={inputStyles}
+            />
+            {effectParams._criteriaType && isExileCardTypeCriteria(effectParams._criteriaType) && (
+              <Button
+                leftSection={<IconPlus size={16} />}
+                onClick={() => {
+                  const existing = effectParams._criteriaItems || [];
+                  existing.push({
+                    type: effectParams._criteriaType,
+                    value: true,
+                  });
+                  setEffectParams(prev => ({
+                    ...prev,
+                    _criteriaItems: existing,
+                    _criteriaType: undefined,
+                    _criteriaValue: undefined,
+                  }));
+                }}
+              >
+                Add Criteria
+              </Button>
+            )}
+            {effectParams._criteriaType && isNumericCriteria(effectParams._criteriaType) && (
+              <NumberInput
+                value={effectParams._criteriaValue}
+                onChange={(val) => setEffectParams(prev => ({ ...prev, _criteriaValue: val }))}
+                min={0}
+                label="Value"
+                styles={inputStyles}
+              />
+            )}
+            {effectParams._criteriaType && effectParams._criteriaType === 'name' && (
+              <TextInput
+                value={effectParams._criteriaValue || ''}
+                onChange={(e) => setEffectParams(prev => ({ ...prev, _criteriaValue: e.target.value }))}
+                placeholder="e.g., Dark Dragon"
+                label="Name"
+                styles={inputStyles}
+              />
+            )}
+            {effectParams._criteriaType && isMultiSelectCriteria(effectParams._criteriaType) && (
+              <MultiSelect
+                data={getCriteriaDataForType(effectParams._criteriaType)}
+                value={effectParams._criteriaValue}
+                onChange={(val) => setEffectParams(prev => ({ ...prev, _criteriaValue: val }))}
+                label="Select"
+                styles={inputStyles}
+              />
+            )}
+            {effectParams._criteriaType && !isNumericCriteria(effectParams._criteriaType) && !isExileCardTypeCriteria(effectParams._criteriaType) && (
+              <Button
+                leftSection={<IconPlus size={16} />}
+                disabled={!exileNonFieldCriteriaReady}
+                onClick={() => {
+                  if (!effectParams._criteriaType || !exileNonFieldCriteriaReady) return;
+                  const existing = effectParams._criteriaItems || [];
+                  existing.push({
+                    type: effectParams._criteriaType,
+                    value: effectParams._criteriaValue,
+                  });
+                  setEffectParams(prev => ({
+                    ...prev,
+                    _criteriaItems: existing,
+                    _criteriaType: undefined,
+                    _criteriaValue: undefined,
+                  }));
+                }}
+              >
+                Add Criteria
+              </Button>
+            )}
+            {effectParams._criteriaItems && effectParams._criteriaItems.length > 0 && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {effectParams._criteriaItems.map((item: { type: string; value: any }, idx: number) => (
+                  <Badge key={idx} style={{ cursor: 'pointer' }}>
+                    {getCriteriaLabel(item.type, item.value)}
+                    <IconX size={12} style={{ marginLeft: 4, cursor: 'pointer' }} onClick={(e) => {
+                      e.stopPropagation();
+                      const updated = [...effectParams._criteriaItems];
+                      updated.splice(idx, 1);
+                      setEffectParams(prev => ({ ...prev, _criteriaItems: updated }));
+                    }} />
+                  </Badge>
+                ))}
+              </div>
+            )}
+          </div>
+        </>
       );
+    }
     case EffectType.PETRIFY:
       return (
         <NumberInput
@@ -543,9 +705,23 @@ export default function EffectParamInputs({ selectedEffect, effectParams, setEff
 interface OtherwiseEffectInputsProps {
   setEffectParams: (updater: (prev: Record<string, any>) => Record<string, any>) => void;
   effectParams: Record<string, any>;
+  currentTrigger?: ConditionalTrigger | undefined;
+  cardType?: string | undefined;
 }
 
-export function OtherwiseEffectInputs({ setEffectParams, effectParams }: OtherwiseEffectInputsProps) {
+export function OtherwiseEffectInputs({ setEffectParams, effectParams, currentTrigger, cardType }: OtherwiseEffectInputsProps) {
+  const otherwiseEffectType = effectParams.otherwise_effect_type;
+  const otherwiseEffectParams = effectParams.otherwise_effect_params || {};
+  const otherwiseEffectTarget = effectParams.otherwise_effect_target;
+  const dynamicOtherwiseTargetOptions = getEffectTargetOptions(currentTrigger, otherwiseEffectType ?? undefined, cardType);
+
+  const setOtherwiseParam = (updater: (prev: Record<string, any>) => Record<string, any>) => {
+    setEffectParams(prev => ({
+      ...prev,
+      otherwise_effect_params: updater(prev.otherwise_effect_params || {}),
+    }));
+  };
+
   return (
     <>
       <Checkbox
@@ -574,53 +750,174 @@ export function OtherwiseEffectInputs({ setEffectParams, effectParams }: Otherwi
               { value: EffectType.ADD, label: 'Add' },
               { value: EffectType.RETURN, label: 'Return' },
             ]}
-            value={effectParams.otherwise_effect_type}
-            onChange={(val) => setEffectParams(prev => ({ ...prev, otherwise_effect_type: val, otherwise_effect_params: {} }))}
+            value={otherwiseEffectType}
+            onChange={(val) => setEffectParams(prev => ({ ...prev, otherwise_effect_type: val as any, otherwise_effect_params: {}, otherwise_effect_target: null }))}
             label="Otherwise Effect"
             styles={inputStyles}
           />
-          {effectParams.otherwise_effect_type === EffectType.DECREASE && (
-            <>
-              <NumberInput
-                label="Otherwise - Amount"
-                value={effectParams.otherwise_effect_params?.amount}
-                onChange={(val) => setEffectParams(prev => ({
-                  ...prev,
-                  otherwise_effect_params: { ...prev.otherwise_effect_params, amount: val }
-                }))}
-                min={0}
-                styles={inputStyles}
-              />
-            </>
+          {otherwiseEffectType && otherwiseEffectType !== EffectType.DRAW && otherwiseEffectType !== EffectType.SCRY && otherwiseEffectType !== EffectType.SUMMON && otherwiseEffectType !== EffectType.EXILE && (
+            <Select
+              data={dynamicOtherwiseTargetOptions}
+              value={otherwiseEffectTarget ?? null}
+              onChange={(val) => setEffectParams(prev => ({ ...prev, otherwise_effect_target: val as any }))}
+              label="Otherwise Effect Target"
+              styles={inputStyles}
+            />
           )}
-          {effectParams.otherwise_effect_type === EffectType.INCREASE && (
-            <>
-              <NumberInput
-                label="Otherwise - Amount"
-                value={effectParams.otherwise_effect_params?.amount}
-                onChange={(val) => setEffectParams(prev => ({
-                  ...prev,
-                  otherwise_effect_params: { ...prev.otherwise_effect_params, amount: val }
-                }))}
-                min={0}
-                styles={inputStyles}
-              />
-            </>
+          {otherwiseEffectType && (
+            <EffectParamInputs
+              selectedEffect={otherwiseEffectType}
+              effectParams={otherwiseEffectParams}
+              setEffectParams={setOtherwiseParam}
+              effectTarget={otherwiseEffectTarget ?? undefined}
+            />
           )}
-          {effectParams.otherwise_effect_type === EffectType.DRAW && (
-            <>
-              <NumberInput
-                label="Otherwise - Count"
-                value={effectParams.otherwise_effect_params?.count}
-                onChange={(val) => setEffectParams(prev => ({
-                  ...prev,
-                  otherwise_effect_params: { ...prev.otherwise_effect_params, count: val }
-                }))}
-                min={1}
-                styles={inputStyles}
-              />
-            </>
+        </>
+      )}
+    </>
+  );
+}
+
+interface OrEffectInputsProps {
+  setEffectParams: (updater: (prev: Record<string, any>) => Record<string, any>) => void;
+  effectParams: Record<string, any>;
+  currentTrigger?: ConditionalTrigger | undefined;
+  cardType?: string | undefined;
+}
+
+export function OrEffectInputs({ setEffectParams, effectParams, currentTrigger, cardType }: OrEffectInputsProps) {
+  const orEffectType = effectParams.or_effect_type;
+  const orEffectParams = effectParams.or_effect_params || {};
+  const orEffectTarget = effectParams.or_effect_target;
+  const dynamicOrTargetOptions = getEffectTargetOptions(currentTrigger, orEffectType ?? undefined, cardType);
+
+  const setOrParam = (updater: (prev: Record<string, any>) => Record<string, any>) => {
+    setEffectParams(prev => ({
+      ...prev,
+      or_effect_params: updater(prev.or_effect_params || {}),
+    }));
+  };
+
+  return (
+    <>
+      <Checkbox
+        label="Or"
+        checked={effectParams.or || false}
+        onChange={(e) => setEffectParams(prev => ({ ...prev, or: e.target.checked }))}
+        styles={{ label: { color: '#000' } }}
+      />
+      {effectParams.or && (
+        <>
+          <Select
+            data={[
+              { value: EffectType.DRAW, label: 'Draw' },
+              { value: EffectType.SCRY, label: 'Scry' },
+              { value: EffectType.DESTROY, label: 'Destroy' },
+              { value: EffectType.EXILE, label: 'Exile' },
+              { value: EffectType.PETRIFY, label: 'Petrify' },
+              { value: EffectType.DECREASE, label: 'Decrease' },
+              { value: EffectType.LOCK, label: 'Lock' },
+              { value: EffectType.INCREASE, label: 'Increase' },
+              { value: EffectType.ETHEREAL, label: 'Ethereal' },
+              { value: EffectType.FIND, label: 'Find' },
+              { value: EffectType.ADD_TRIGGER, label: 'Add Trigger' },
+              { value: EffectType.SUMMON, label: 'Summon' },
+              { value: EffectType.COPY, label: 'Copy' },
+              { value: EffectType.ADD, label: 'Add' },
+              { value: EffectType.RETURN, label: 'Return' },
+            ]}
+            value={orEffectType}
+            onChange={(val) => setEffectParams(prev => ({ ...prev, or_effect_type: val as any, or_effect_params: {}, or_effect_target: null }))}
+            label="Or Effect"
+            styles={inputStyles}
+          />
+          {orEffectType && orEffectType !== EffectType.DRAW && orEffectType !== EffectType.SCRY && orEffectType !== EffectType.SUMMON && orEffectType !== EffectType.EXILE && (
+            <Select
+              data={dynamicOrTargetOptions}
+              value={orEffectTarget ?? null}
+              onChange={(val) => setEffectParams(prev => ({ ...prev, or_effect_target: val as any }))}
+              label="Or Effect Target"
+              styles={inputStyles}
+            />
           )}
+          {orEffectType && (
+            <EffectParamInputs
+              selectedEffect={orEffectType}
+              effectParams={orEffectParams}
+              setEffectParams={setOrParam}
+              effectTarget={orEffectTarget ?? undefined}
+            />
+          )}
+        </>
+      )}
+    </>
+  );
+}
+
+interface ForEachInputsProps {
+  setEffectParams: (updater: (prev: Record<string, any>) => Record<string, any>) => void;
+  effectParams: Record<string, any>;
+}
+
+export function ForEachInputs({ setEffectParams, effectParams }: ForEachInputsProps) {
+  const forEachConfig = effectParams.forEachConfig || {};
+
+  return (
+    <>
+      <Checkbox
+        label="For Each"
+        checked={effectParams.forEach || false}
+        onChange={(e) => setEffectParams(prev => ({ ...prev, forEach: e.target.checked, forEachConfig: e.target.checked ? {} : undefined }))}
+        styles={{ label: { color: '#000' } }}
+      />
+      {effectParams.forEach && (
+        <>
+          <Select
+            data={[
+              { value: 'numen', label: 'Numen' },
+              { value: 'ward', label: 'Ward' },
+              { value: 'rite', label: 'Rite' },
+              { value: 'magic', label: 'Magic' },
+              { value: 'any', label: 'Any Card' },
+            ]}
+            value={forEachConfig.cardType || null}
+            onChange={(val) => setEffectParams(prev => ({
+              ...prev,
+              forEachConfig: { ...prev.forEachConfig, cardType: val },
+            }))}
+            label="Count Type"
+            styles={inputStyles}
+          />
+          <Select
+            data={[
+              { value: 'graveyard', label: 'Graveyard' },
+              { value: 'field', label: 'Field' },
+              { value: 'exile', label: 'Exile' },
+              { value: 'deck', label: 'Deck' },
+              { value: 'hand', label: 'Hand' },
+            ]}
+            value={forEachConfig.zone || null}
+            onChange={(val) => setEffectParams(prev => ({
+              ...prev,
+              forEachConfig: { ...prev.forEachConfig, zone: val },
+            }))}
+            label="Zone"
+            styles={inputStyles}
+          />
+          <Select
+            data={[
+              { value: 'player', label: 'Player' },
+              { value: 'opponent', label: 'Opponent' },
+              { value: 'both', label: 'Both' },
+            ]}
+            value={forEachConfig.owner || null}
+            onChange={(val) => setEffectParams(prev => ({
+              ...prev,
+              forEachConfig: { ...prev.forEachConfig, owner: val },
+            }))}
+            label="Owner"
+            styles={inputStyles}
+          />
         </>
       )}
     </>

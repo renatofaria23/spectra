@@ -8,10 +8,11 @@
   --accent-bg: colors.Purple_1_10;
   --accent-border: colors.Purple_2_50;
   --social-bg: colors.Beige_2;
-  --shadow: rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.5) 0 4px 6px -2px;
+  --shadow:
+    rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.5) 0 4px 6px -2px;
 
-  --sans: 'Lora', system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: 'Lora', system-ui, 'Segoe UI', Roboto, sans-serif;
+  --sans: "Crimson Text", "Lora", system-ui, "Segoe UI", Roboto, sans-serif;
+  --heading: "Crimson Text", "Lora", system-ui, "Segoe UI", Roboto, sans-serif;
   --mono: ui-monospace, Consolas, monospace;
 
   font: 20px/160% var(--sans);
@@ -42,7 +43,8 @@
     --accent-bg: colors.Purple_1_10;
     --accent-border: colors.Purple_3_15;
     --social-bg: colors.Beige_2;
-    --shadow: rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
+    --shadow:
+      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
   }
 }
 

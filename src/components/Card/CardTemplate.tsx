@@ -1,12 +1,12 @@
-import React from 'react';
-import { Box, Text } from '@mantine/core';
-import { IconApiApp, IconTriangleInvertedFilled } from '@tabler/icons-react';
-import colors from '../../styles/Colors';
-import { NatureIcon } from './NatureIcon';
-import type { TriggerEntry } from '../../logic/Triggers';
+import React from "react";
+import { Box, Text } from "@mantine/core";
+import { IconApiApp, IconTriangleInvertedFilled } from "@tabler/icons-react";
+import colors from "../../styles/Colors";
+import { NatureIcon } from "./NatureIcon";
+import type { TriggerEntry } from "../../logic/Triggers";
 
-type CardType = 'numen' | 'rite' | 'ward';
-type CardSize = 'xs' | 'sm' | 'md' | 'lg';
+type CardType = "numen" | "rite" | "ward";
+type CardSize = "xs" | "sm" | "md" | "lg";
 
 export interface CardData {
   id: string;
@@ -51,14 +51,17 @@ const attributeThemeMap: Record<string, string[]> = {
 const rarityColorsMap: Record<string, string> = {
   common: colors.Gray_10,
   rare: colors.Blue_9,
+  legendary: colors.Yellow_1,
   mythic: colors.Red_4,
 };
 
-const LIGHT_NATURES = ['air', 'light'];
+const LIGHT_NATURES = ["air", "light"];
 
 const createPixelGradient = (colorStops: string[]) => {
   if (colorStops.length < 2) return colorStops[0] || colors.Gray_7;
-  const stops = colorStops.map((c, i) => `${c} ${Math.round((i / (colorStops.length - 1)) * 100)}%`).join(', ');
+  const stops = colorStops
+    .map((c, i) => `${c} ${Math.round((i / (colorStops.length - 1)) * 100)}%`)
+    .join(", ");
   return `linear-gradient(315deg, ${stops})`;
 };
 
@@ -72,7 +75,7 @@ interface CardTheme {
   textColor: string;
 }
 
-const getNumenTheme = (attribute: string = 'dark'): CardTheme => {
+const getNumenTheme = (attribute: string = "dark"): CardTheme => {
   const theme = attributeThemeMap[attribute.toLowerCase()];
   if (!theme) {
     return {
@@ -139,16 +142,16 @@ const getWardTheme = (): CardTheme => {
 };
 
 const getTheme = (cardType: CardType, attribute?: string): CardTheme => {
-  if (cardType === 'numen') return getNumenTheme(attribute);
-  if (cardType === 'rite') return getRiteTheme();
+  if (cardType === "numen") return getNumenTheme(attribute);
+  if (cardType === "rite") return getRiteTheme();
   return getWardTheme();
 };
 
 export const CardTemplate = React.memo(
-  ({ card, size = 'lg', style, artImage: artImageProp }: CardTemplateProps) => {
+  ({ card, size = "lg", style, artImage: artImageProp }: CardTemplateProps) => {
     const dims = sizeDimensions[size];
 
-    const isNumen = card.type === 'numen';
+    const isNumen = card.type === "numen";
     const theme = getTheme(card.type, card.attribute);
 
     return (
@@ -157,92 +160,94 @@ export const CardTemplate = React.memo(
         style={{
           width: dims.width,
           height: dims.height,
-          display: 'flex',
-          flexDirection: 'column',
+          display: "flex",
+          flexDirection: "column",
           background: theme.borderGradient,
-          imageRendering: 'pixelated',
-          borderRadius: '12px',
+          imageRendering: "pixelated",
+          borderRadius: "12px",
           ...style,
         }}
       >
         <Box
           data-name="left-border-spacer"
           style={{
-            width: '2px',
+            width: "2px",
             backgroundColor: colors.Gray_5,
-            imageRendering: 'pixelated',
+            imageRendering: "pixelated",
           }}
         />
         <Box
           data-name="card-main-content"
           style={{
-            width: '100%',
-            height: '100%',
-            display: 'flex',
-            flexDirection: 'column',
+            width: "100%",
+            height: "100%",
+            display: "flex",
+            flexDirection: "column",
             background: theme.backgroundGradient,
-            imageRendering: 'pixelated',
+            imageRendering: "pixelated",
           }}
         >
-           <Box
-             data-name="top-spacer"
-             style={{
-               width: '1px',
-               backgroundColor: colors.Gray_5,
-               imageRendering: 'pixelated',
-             }}
-           />
+          <Box
+            data-name="top-spacer"
+            style={{
+              width: "1px",
+              backgroundColor: colors.Gray_5,
+              imageRendering: "pixelated",
+            }}
+          />
           <Box
             data-name="level-bar-section"
             style={{
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              minHeight: '14px',
-              padding: '2px 12px',
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              minHeight: "14px",
+              padding: "2px 12px",
               background: theme.sectionBgGradient,
-              width: '100%',
-              boxSizing: 'border-box',
-              imageRendering: 'pixelated',
+              width: "100%",
+              boxSizing: "border-box",
+              imageRendering: "pixelated",
             }}
           >
             {isNumen && card.level && (
               <Box
                 data-name="level-icons-container"
                 style={{
-                  display: 'flex',
-                  gap: '1px',
-                  justifyContent: 'center',
+                  display: "flex",
+                  gap: "1px",
+                  justifyContent: "center",
                   width: `${Math.min(card.level * 10, 100)}%`,
-                  imageRendering: 'pixelated',
+                  imageRendering: "pixelated",
                 }}
               >
-                {Array.from({ length: Math.min(card.level, 10) }).map((_, i) => (
-                  <IconApiApp key={i} size={10} color={theme.textColor} />
-                ))}
+                {Array.from({ length: Math.min(card.level, 10) }).map(
+                  (_, i) => (
+                    <IconApiApp key={i} size={10} color={theme.textColor} />
+                  ),
+                )}
               </Box>
             )}
           </Box>
 
-           <Box
-             data-name="level-name-spacer"
-             style={{
-               height: '1px',
-               backgroundColor: colors.Gray_5,
-               imageRendering: 'pixelated',
-             }}
-           />
+          <Box
+            data-name="level-name-spacer"
+            style={{
+              height: "1px",
+              backgroundColor: colors.Gray_5,
+              imageRendering: "pixelated",
+            }}
+          />
           <Box
             data-name="card-name-section"
             style={{
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              padding: '3px 12px',
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              padding: "3px 12px",
               background: theme.sectionBgGradient,
-              width: '100%',
-              boxSizing: 'border-box',
-              imageRendering: 'pixelated',
+              width: "100%",
+              boxSizing: "border-box",
+              imageRendering: "pixelated",
             }}
           >
             <Text
@@ -250,37 +255,37 @@ export const CardTemplate = React.memo(
               size="xs"
               fw={700}
               style={{
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-                width: '100%',
-                textAlign: 'center',
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+                width: "100%",
+                textAlign: "center",
               }}
             >
               {card.name}
             </Text>
           </Box>
 
-           <Box
-             data-name="name-art-spacer"
-             style={{
-               position: 'relative',
-               zIndex: 5,
-               width: '100%',
-               height: '1px',
-               backgroundColor: colors.Gray_5,
-               alignSelf: 'center',
-               imageRendering: 'pixelated',
-             }}
-           />
+          <Box
+            data-name="name-art-spacer"
+            style={{
+              position: "relative",
+              zIndex: 5,
+              width: "100%",
+              height: "1px",
+              backgroundColor: colors.Gray_5,
+              alignSelf: "center",
+              imageRendering: "pixelated",
+            }}
+          />
           <Box
             data-name="art-image-section"
             style={{
-              position: 'relative',
+              position: "relative",
               zIndex: 5,
-              width: '170px',
-              height: '170px',
-              alignSelf: 'center',
-              imageRendering: 'pixelated',
+              width: "170px",
+              height: "170px",
+              alignSelf: "center",
+              imageRendering: "pixelated",
             }}
           >
             {artImageProp && (
@@ -288,137 +293,152 @@ export const CardTemplate = React.memo(
                 src={artImageProp}
                 alt="Card art"
                 style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'contain',
-                  objectPosition: 'center',
-                  imageRendering: 'pixelated',
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "contain",
+                  objectPosition: "center",
+                  imageRendering: "pixelated",
                 }}
               />
             )}
           </Box>
 
-           <Box
-             data-name="art-info-spacer"
-             style={{
-               height: '1px',
-               backgroundColor: colors.Gray_5,
-               width: '100%',
-               imageRendering: 'pixelated',
-             }}
-           />
+          <Box
+            data-name="art-info-spacer"
+            style={{
+              height: "1px",
+              backgroundColor: colors.Gray_5,
+              width: "100%",
+              imageRendering: "pixelated",
+            }}
+          />
           <Box
             data-name="info-section"
             style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              minHeight: '22px',
-              padding: '3px 6px',
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              minHeight: "22px",
+              padding: "3px 6px",
               background: theme.sectionBgGradient,
-              position: 'relative',
+              position: "relative",
               zIndex: 1,
-              imageRendering: 'pixelated',
+              imageRendering: "pixelated",
             }}
           >
             {isNumen ? (
               <>
                 <Text c={theme.textColor} size="7px" fw={500}>
-                  {card.family ? card.family.charAt(0).toUpperCase() + card.family.slice(1) : card.cardType}
+                  {card.family
+                    ? card.family.charAt(0).toUpperCase() + card.family.slice(1)
+                    : card.cardType}
                 </Text>
-                <NatureIcon type={card.attribute || 'dark'} size={16} />
+                <NatureIcon type={card.attribute || "dark"} size={16} />
               </>
             ) : (
               <Box />
             )}
             <IconTriangleInvertedFilled
               size={12}
-              color={card.rarity ? rarityColorsMap[card.rarity] : colors.Gray_10}
+              color={
+                card.rarity ? rarityColorsMap[card.rarity] : colors.Gray_10
+              }
               style={{
-                position: 'absolute',
-                left: '50%',
-                transform: 'translateX(-50%)',
+                position: "absolute",
+                left: "50%",
+                transform: "translateX(-50%)",
               }}
             />
           </Box>
 
-           <Box
-             data-name="info-desc-spacer"
-             style={{
-               height: '1px',
-               backgroundColor: colors.Gray_5,
-               width: '100%',
-               imageRendering: 'pixelated',
-             }}
-           />
+          <Box
+            data-name="info-desc-spacer"
+            style={{
+              height: "1px",
+              backgroundColor: colors.Gray_5,
+              width: "100%",
+              imageRendering: "pixelated",
+            }}
+          />
           <Box
             data-name="description-outer-frame"
             style={{
               flex: 1,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
               minHeight: 0,
               backgroundColor: colors.Gray_5,
-              imageRendering: 'pixelated',
+              imageRendering: "pixelated",
             }}
           >
             <Box
               data-name="description-inner-bg"
               style={{
-                width: '100%',
-                height: '100%',
+                width: "100%",
+                height: "100%",
                 background: theme.backgroundGradient,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
               }}
             >
-               <Text
-                 c={theme.textColor}
-                 size="7px"
-                 fw={400}
-                 style={{
-                   textAlign: 'center',
-                  textOverflow: 'ellipsis',
-                 }}
-               >
-                 {card.description.split('\n').map((line, i) => (
-                   <span key={i}>
-                     <span dangerouslySetInnerHTML={{ __html: line }} />
-                     {i < card.description.split('\n').length - 1 && <br />}
-                   </span>
-                 ))}
-               </Text>
+              <Text
+                c={theme.textColor}
+                size="7px"
+                fw={400}
+                style={{
+                  textAlign: "center",
+                  textOverflow: "ellipsis",
+                  lineHeight: "9px",
+                }}
+              >
+                {card.description.split("\n").map((line, i) => (
+                  <span key={i}>
+                    <span dangerouslySetInnerHTML={{ __html: line }} />
+                    {i < card.description.split("\n").length - 1 && <br />}
+                  </span>
+                ))}
+              </Text>
             </Box>
           </Box>
 
-           <Box
-             data-name="desc-stats-spacer"
-             style={{
-               height: '1px',
-               backgroundColor: colors.Gray_5,
-               width: '100%',
-               imageRendering: 'pixelated',
-             }}
-           />
+          <Box
+            data-name="desc-stats-spacer"
+            style={{
+              height: "1px",
+              backgroundColor: colors.Gray_5,
+              width: "100%",
+              imageRendering: "pixelated",
+            }}
+          />
           <Box
             data-name="stats-section"
             style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              padding: '3px 20px',
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              padding: "3px 20px",
               background: theme.sectionBgGradient,
-              imageRendering: 'pixelated',
+              imageRendering: "pixelated",
             }}
           >
             {isNumen ? (
               <>
-                <Text c={theme.textColor} size="7px" fw={500} style={{ textAlign: 'left' }}>
+                <Text
+                  c={theme.textColor}
+                  size="7px"
+                  fw={500}
+                  style={{ textAlign: "left" }}
+                >
                   ATK: {card.attack}
                 </Text>
-                <Text c={theme.textColor} size="7px" fw={500} style={{ textAlign: 'right' }}>
+                <Text
+                  c={theme.textColor}
+                  size="7px"
+                  fw={500}
+                  style={{ textAlign: "right" }}
+                >
                   DEF: {card.defense}
                 </Text>
               </>
@@ -433,20 +453,20 @@ export const CardTemplate = React.memo(
               </>
             )}
           </Box>
-           <Box
-             data-name="bottom-spacer"
-             style={{
-               width: '1px',
-               backgroundColor: colors.Gray_5,
-               imageRendering: 'pixelated',
-             }}
-           />
+          <Box
+            data-name="bottom-spacer"
+            style={{
+              width: "1px",
+              backgroundColor: colors.Gray_5,
+              imageRendering: "pixelated",
+            }}
+          />
         </Box>
       </Box>
     );
-  }
+  },
 );
 
-CardTemplate.displayName = 'CardTemplate';
+CardTemplate.displayName = "CardTemplate";
 
 export default CardTemplate;

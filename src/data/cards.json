@@ -1,7 +1,7 @@
 [
   {
     "id": "numen-1780396331102",
-    "name": "Dual Blade Ravager",
+    "name": "Dual Blade Imp",
     "type": "numen",
     "cardType": "Numen",
     "description": "<b>Locked</b>",
@@ -10,11 +10,11 @@
       "LOCKED"
     ],
     "level": 1,
-    "attribute": "dark",
+    "attribute": "fire",
     "family": "demon",
     "rarity": "common",
-    "attack": 850,
-    "defense": 350
+    "attack": 1100,
+    "defense": 0
   },
   {
     "id": "numen-1780484116937",
@@ -61,31 +61,29 @@
     "name": "Strix",
     "type": "numen",
     "cardType": "Numen",
-    "description": "<b>Veiled</b>\n<b>Before Attack on a numen</b>: Decrease the attack target's ATK by 150 and decrease the attack target's DEF by 150.",
+    "description": "<b>Veiled</b>\n<b>Before Attack on a numen</b>: Decrease the attack target's ATK by 400 permanently and decrease the attack target's DEF by 400 permanently.",
     "art": "Strix.png",
     "triggers": [
       "VEILED",
       {
         "trigger": "BEFORE_ATTACK",
-        "effect": {
-          "effect": "DECREASE",
-          "target": "atk",
-          "amount": 150,
-          "effectTarget": "attack_target"
-        },
-        "attackTarget": "numen",
-        "effectTarget": "attack_target"
-      },
-      {
-        "trigger": "BEFORE_ATTACK",
-        "effect": {
-          "effect": "DECREASE",
-          "target": "def",
-          "amount": 150,
-          "effectTarget": "attack_target"
-        },
-        "attackTarget": "numen",
-        "effectTarget": "attack_target"
+        "effects": [
+          {
+            "effect": "DECREASE",
+            "target": "atk",
+            "amount": 400,
+            "duration": "permanent",
+            "effectTarget": "attack_target"
+          },
+          {
+            "effect": "DECREASE",
+            "target": "def",
+            "amount": 400,
+            "duration": "permanent",
+            "effectTarget": "attack_target"
+          }
+        ],
+        "attackTarget": "numen"
       }
     ],
     "level": 4,
@@ -186,30 +184,19 @@
       }
     ],
     "rarity": "common",
-    "mana": 50
+    "mana": 75
   },
   {
     "id": "numen-1780505132774",
     "name": "Saturn, the Exiled",
     "type": "numen",
     "cardType": "Numen",
-    "description": "<b>Celerity</b>, <b>Recluse</b>, <b>Relentless</b>, <b>Veiled</b>\n<b>Decree</b>: Exile all enemy magics. <b>Testament</b>: Exile this card.",
+    "description": "<b>Celerity</b>, <b>Recluse</b>, <b>Veiled</b>\n<b>Testament</b>: Exile this card. <b>Decree</b>: Select and exile all enemy magics, For each magic in both players' exile, While this card is on the field, gain 100 ATK and For each magic in both players' exile, While this card is on the field, gain 100 DEF.",
     "art": "Saturn, the Exiled.png",
     "triggers": [
       "CELERITY",
       "RECLUSE",
-      "RELENTLESS",
       "VEILED",
-      {
-        "trigger": "DECREE",
-        "effects": [
-          {
-            "effect": "EXILE",
-            "count": 1
-          }
-        ],
-        "effectTarget": "all_enemy_magics"
-      },
       {
         "trigger": "TESTAMENT",
         "effects": [
@@ -219,21 +206,57 @@
           }
         ],
         "effectTarget": "self"
+      },
+      {
+        "trigger": "DECREE",
+        "effects": [
+          {
+            "effect": "EXILE",
+            "count": 1,
+            "effectTarget": "all_enemy_magics"
+          },
+          {
+            "effect": "INCREASE",
+            "target": "atk",
+            "amount": 100,
+            "duration": "while_on_field",
+            "effectTarget": "self",
+            "forEach": true,
+            "forEachConfig": {
+              "cardType": "magic",
+              "zone": "exile",
+              "owner": "both"
+            }
+          },
+          {
+            "effect": "INCREASE",
+            "target": "def",
+            "amount": 100,
+            "duration": "while_on_field",
+            "effectTarget": "self",
+            "forEach": true,
+            "forEachConfig": {
+              "cardType": "magic",
+              "zone": "exile",
+              "owner": "both"
+            }
+          }
+        ]
       }
     ],
     "level": 9,
     "attribute": "dark",
     "family": "god",
     "rarity": "mythic",
-    "attack": 2500,
-    "defense": 2500
+    "attack": 0,
+    "defense": 0
   },
   {
     "id": "rite-1780517162324",
     "name": "Void Harvest",
     "type": "rite",
     "cardType": "Rite",
-    "description": "<b>End of Turn</b>: Select and exile an enemy numen and decrease your mana by 150.",
+    "description": "<b>End of Turn</b>: Select and exile an enemy numen and decrease your mana by 150, otherwise destroy this card.",
     "art": "Void Harvest.png",
     "triggers": [
       {
@@ -248,12 +271,239 @@
             "effect": "DECREASE",
             "target": "hp",
             "amount": 150,
-            "effectTarget": "player_mana"
+            "effectTarget": "player_mana",
+            "otherwise": true,
+            "otherwise_effect": {
+              "effect": "DESTROY",
+              "count": 1,
+              "effectTarget": "self"
+            }
           }
         ]
       }
     ],
     "rarity": "common",
     "mana": 0
+  },
+  {
+    "id": "numen-1781170187198",
+    "name": "Pegasus",
+    "type": "numen",
+    "cardType": "Numen",
+    "description": "<b>Veiled</b>, <b>Celerity</b>\n<b>After Attack</b>: Select and destroy an enemy magic.",
+    "art": "Pegasus.png",
+    "triggers": [
+      "VEILED",
+      "CELERITY",
+      {
+        "trigger": "AFTER_ATTACK",
+        "effects": [
+          {
+            "effect": "DESTROY",
+            "count": 1,
+            "effectTarget": "enemy_magic"
+          }
+        ],
+        "attackTarget": "anything"
+      }
+    ],
+    "level": 7,
+    "attribute": "air",
+    "family": "beast",
+    "rarity": "rare",
+    "attack": 1800,
+    "defense": 1200
+  },
+  {
+    "id": "numen-1781173555454",
+    "name": "Empusa",
+    "type": "numen",
+    "cardType": "Numen",
+    "description": "<b>Challenge</b>, <b>Celerity</b>",
+    "art": "Empusa.png",
+    "triggers": [
+      "CHALLENGE",
+      "CELERITY"
+    ],
+    "level": 1,
+    "attribute": "earth",
+    "family": "demon",
+    "rarity": "common",
+    "attack": 900,
+    "defense": 0
+  },
+  {
+    "id": "numen-1781176242767",
+    "name": "Scylla",
+    "type": "numen",
+    "cardType": "Numen",
+    "description": "<b>Challenge</b>, <b>Relentless</b>\n<b>When Attacked</b>: Summon 1 Level 2 or lower Water from your deck.",
+    "art": "Scylla.png",
+    "triggers": [
+      {
+        "trigger": "WHEN_ATTACKED",
+        "effects": [
+          {
+            "effect": "SUMMON",
+            "from": "player_deck",
+            "criteria": {
+              "levelMax": 2,
+              "natures": [
+                "water"
+              ]
+            },
+            "count": 1
+          }
+        ],
+        "attackTarget": "numen"
+      },
+      "CHALLENGE",
+      "RELENTLESS"
+    ],
+    "level": 8,
+    "attribute": "water",
+    "family": "beast",
+    "rarity": "rare",
+    "attack": 1700,
+    "defense": 2300
+  },
+  {
+    "id": "rite-1781177245647",
+    "name": "Haruspicy",
+    "type": "rite",
+    "cardType": "Rite",
+    "description": "<b>Decree</b>: Exile 3 numina from your graveyard, scry 3 cards from your deck and destroy this card.",
+    "art": "Haruspicy.png",
+    "triggers": [
+      {
+        "trigger": "DECREE",
+        "effects": [
+          {
+            "effect": "EXILE",
+            "from": "player_graveyard",
+            "criteria": {
+              "any_numen": true
+            },
+            "count": 3
+          },
+          {
+            "effect": "SCRY",
+            "count": 3,
+            "deck": "player"
+          }
+        ]
+      },
+      {
+        "trigger": "DECREE",
+        "effects": [
+          {
+            "effect": "DESTROY",
+            "count": 1,
+            "effectTarget": "self"
+          }
+        ]
+      }
+    ],
+    "rarity": "common",
+    "mana": 25
+  },
+  {
+    "id": "numen-1781178043918",
+    "name": "Charybdis",
+    "type": "numen",
+    "cardType": "Numen",
+    "description": "<b>Celerity</b>, <b>Recluse</b>\n<b>After Attack</b>: Summon 1 Level 2 or lower Water from your deck.",
+    "art": "Charybdis.png",
+    "triggers": [
+      {
+        "trigger": "AFTER_ATTACK",
+        "effects": [
+          {
+            "effect": "SUMMON",
+            "from": "player_deck",
+            "criteria": {
+              "levelMax": 2,
+              "natures": [
+                "water"
+              ]
+            },
+            "count": 1
+          }
+        ],
+        "attackTarget": "anything"
+      },
+      "CELERITY",
+      "RECLUSE"
+    ],
+    "level": 8,
+    "attribute": "water",
+    "family": "beast",
+    "rarity": "rare",
+    "attack": 2300,
+    "defense": 1700
+  },
+  {
+    "id": "numen-1781181998883",
+    "name": "Odysseus",
+    "type": "numen",
+    "cardType": "Numen",
+    "description": "<b>Veiled</b>, <b>Legion</b>\n<b>Testament</b>: Return this to your hand.",
+    "art": "Odysseus.png",
+    "triggers": [
+      {
+        "trigger": "TESTAMENT",
+        "effects": [
+          {
+            "effect": "RETURN",
+            "destination": "hand",
+            "count": 1,
+            "effectTarget": "self"
+          }
+        ]
+      },
+      "VEILED",
+      "LEGION"
+    ],
+    "level": 6,
+    "attribute": "air",
+    "family": "human",
+    "rarity": "legendary",
+    "attack": 1700,
+    "defense": 1700
+  },
+  {
+    "id": "numen-1781183281783",
+    "name": "Jupiter, Optimus Maximus",
+    "type": "numen",
+    "cardType": "Numen",
+    "description": "<b>Celerity</b>, <b>Veiled</b>\n<b>End of Turn</b>: Decrease the opponent's HP by 500 and decrease the opponent's mana by 100.",
+    "art": "Jupiter.png",
+    "triggers": [
+      "CELERITY",
+      "VEILED",
+      {
+        "trigger": "END_OF_TURN",
+        "effects": [
+          {
+            "effect": "DECREASE",
+            "target": "hp",
+            "amount": 500,
+            "effectTarget": "opponent_hp"
+          },
+          {
+            "effect": "DECREASE",
+            "target": "hp",
+            "amount": 100,
+            "effectTarget": "opponent_mana"
+          }
+        ]
+      }
+    ],
+    "level": 10,
+    "attribute": "light",
+    "family": "god",
+    "rarity": "mythic",
+    "attack": 2000,
+    "defense": 3000
   }
 ]

@@ -20,7 +20,7 @@ export const Gray_2 = "#2d3748";
 export const Gray_3 = "#999999";
 export const Gray_4 = "#888888";
 export const Gray_5 = "#aaaaaa";
-export const Gray_6 = "#9ca3af";;
+export const Gray_6 = "#9ca3af";
 export const Gray_7 = "#4a4a4a";
 export const Gray_8 = "#333333";
 export const Gray_9 = "#1a1a1a";
@@ -123,6 +123,11 @@ export const Purple_1_10 = "rgba(170, 59, 255, 0.1)";
 export const Purple_2_50 = "rgba(170, 59, 255, 0.5)";
 export const Purple_3_15 = "rgba(192, 132, 252, 0.15)";
 
+// Yellows
+export const Yellow_1 = "#FFFF00";
+export const Yellow_2 = "#FFEE00";
+export const Yellow_3 = "#FFDD00";
+
 // Browns
 export const Brown_1 = "#8b4513";
 export const Brown_2 = "#bf9986";
@@ -135,10 +140,10 @@ export const Brown_8 = "#c4a98c";
 export const Brown_9 = "#3d2314";
 
 // Elemental Natures
-export const Fire_1 = Orange_8;
-export const Fire_2 = Orange_7;
-export const Fire_3 = Orange_6;
-export const Fire_4 = Orange_5;
+export const Fire_1 = Red_10;
+export const Fire_2 = Red_8;
+export const Fire_3 = Orange_11;
+export const Fire_4 = Orange_12;
 export const Fire_5 = Orange_4;
 export const Fire_6 = Orange_3;
 export const Fire_7 = Orange_2;
@@ -172,13 +177,13 @@ export const Air_6 = Gray_5;
 export const Air_7 = Gray_6;
 
 export const Light_1 = Beige_2;
-export const Light_2 = Orange_10;
-export const Light_3 = Orange_3;
+export const Light_2 = Beige_3;
+export const Light_3 = Yellow_3;
 export const Light_4 = Beige_5;
-export const Light_5 = Orange_5;
-export const Light_6 = Orange_3;
-export const Light_7 = Orange_2;
-export const Light_8 = Orange_1;
+export const Light_5 = Orange_10;
+export const Light_6 = Yellow_2;
+export const Light_7 = Orange_3;
+export const Light_8 = Beige_4;
 
 export const Dark_1 = Purple_5;
 export const Dark_2 = Purple_6;
@@ -200,30 +205,212 @@ export const Ward_4 = Red_10;
 export const Ward_5 = Red_9;
 
 export default {
-  White_1, White_1_50, White_1_20,
-  Beige_1, Beige_2, Beige_3, Beige_4, Beige_5, Beige_6, Beige_7, Beige_8, Beige_1_50,
-  Gray_1, Gray_2, Gray_3, Gray_4, Gray_5, Gray_6, Gray_7, Gray_8, Gray_9, Gray_10, Gray_1_50, Gray_2_50,
-  Black_1, Black_1_10, Black_2_05, Black_3_25, Black_4_40, Black_5_50, Black_6_70, Black_7_80,
-  Red_1, Red_2, Red_3, Red_4, Red_5, Red_6, Red_7, Red_8, Red_9, Red_10, Red_11, Red_12, Red_13, Red_1_70,
-  Blue_1, Blue_2, Blue_3, Blue_4, Blue_5, Blue_6, Blue_7, Blue_8, Blue_9, Blue_10, Blue_11, Blue_12, Blue_13, Blue_14, Blue_15, Blue_16, Blue_17, Blue_1_70,
-  Green_1, Green_2, Green_3, Green_4, Green_5, Green_6, Green_7, Green_8, Green_9, Green_10,
-  Teal_1, Teal_2, Teal_3,
-  Orange_1, Orange_2, Orange_3, Orange_4, Orange_5, Orange_6, Orange_7, Orange_8, Orange_9, Orange_10, Orange_11, Orange_12,
-  Purple_1, Purple_2, Purple_3, Purple_4, Purple_5, Purple_6, Purple_7, Purple_8, Purple_9, Purple_10, Purple_11, Purple_12, Purple_13, Purple_1_10, Purple_2_50, Purple_3_15,
-  Brown_1, Brown_2, Brown_3, Brown_4, Brown_5, Brown_6, Brown_7, Brown_8, Brown_9,
-  Fire_1, Fire_2, Fire_3, Fire_4, Fire_5, Fire_6, Fire_7, Fire_8,
-  Water_1, Water_2, Water_3, Water_4, Water_5, Water_6, Water_7, Water_8, Water_9,
-  Earth_1, Earth_2, Earth_3, Earth_4, Earth_5, Earth_6, Earth_7, Earth_8,
-  Air_1, Air_2, Air_3, Air_4, Air_5, Air_6, Air_7,
-  Light_1, Light_2, Light_3, Light_4, Light_5, Light_6, Light_7, Light_8,
-  Dark_1, Dark_2, Dark_3, Dark_4, Dark_5, Dark_6,
-  Rite_1, Rite_2, Rite_3, Rite_4, Rite_5,
-  Ward_1, Ward_2, Ward_3, Ward_4, Ward_5,
+  White_1,
+  White_1_50,
+  White_1_20,
+  Beige_1,
+  Beige_2,
+  Beige_3,
+  Beige_4,
+  Beige_5,
+  Beige_6,
+  Beige_7,
+  Beige_8,
+  Beige_1_50,
+  Gray_1,
+  Gray_2,
+  Gray_3,
+  Gray_4,
+  Gray_5,
+  Gray_6,
+  Gray_7,
+  Gray_8,
+  Gray_9,
+  Gray_10,
+  Gray_1_50,
+  Gray_2_50,
+  Black_1,
+  Black_1_10,
+  Black_2_05,
+  Black_3_25,
+  Black_4_40,
+  Black_5_50,
+  Black_6_70,
+  Black_7_80,
+  Red_1,
+  Red_2,
+  Red_3,
+  Red_4,
+  Red_5,
+  Red_6,
+  Red_7,
+  Red_8,
+  Red_9,
+  Red_10,
+  Red_11,
+  Red_12,
+  Red_13,
+  Red_1_70,
+  Blue_1,
+  Blue_2,
+  Blue_3,
+  Blue_4,
+  Blue_5,
+  Blue_6,
+  Blue_7,
+  Blue_8,
+  Blue_9,
+  Blue_10,
+  Blue_11,
+  Blue_12,
+  Blue_13,
+  Blue_14,
+  Blue_15,
+  Blue_16,
+  Blue_17,
+  Blue_1_70,
+  Green_1,
+  Green_2,
+  Green_3,
+  Green_4,
+  Green_5,
+  Green_6,
+  Green_7,
+  Green_8,
+  Green_9,
+  Green_10,
+  Teal_1,
+  Teal_2,
+  Teal_3,
+  Orange_1,
+  Orange_2,
+  Orange_3,
+  Orange_4,
+  Orange_5,
+  Orange_6,
+  Orange_7,
+  Orange_8,
+  Orange_9,
+  Orange_10,
+  Orange_11,
+  Orange_12,
+  Purple_1,
+  Purple_2,
+  Purple_3,
+  Purple_4,
+  Purple_5,
+  Purple_6,
+  Purple_7,
+  Purple_8,
+  Purple_9,
+  Purple_10,
+  Purple_11,
+  Purple_12,
+  Purple_13,
+  Purple_1_10,
+  Purple_2_50,
+  Purple_3_15,
+  Yellow_1,
+  Yellow_2,
+  Yellow_3,
+  Brown_1,
+  Brown_2,
+  Brown_3,
+  Brown_4,
+  Brown_5,
+  Brown_6,
+  Brown_7,
+  Brown_8,
+  Brown_9,
+  Fire_1,
+  Fire_2,
+  Fire_3,
+  Fire_4,
+  Fire_5,
+  Fire_6,
+  Fire_7,
+  Fire_8,
+  Water_1,
+  Water_2,
+  Water_3,
+  Water_4,
+  Water_5,
+  Water_6,
+  Water_7,
+  Water_8,
+  Water_9,
+  Earth_1,
+  Earth_2,
+  Earth_3,
+  Earth_4,
+  Earth_5,
+  Earth_6,
+  Earth_7,
+  Earth_8,
+  Air_1,
+  Air_2,
+  Air_3,
+  Air_4,
+  Air_5,
+  Air_6,
+  Air_7,
+  Light_1,
+  Light_2,
+  Light_3,
+  Light_4,
+  Light_5,
+  Light_6,
+  Light_7,
+  Light_8,
+  Dark_1,
+  Dark_2,
+  Dark_3,
+  Dark_4,
+  Dark_5,
+  Dark_6,
+  Rite_1,
+  Rite_2,
+  Rite_3,
+  Rite_4,
+  Rite_5,
+  Ward_1,
+  Ward_2,
+  Ward_3,
+  Ward_4,
+  Ward_5,
   FireTheme: [Fire_1, Fire_2, Fire_3, Fire_4, Fire_5, Fire_6, Fire_7, Fire_8],
-  WaterTheme: [Water_1, Water_2, Water_3, Water_4, Water_5, Water_6, Water_7, Water_8, Water_9],
-  EarthTheme: [Earth_1, Earth_2, Earth_3, Earth_4, Earth_5, Earth_6, Earth_7, Earth_8],
+  WaterTheme: [
+    Water_1,
+    Water_2,
+    Water_3,
+    Water_4,
+    Water_5,
+    Water_6,
+    Water_7,
+    Water_8,
+    Water_9,
+  ],
+  EarthTheme: [
+    Earth_1,
+    Earth_2,
+    Earth_3,
+    Earth_4,
+    Earth_5,
+    Earth_6,
+    Earth_7,
+    Earth_8,
+  ],
   AirTheme: [Air_1, Air_2, Air_3, Air_4, Air_5, Air_6, Air_7],
-  LightTheme: [Light_1, Light_2, Light_3, Light_4, Light_5, Light_6, Light_7, Light_8],
+  LightTheme: [
+    Light_1,
+    Light_2,
+    Light_3,
+    Light_4,
+    Light_5,
+    Light_6,
+    Light_7,
+    Light_8,
+  ],
   DarkTheme: [Dark_1, Dark_2, Dark_3, Dark_4, Dark_5, Dark_6],
   RiteTheme: [Rite_1, Rite_2, Rite_3, Rite_4, Rite_5],
   WardTheme: [Ward_1, Ward_2, Ward_3, Ward_4, Ward_5],

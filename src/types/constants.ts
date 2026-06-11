@@ -31,7 +31,7 @@ export const NUMEN_FAMILIES = {
   DEMON: 'demon' as const,
   DRAGON: 'dragon' as const,
   ANGEL: 'angel' as const,
-  ANDROID: 'android' as const,
+  HUMAN: 'human' as const,
   ELEMENTAL: 'elemental' as const,
   UNDEAD: 'undead' as const,
   BUG: 'bug' as const,
@@ -94,7 +94,8 @@ type WardType = (typeof WARD_TYPES)[keyof typeof WARD_TYPES];
 export const RARITY = {
   COMMON: 'common' as const,
   RARE: 'rare' as const,
-  LEGENDARY: 'mythic' as const,
+  LEGENDARY: 'legendary' as const,
+  MYTHIC: 'mythic' as const,
 } as const;
 
 type Rarity = (typeof RARITY)[keyof typeof RARITY];

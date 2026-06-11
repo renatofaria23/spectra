@@ -39,6 +39,8 @@ export interface ExileEffect {
   effect: EffectType.EXILE;
   count?: number;
   effectTarget?: string;
+  from?: string;
+  criteria?: SummonCriteria;
 }
 
 export interface PetrifyEffect {
@@ -144,28 +146,34 @@ export interface AddEffect {
 
 export interface ReturnEffect {
   effect: EffectType.RETURN;
-  destination: "hand" | "deck";
+  destination: string;
   count?: number;
   effectTarget?: string;
 }
 
+export interface ForEachConfig {
+  cardType: "numen" | "ward" | "rite" | "magic" | "any";
+  zone: "graveyard" | "field" | "exile" | "deck" | "hand";
+  owner: "player" | "opponent" | "both";
+}
+
 export type EffectEntry =
-  | (DrawEffect & { otherwise?: boolean; otherwise_effect?: EffectEntry })
-  | (ScryEffect & { otherwise?: boolean; otherwise_effect?: EffectEntry })
-  | (DestroyEffect & { otherwise?: boolean; otherwise_effect?: EffectEntry })
-  | (ExileEffect & { otherwise?: boolean; otherwise_effect?: EffectEntry })
-  | (PetrifyEffect & { otherwise?: boolean; otherwise_effect?: EffectEntry })
-  | (DecreaseEffect & { otherwise?: boolean; otherwise_effect?: EffectEntry })
-  | (LockEffect & { otherwise?: boolean; otherwise_effect?: EffectEntry })
-  | (IncreaseEffect & { otherwise?: boolean; otherwise_effect?: EffectEntry })
-  | (EtherealEffect & { otherwise?: boolean; otherwise_effect?: EffectEntry })
-  | (FindEffect & { otherwise?: boolean; otherwise_effect?: EffectEntry })
-  | (ChooseOneEffect & { otherwise?: boolean; otherwise_effect?: EffectEntry })
-  | (AddTriggerEffect & { otherwise?: boolean; otherwise_effect?: EffectEntry })
-  | (SummonEffect & { otherwise?: boolean; otherwise_effect?: EffectEntry })
-  | (CopyEffect & { otherwise?: boolean; otherwise_effect?: EffectEntry })
-  | (AddEffect & { otherwise?: boolean; otherwise_effect?: EffectEntry })
-  | (ReturnEffect & { otherwise?: boolean; otherwise_effect?: EffectEntry });
+  | (DrawEffect & { otherwise?: boolean; otherwise_effect?: EffectEntry; or?: boolean; or_effect?: EffectEntry; forEach?: boolean; forEachConfig?: ForEachConfig })
+  | (ScryEffect & { otherwise?: boolean; otherwise_effect?: EffectEntry; or?: boolean; or_effect?: EffectEntry; forEach?: boolean; forEachConfig?: ForEachConfig })
+  | (DestroyEffect & { otherwise?: boolean; otherwise_effect?: EffectEntry; or?: boolean; or_effect?: EffectEntry; forEach?: boolean; forEachConfig?: ForEachConfig })
+  | (ExileEffect & { otherwise?: boolean; otherwise_effect?: EffectEntry; or?: boolean; or_effect?: EffectEntry; forEach?: boolean; forEachConfig?: ForEachConfig })
+  | (PetrifyEffect & { otherwise?: boolean; otherwise_effect?: EffectEntry; or?: boolean; or_effect?: EffectEntry; forEach?: boolean; forEachConfig?: ForEachConfig })
+  | (DecreaseEffect & { otherwise?: boolean; otherwise_effect?: EffectEntry; or?: boolean; or_effect?: EffectEntry; forEach?: boolean; forEachConfig?: ForEachConfig })
+  | (LockEffect & { otherwise?: boolean; otherwise_effect?: EffectEntry; or?: boolean; or_effect?: EffectEntry; forEach?: boolean; forEachConfig?: ForEachConfig })
+  | (IncreaseEffect & { otherwise?: boolean; otherwise_effect?: EffectEntry; or?: boolean; or_effect?: EffectEntry; forEach?: boolean; forEachConfig?: ForEachConfig })
+  | (EtherealEffect & { otherwise?: boolean; otherwise_effect?: EffectEntry; or?: boolean; or_effect?: EffectEntry; forEach?: boolean; forEachConfig?: ForEachConfig })
+  | (FindEffect & { otherwise?: boolean; otherwise_effect?: EffectEntry; or?: boolean; or_effect?: EffectEntry; forEach?: boolean; forEachConfig?: ForEachConfig })
+  | (ChooseOneEffect & { otherwise?: boolean; otherwise_effect?: EffectEntry; or?: boolean; or_effect?: EffectEntry; forEach?: boolean; forEachConfig?: ForEachConfig })
+  | (AddTriggerEffect & { otherwise?: boolean; otherwise_effect?: EffectEntry; or?: boolean; or_effect?: EffectEntry; forEach?: boolean; forEachConfig?: ForEachConfig })
+  | (SummonEffect & { otherwise?: boolean; otherwise_effect?: EffectEntry; or?: boolean; or_effect?: EffectEntry; forEach?: boolean; forEachConfig?: ForEachConfig })
+  | (CopyEffect & { otherwise?: boolean; otherwise_effect?: EffectEntry; or?: boolean; or_effect?: EffectEntry; forEach?: boolean; forEachConfig?: ForEachConfig })
+  | (AddEffect & { otherwise?: boolean; otherwise_effect?: EffectEntry; or?: boolean; or_effect?: EffectEntry; forEach?: boolean; forEachConfig?: ForEachConfig })
+  | (ReturnEffect & { otherwise?: boolean; otherwise_effect?: EffectEntry; or?: boolean; or_effect?: EffectEntry; forEach?: boolean; forEachConfig?: ForEachConfig });
 
 export function isDrawEffect(entry: EffectEntry): entry is DrawEffect {
   return entry.effect === EffectType.DRAW;

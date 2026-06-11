@@ -3,7 +3,7 @@ import { Box, Badge, Group } from '@mantine/core';
 import { IconFlame, IconDroplet, IconMountain, IconTornado, IconMoon, IconStar } from '@tabler/icons-react';
 import {
   Blue_4, Blue_5, Blue_7, Gray_4, Gray_5, Blue_3, Orange_4, Orange_3, Gray_4 as CommonGray_4,
-  White_1, Black_1, Beige_5, Orange_8, Teal_2,
+  White_1, Black_1, Beige_5, Orange_8, Teal_2, Yellow_1,
 } from '../../styles/Colors';
 
 interface CardProps {
@@ -55,6 +55,7 @@ export const Card = React.memo(
       if (rarity === 'common') return CommonGray_4;
       if (rarity === 'rare') return Blue_3;
       if (rarity === 'epic') return Orange_4;
+      if (rarity === 'legendary') return Yellow_1;
       if (rarity === 'mythic') return Orange_3;
       return CommonGray_4;
     };

@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { Box, Text, Select, NumberInput, Button, TextInput, Group, Checkbox } from '@mantine/core';
 import { Dropzone } from '@mantine/dropzone';
-import { IconPlus, IconDeviceFloppy, IconPhoto, IconUpload, IconX } from '@tabler/icons-react';
+import { IconPlus, IconDeviceFloppy, IconPhoto, IconUpload, IconX, IconPencil } from '@tabler/icons-react';
 import colors from '../styles/Colors';
 import { CardTemplate, type CardData } from '../components/Card/CardTemplate';
 import { ConditionalTrigger, PassiveTrigger, isConditionalTrigger, isPassiveTrigger } from '../logic/Triggers';
@@ -10,7 +10,7 @@ import type { EffectEntry } from '../logic/Effects';
 import { useNavigate, useParams } from 'react-router-dom';
 import { readCards, saveCards, saveArt, readArt, addCard } from '../services/cardsAPI';
 import { useCardEditor } from '../hooks/useCardEditor';
-import EffectParamInputs, { OtherwiseEffectInputs } from '../components/CardEditor/EffectParamInputs';
+import EffectParamInputs, { OtherwiseEffectInputs, OrEffectInputs, ForEachInputs } from '../components/CardEditor/EffectParamInputs';
 import {
   triggerTypeOptions,
   activeTriggerOptions,
@@ -81,6 +81,7 @@ export const CardEditor = () => {
     effectParams, setEffectParams,
     pendingEffects,
     effectSlots, setEffectSlots,
+    editingSlotIndex,
     buildPreviewCard,
     handleTriggerTypeChange,
     toggleActiveTrigger,
@@ -89,8 +90,12 @@ export const CardEditor = () => {
     removePendingEffect,
     addEffectToSlot,
     removeEffectSlot,
+    loadEffectForEditing,
+    cancelEditing,
+    replaceEffectSlot,
     setArtFilename,
     isEffectComplete,
+    isEffectAndForEachComplete,
     whenTarget, setWhenTarget,
     whenCondition, setWhenCondition,
   } = editor;
@@ -410,7 +415,7 @@ export const CardEditor = () => {
         />
       )}
 
-      {triggerType === 'active' && selectedEffectType && selectedEffectType !== EffectType.DRAW && selectedEffectType !== EffectType.SCRY && selectedEffectType !== EffectType.SUMMON && (
+      {triggerType === 'active' && selectedEffectType && selectedEffectType !== EffectType.DRAW && selectedEffectType !== EffectType.SCRY && selectedEffectType !== EffectType.SUMMON && selectedEffectType !== EffectType.EXILE && (
         <Select
           data={dynamicEffectTargetOptions}
           value={selectedEffectTarget}
@@ -431,7 +436,25 @@ export const CardEditor = () => {
       )}
 
       {triggerType === 'active' && selectedEffectType && (
+        <OrEffectInputs
+          effectParams={effectParams}
+          setEffectParams={setEffectParams}
+          currentTrigger={currentTrigger}
+          cardType={cardType}
+        />
+      )}
+
+      {triggerType === 'active' && selectedEffectType && (
         <OtherwiseEffectInputs
+          effectParams={effectParams}
+          setEffectParams={setEffectParams}
+          currentTrigger={currentTrigger}
+          cardType={cardType}
+        />
+      )}
+
+      {triggerType === 'active' && selectedEffectType && (
+        <ForEachInputs
           effectParams={effectParams}
           setEffectParams={setEffectParams}
         />
@@ -441,7 +464,7 @@ export const CardEditor = () => {
         <Button
           leftSection={<IconPlus size={16} />}
           onClick={addEffectToPending}
-          disabled={!isEffectComplete()}
+          disabled={!isEffectAndForEachComplete()}
           styles={{ root: { backgroundColor: colors.Orange_5, '&:hover': { backgroundColor: colors.Orange_4 } } }}
         >
           Add to Pending
@@ -482,18 +505,42 @@ export const CardEditor = () => {
         </Box>
       )}
 
-      <Button
-        leftSection={<IconPlus size={16} />}
-        onClick={addEffectToSlot}
-        disabled={
-          triggerType === 'passive'
-            ? !selectedPassiveTrigger
-            : selectedActiveTriggers.size === 0 || pendingEffects.length === 0
-        }
-        styles={{ root: { backgroundColor: colors.Blue_5, '&:hover': { backgroundColor: colors.Blue_4 } } }}
-      >
-        Add Effect with Trigger
-      </Button>
+      {editingSlotIndex !== null ? (
+        <>
+          <Button
+            leftSection={<IconDeviceFloppy size={16} />}
+            onClick={replaceEffectSlot}
+            disabled={
+              triggerType === 'passive'
+                ? !selectedPassiveTrigger
+                : selectedActiveTriggers.size === 0 || pendingEffects.length === 0
+            }
+            styles={{ root: { backgroundColor: colors.Green_6, '&:hover': { backgroundColor: colors.Green_5 } } }}
+          >
+            Replace Effect
+          </Button>
+          <Button
+            leftSection={<IconX size={16} />}
+            onClick={cancelEditing}
+            styles={{ root: { backgroundColor: colors.Gray_5, '&:hover': { backgroundColor: colors.Gray_4 } } }}
+          >
+            Cancel Editing
+          </Button>
+        </>
+      ) : (
+        <Button
+          leftSection={<IconPlus size={16} />}
+          onClick={addEffectToSlot}
+          disabled={
+            triggerType === 'passive'
+              ? !selectedPassiveTrigger
+              : selectedActiveTriggers.size === 0 || pendingEffects.length === 0
+          }
+          styles={{ root: { backgroundColor: colors.Blue_5, '&:hover': { backgroundColor: colors.Blue_4 } } }}
+        >
+          Add Effect with Trigger
+        </Button>
+      )}
 
       <Button
         leftSection={<IconDeviceFloppy size={16} />}
@@ -533,7 +580,7 @@ export const CardEditor = () => {
           <Text c={colors.Black_1} size="lg" fw={700}>
             Card Effects
           </Text>
-          {effectSlots.map((slot, index) => (
+          {effectSlots.map((slot: EffectSlot, index: number) => (
             <Box
               key={index}
               style={{
@@ -541,11 +588,13 @@ export const CardEditor = () => {
                 justifyContent: 'space-between',
                 alignItems: 'center',
                 padding: '12px 20px',
-                backgroundColor: colors.Gray_7,
+                backgroundColor: editingSlotIndex === index ? colors.Orange_8 : colors.Gray_7,
                 borderRadius: '6px',
-                border: `2px solid ${colors.Gray_5}`,
+                border: `2px solid ${editingSlotIndex === index ? colors.Orange_5 : colors.Gray_5}`,
                 minWidth: '300px',
+                cursor: 'pointer',
               }}
+              onClick={() => loadEffectForEditing(index)}
             >
               <Text c={colors.White_1} size="sm" fw={600}>
                 {(() => {
@@ -558,14 +607,24 @@ export const CardEditor = () => {
                   return `${slot.trigger} ${slot.attackTarget ? `(attack: ${slot.attackTarget})` : ''} → ${effectsText || 'no effects'}`;
                 })()}
               </Text>
-              <Button
-                size="xs"
-                color="red"
-                onClick={() => removeEffectSlot(index)}
-                styles={{ root: { backgroundColor: colors.Red_8, '&:hover': { backgroundColor: colors.Red_7 } } }}
-              >
-                Remove
-              </Button>
+              <Box style={{ display: 'flex', gap: '0.3rem' }}>
+                <Button
+                  size="xs"
+                  leftSection={<IconPencil size={12} />}
+                  onClick={(e) => { e.stopPropagation(); loadEffectForEditing(index); }}
+                  styles={{ root: { backgroundColor: colors.Blue_5, '&:hover': { backgroundColor: colors.Blue_4 } } }}
+                >
+                  Edit
+                </Button>
+                <Button
+                  size="xs"
+                  leftSection={<IconX size={12} />}
+                  onClick={(e) => { e.stopPropagation(); removeEffectSlot(index); }}
+                  styles={{ root: { backgroundColor: colors.Red_8, '&:hover': { backgroundColor: colors.Red_7 } } }}
+                >
+                  Remove
+                </Button>
+              </Box>
             </Box>
           ))}
         </>

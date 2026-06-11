@@ -56,6 +56,7 @@ export const DeckEditor = () => {
     const rarity = card.rarity || 'common';
     if (rarity === 'common') return 3;
     if (rarity === 'rare') return 2;
+    if (rarity === 'legendary') return 1;
     if (rarity === 'mythic') return 1;
     return 3;
   };
@@ -67,6 +68,13 @@ export const DeckEditor = () => {
     });
   };
 
+  const hasLegendaryInDeck = (): boolean => {
+    return deckEntries.some((entry) => {
+      const card = allCards.find((c) => c.id === entry.cardId);
+      return card?.rarity === 'legendary';
+    });
+  };
+
   const currentQuantity = (cardId: string): number => {
     const entry = deckEntries.find((e) => e.cardId === cardId);
     return entry ? entry.quantity : 0;
@@ -75,6 +83,10 @@ export const DeckEditor = () => {
   const addToDeck = (card: CardData) => {
     const qty = currentQuantity(card.id);
     const max = maxForCard(card);
+
+    if (card.rarity === 'legendary' && hasLegendaryInDeck()) {
+      return;
+    }
 
     if (card.rarity === 'mythic' && hasMythicInDeck()) {
       return;
@@ -233,9 +245,11 @@ export const DeckEditor = () => {
             {filteredAvailable.map((card) => {
               const qty = currentQuantity(card.id);
               const max = maxForCard(card);
-              const isMythic = card.rarity === 'mythic';
-              const blockedByMythic = isMythic && hasMythicInDeck() && qty === 0;
-              const atMax = qty >= max || blockedByMythic;
+               const isMythic = card.rarity === 'mythic';
+               const isLegendary = card.rarity === 'legendary';
+               const blockedByMythic = isMythic && hasMythicInDeck() && qty === 0;
+               const blockedByLegendary = isLegendary && hasLegendaryInDeck() && qty === 0;
+               const atMax = qty >= max || blockedByMythic || blockedByLegendary;
 
               return (
                 <Box

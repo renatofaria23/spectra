@@ -6,12 +6,29 @@ import colors from '../styles/Colors';
 
 export type CardTypeOption = 'numen' | 'rite' | 'ward';
 
+export interface OtherwiseEffect {
+  attackTarget?: AttackTarget;
+  effectTarget?: EffectTarget;
+  effects?: EffectEntry[];
+  effect?: EffectEntry;
+}
+
+export interface OrEffect {
+  effectTarget?: EffectTarget;
+  effects?: EffectEntry[];
+  effect?: EffectEntry;
+}
+
 export interface EffectSlot {
   trigger: ConditionalTrigger | PassiveTrigger;
   attackTarget?: AttackTarget;
   effectTarget?: EffectTarget;
   effects?: EffectEntry[];
   effect?: EffectEntry;
+  otherwise?: boolean;
+  otherwiseEffect?: OtherwiseEffect;
+  or?: boolean;
+  orEffect?: OrEffect;
 }
 
 export const triggerTypeOptions = [
@@ -302,9 +319,6 @@ export const getEffectTargetOptions = (
 
     if (isNonAttack) {
       filtered = filtered.map(group => {
-        if (group.group === 'This Card' && cardType === 'rite' && isDestroy) {
-          return { ...group, items: [] };
-        }
         if (group.group === 'Attack Target') {
           return { ...group, items: [] };
         }
@@ -430,7 +444,6 @@ export const findSourceOptions = [
 ];
 
 export const familyOptions = [
-  { value: 'android', label: 'Android' },
   { value: 'angel', label: 'Angel' },
   { value: 'beast', label: 'Beast' },
   { value: 'bug', label: 'Bug' },
@@ -438,6 +451,7 @@ export const familyOptions = [
   { value: 'dragon', label: 'Dragon' },
   { value: 'elemental', label: 'Elemental' },
   { value: 'god', label: 'God' },
+  { value: 'human', label: 'Human' },
   { value: 'plant', label: 'Plant' },
   { value: 'undead', label: 'Undead' },
 ];
@@ -445,6 +459,7 @@ export const familyOptions = [
 export const rarityOptions = [
   { value: 'common', label: 'Common' },
   { value: 'rare', label: 'Rare' },
+  { value: 'legendary', label: 'Legendary' },
   { value: 'mythic', label: 'Mythic' },
 ];
 

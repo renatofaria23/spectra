@@ -1,8 +1,8 @@
-import type { CardData } from '../components/Card/CardTemplate';
-import decksData from '../data/decks.json';
+import type { CardData } from "../components/Card/CardTemplate";
+import decksData from "../data/decks.json";
 
 function isElectron() {
-  return typeof window !== 'undefined' && (window as any).electronAPI != null;
+  return typeof window !== "undefined" && (window as any).electronAPI != null;
 }
 
 export interface Deck {
@@ -42,7 +42,10 @@ export async function deleteDeck(id: string): Promise<void> {
   await saveDecksAll(decks.filter((d) => d.id !== id));
 }
 
-export function validateDeck(deckCards: { cardId: string; quantity: number }[], allCards: CardData[]): {
+export function validateDeck(
+  deckCards: { cardId: string; quantity: number }[],
+  allCards: CardData[],
+): {
   isValid: boolean;
   errors: string[];
 } {
@@ -60,32 +63,56 @@ export function validateDeck(deckCards: { cardId: string; quantity: number }[], 
 
   const mythicCount = deckCards.reduce((sum, entry) => {
     const card = allCards.find((c) => c.id === entry.cardId);
-    if (card && card.rarity === 'mythic') {
+    if (card && card.rarity === "mythic") {
       return sum + entry.quantity;
     }
     return sum;
   }, 0);
 
   if (mythicCount > 1) {
-    errors.push('Deck can only contain 1 Mythic card total.');
+    errors.push("Deck can only contain 1 Mythic card total.");
+  }
+
+  const legendaryCount = deckCards.reduce((sum, entry) => {
+    const card = allCards.find((c) => c.id === entry.cardId);
+    if (card && card.rarity === "legendary") {
+      return sum + entry.quantity;
+    }
+    return sum;
+  }, 0);
+
+  if (legendaryCount > 1) {
+    errors.push("Deck can only contain 1 Legendary card total.");
   }
 
   for (const entry of deckCards) {
     const card = allCards.find((c) => c.id === entry.cardId);
     if (!card) continue;
 
-    const rarity = card.rarity || 'common';
+    const rarity = card.rarity || "common";
 
-    if (rarity === 'common' && entry.quantity > 3) {
-      errors.push(`${card.name} (Common) has ${entry.quantity} copies. Max is 3.`);
+    if (rarity === "common" && entry.quantity > 3) {
+      errors.push(
+        `${card.name} (Common) has ${entry.quantity} copies. Max is 3.`,
+      );
     }
 
-    if (rarity === 'rare' && entry.quantity > 2) {
-      errors.push(`${card.name} (Rare) has ${entry.quantity} copies. Max is 2.`);
+    if (rarity === "rare" && entry.quantity > 2) {
+      errors.push(
+        `${card.name} (Rare) has ${entry.quantity} copies. Max is 2.`,
+      );
     }
 
-    if (rarity === 'mythic' && entry.quantity > 1) {
-      errors.push(`${card.name} (Mythic) has ${entry.quantity} copies. Max is 1.`);
+    if (rarity === "legendary" && entry.quantity > 1) {
+      errors.push(
+        `${card.name} (Legendary) has ${entry.quantity} copies. Max is 1.`,
+      );
+    }
+
+    if (rarity === "mythic" && entry.quantity > 1) {
+      errors.push(
+        `${card.name} (Mythic) has ${entry.quantity} copies. Max is 1.`,
+      );
     }
   }
 

@@ -256,7 +256,7 @@
     "name": "Void Harvest",
     "type": "rite",
     "cardType": "Rite",
-    "description": "<b>End of Turn</b>: Select and exile an enemy numen and decrease your mana by 150, otherwise destroy this card.",
+    "description": "<b>End of Turn</b>: Select and exile an enemy numen and decrease your mana by 150, otherwise exile this card.",
     "art": "Void Harvest.png",
     "triggers": [
       {
@@ -274,7 +274,7 @@
             "effectTarget": "player_mana",
             "otherwise": true,
             "otherwise_effect": {
-              "effect": "DESTROY",
+              "effect": "EXILE",
               "count": 1,
               "effectTarget": "self"
             }

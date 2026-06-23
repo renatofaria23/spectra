@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { Box, Text, Button } from '@mantine/core';
-import colors from '../../styles/Colors';
+import colors from '../../../styles/Colors';
 import { Link } from 'react-router-dom';
-import useGameStore from '../../stores/gameStore';
-import type { Card } from '../../logic/deckConstraints';
-import DeckSelector from './DeckSelector';
-import GameBoard from './GameBoard';
+import useGameStore from '../../../stores/gameStore';
+import type { Card } from '../../../logic/deckConstraints';
+import DeckSelector from '../DeckSelector/DeckSelector';
+import GameBoard from '../GameBoard/GameBoard';
 
 export const Board = () => {
   const gameActive = useGameStore((s) => s.gameState.gameActive);

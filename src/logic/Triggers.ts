@@ -7,7 +7,8 @@ export enum PassiveTrigger {
   LOCKED = "LOCKED",
   RECLUSE = "RECLUSE",
   LEGION = "LEGION",
-  RELENTLESS = "RELENTLESS"
+  RELENTLESS = "RELENTLESS",
+  SHROUDED = "SHROUDED"
 }
 
 export enum SemiConfigurableTrigger {
@@ -83,13 +84,13 @@ export type EffectTarget =
   | 'opponent_hp'
   | 'opponent_hand'
   | 'opponent_deck'
-  | 'opponent_graveyard'
+  | 'opponent_memora'
   | 'opponent_exile'
   | 'opponent_mana'
   | 'player_hp'
   | 'player_hand'
   | 'player_deck'
-  | 'player_graveyard'
+  | 'player_memora'
   | 'player_exile'
   | 'player_mana';
 
@@ -153,6 +154,8 @@ export function handlePassiveTrigger(trigger: PassiveTrigger) {
     case PassiveTrigger.LEGION:
       return;
     case PassiveTrigger.RELENTLESS:
+      return;
+    case PassiveTrigger.SHROUDED:
       return;
   }
 }

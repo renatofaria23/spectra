@@ -1,6 +1,7 @@
 import React from 'react';
 import { Box } from '@mantine/core';
-import colors from '../../styles/Colors';
+import colors from '../../../styles/Colors';
+import * as styles from './RaritySymbol.css.ts';
 
 interface RaritySymbolProps {
   rarity: string;
@@ -146,14 +147,8 @@ export const RaritySymbol = React.memo(({ rarity, size = 16, borderColor }: Rari
 
   return (
     <Box
-      style={{
-        width: size,
-        height: size,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        flexShrink: 0,
-      }}
+      data-name="rarity-symbol-root"
+      style={styles.raritySymbolRoot}
     >
       {renderSymbol()}
     </Box>

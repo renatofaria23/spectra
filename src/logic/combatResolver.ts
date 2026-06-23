@@ -9,7 +9,7 @@ export interface Numen {
   currentAttack: number;
   currentDefense: number;
   position: 'attack' | 'defense' | 'face_down';
-  justSummoned?: boolean;
+  justInvokeed?: boolean;
   hasAttacked?: boolean;
   triggers?: string[];
   [key: string]: unknown;
@@ -28,8 +28,8 @@ export interface CombatInteraction {
 
 export interface BattleResult {
   totalOverflowDamage: number;
-  destroyedNumina: { numenId: string; destroyedBy: string }[];
-  destroyedAttackers: string[];
+  forgetedNumina: { numenId: string; forgetedBy: string }[];
+  forgetedAttackers: string[];
   interactions: CombatInteraction[];
   validationErrors: string[];
 }
@@ -41,7 +41,7 @@ export interface Attack {
 
 export interface BattleResultSummary {
   totalDecrease: number;
-  destroyedNumina: { numenId: string; destroyedBy: string }[];
+  forgetedNumina: { numenId: string; forgetedBy: string }[];
   interactions: CombatInteraction[];
   validationErrors: string[];
 }
@@ -65,8 +65,8 @@ export const resolveGroupAttack = (
 ): BattleResult => {
   const result: BattleResult = {
     totalOverflowDamage: 0,
-    destroyedNumina: [],
-    destroyedAttackers: [],
+    forgetedNumina: [],
+    forgetedAttackers: [],
     interactions: [],
     validationErrors: [],
   };
@@ -96,7 +96,7 @@ export const resolveGroupAttack = (
         mutualDestruction: false,
       });
 
-      result.destroyedNumina.push({ numenId: defender.id, destroyedBy: attacker.id });
+      result.forgetedNumina.push({ numenId: defender.id, forgetedBy: attacker.id });
       result.totalOverflowDamage += overflow;
 
       if (hasTrigger(currentDefender, PassiveTrigger.RELENTLESS)) {
@@ -123,9 +123,9 @@ export const resolveGroupAttack = (
         mutualDestruction: true,
       });
 
-      result.destroyedNumina.push({ numenId: defender.id, destroyedBy: attacker.id });
+      result.forgetedNumina.push({ numenId: defender.id, forgetedBy: attacker.id });
       attackers.forEach((aId) => {
-        result.destroyedAttackers.push(attacker.id);
+        result.forgetedAttackers.push(attacker.id);
       });
 
       attackers.forEach((a) => {
@@ -174,8 +174,8 @@ export const resolveSoloAttack = (
 ): BattleResult => {
   const result: BattleResult = {
     totalOverflowDamage: 0,
-    destroyedNumina: [],
-    destroyedAttackers: [],
+    forgetedNumina: [],
+    forgetedAttackers: [],
     interactions: [],
     validationErrors: [],
   };
@@ -218,7 +218,7 @@ export const resolveSoloAttack = (
       mutualDestruction: false,
     });
 
-    result.destroyedNumina.push({ numenId: defender.id, destroyedBy: attacker.id });
+    result.forgetedNumina.push({ numenId: defender.id, forgetedBy: attacker.id });
     result.totalOverflowDamage = overflow;
     attacker.currentAttack = 0;
   } else if (totalATK === defenderStat) {
@@ -232,8 +232,8 @@ export const resolveSoloAttack = (
       mutualDestruction: true,
     });
 
-    result.destroyedNumina.push({ numenId: defender.id, destroyedBy: attacker.id });
-    result.destroyedAttackers.push(attacker.id);
+    result.forgetedNumina.push({ numenId: defender.id, forgetedBy: attacker.id });
+    result.forgetedAttackers.push(attacker.id);
     attacker.currentAttack = 0;
   } else {
     result.interactions.push({
@@ -254,7 +254,7 @@ export const resolveSoloAttack = (
 
 export const canNumenAttack = (
   numen: Numen,
-  maxSummons: number
+  maxInvokes: number
 ): { canAttack: boolean; reason: string } => {
   if (numen.position === 'defense') {
     return { canAttack: false, reason: 'Numen in defense position' };
@@ -264,8 +264,8 @@ export const canNumenAttack = (
     return { canAttack: false, reason: 'Numen is stunned' };
   }
 
-  if (numen.justSummoned && !hasTrigger(numen, PassiveTrigger.CELERITY)) {
-    return { canAttack: false, reason: 'Freshly summoned, cannot attack this turn' };
+  if (numen.justInvokeed && !hasTrigger(numen, PassiveTrigger.CELERITY)) {
+    return { canAttack: false, reason: 'Freshly invokeed, cannot attack this turn' };
   }
 
   return { canAttack: true, reason: '' };
@@ -288,7 +288,7 @@ export const resetNumenStats = (numina: Numen[]): Numen[] => {
     currentAttack: numen.baseAttack,
     currentDefense: numen.baseDefense,
     hasAttacked: false,
-    justSummoned: false,
+    justInvokeed: false,
   }));
 };
 
@@ -319,7 +319,7 @@ export const resolveBattlePhase = (
 ): BattleResultSummary => {
   const summary: BattleResultSummary = {
     totalDecrease: 0,
-    destroyedNumina: [],
+    forgetedNumina: [],
     interactions: [],
     validationErrors: [],
   };
@@ -341,16 +341,16 @@ export const resolveBattlePhase = (
 
     const defaultScaling: NatureScaling = {
       fire: { damageBonus: 0, numinaCount: 0 },
-      air: { extraSummons: 0, numinaCount: 0 },
+      air: { extraInvokes: 0, numinaCount: 0 },
       earth: { hpBonus: 0, numinaCount: 0 },
       water: { hpRegenBonus: 0, numinaCount: 0 },
-      light: { manaGainBonus: 0, maxManaBonus: 0, numinaCount: 0 },
+      light: { manaGainBonus: 0, numinaCount: 0 },
       dark: { handSizeBonus: 0, numinaCount: 0 },
     };
 
     const result = resolveSoloAttack(attacker, defender, defaultScaling);
     summary.interactions.push(...result.interactions);
-    summary.destroyedNumina.push(...result.destroyedNumina);
+    summary.forgetedNumina.push(...result.forgetedNumina);
     summary.totalDecrease += result.totalOverflowDamage;
     summary.validationErrors.push(...result.validationErrors);
   }

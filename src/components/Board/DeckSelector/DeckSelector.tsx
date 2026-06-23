@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Box, Text, Button, Modal, ScrollArea } from '@mantine/core';
-import colors from '../../styles/Colors';
-import { readDecksAsync, type Deck, validateDeck } from '../../services/decksAPI';
-import { readCards } from '../../services/cardsAPI';
+import colors from '../../../styles/Colors';
+import * as styles from './DeckSelector.css';
+import { readDecksAsync, type Deck, validateDeck } from '../../../services/decksAPI';
+import { readCards } from '../../../services/cardsAPI';
 import type { CardData } from '../Card/CardTemplate';
-import { generateDescription } from '../../logic/DescriptionEngine';
-import type { Card } from '../../logic/deckConstraints';
+import { generateDescription } from '../../../logic/DescriptionEngine';
+import type { Card } from '../../../logic/deckConstraints';
 
 interface DeckSelectorProps {
   opened: boolean;
@@ -52,6 +53,15 @@ export const DeckSelector = ({ opened, onClose, onStartGame }: DeckSelectorProps
     }
   }, [opened]);
 
+  const getDeckCardStyle = (isSelected: boolean, isValid: boolean, selectedColor: string) => ({
+    ...styles.deckCard,
+    ...styles.deckCardBase,
+    backgroundColor: isSelected ? selectedColor : colors.Gray_6,
+    cursor: isValid ? 'pointer' : 'not-allowed',
+    opacity: isValid ? 1 : 0.5,
+    border: `2px solid ${isSelected ? selectedColor : 'transparent'}`,
+  });
+
   const handleStart = () => {
     if (!p1Selected || !p2Selected) return;
     const p1Deck = decks.find((d) => d.id === p1Selected);
@@ -77,27 +87,28 @@ export const DeckSelector = ({ opened, onClose, onStartGame }: DeckSelectorProps
         header: { backgroundColor: colors.Gray_8 },
       }}
     >
-      <Box style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+      <Box data-name="deck-selector-root" style={styles.deckSelectorRoot}>
         <Text c={colors.White_1} size="md" fw={600}>Player 1 - Select Deck:</Text>
         <ScrollArea mah={250}>
-          <Box style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          <Box data-name="deck-list" style={styles.deckList}>
             {decks.map((deck) => {
               const validation = validateDeck(deck.cards, allCards);
               const isSelected = p1Selected === deck.id;
               return (
                 <Box
                   key={deck.id}
+                  data-name="deck-option"
                   onClick={() => setP1Selected(deck.id)}
                   style={{
-                    padding: '0.75rem 1rem',
+                    ...styles.deckCard,
+                    ...styles.deckCardBase,
                     backgroundColor: isSelected ? colors.Blue_5 : colors.Gray_6,
-                    borderRadius: '6px',
                     cursor: validation.isValid ? 'pointer' : 'not-allowed',
                     opacity: validation.isValid ? 1 : 0.5,
                     border: `2px solid ${isSelected ? colors.Blue_3 : 'transparent'}`,
                   }}
                 >
-                  <Text c={colors.White_1} size="sm" fw={600}>
+                  <Text c={colors.White_1} size="sm" fw={600} style={styles.deckOptionText}>
                     {deck.name}
                   </Text>
                   <Text c={colors.Gray_3} size="xs">
@@ -111,24 +122,25 @@ export const DeckSelector = ({ opened, onClose, onStartGame }: DeckSelectorProps
 
         <Text c={colors.White_1} size="md" fw={600}>Player 2 - Select Deck:</Text>
         <ScrollArea mah={250}>
-          <Box style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          <Box data-name="deck-list" style={styles.deckList}>
             {decks.map((deck) => {
               const validation = validateDeck(deck.cards, allCards);
               const isSelected = p2Selected === deck.id;
               return (
                 <Box
                   key={deck.id}
+                  data-name="deck-option"
                   onClick={() => setP2Selected(deck.id)}
                   style={{
-                    padding: '0.75rem 1rem',
+                    ...styles.deckCard,
+                    ...styles.deckCardBase,
                     backgroundColor: isSelected ? colors.Red_8 : colors.Gray_6,
-                    borderRadius: '6px',
                     cursor: validation.isValid ? 'pointer' : 'not-allowed',
                     opacity: validation.isValid ? 1 : 0.5,
                     border: `2px solid ${isSelected ? colors.Red_5 : 'transparent'}`,
                   }}
                 >
-                  <Text c={colors.White_1} size="sm" fw={600}>
+                  <Text c={colors.White_1} size="sm" fw={600} style={styles.deckOptionText}>
                     {deck.name}
                   </Text>
                   <Text c={colors.Gray_3} size="xs">

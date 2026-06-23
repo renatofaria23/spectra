@@ -13,7 +13,7 @@ type DeckStoreState = {
   deckName: string;
   deckStats: DeckStats | null;
   deckRequirements: ReturnType<typeof calculateDeckRequirements> | null;
-  attributeScaling: NatureScaling | null;
+  natureScaling: NatureScaling | null;
   validationErrors: string[];
 
   createDeck: (name?: string) => void;
@@ -33,7 +33,7 @@ type DeckStoreState = {
     cards: DeckCard[];
     stats: DeckStats | null;
     requirements: ReturnType<typeof calculateDeckRequirements> | null;
-    attributeScaling: NatureScaling | null;
+    natureScaling: NatureScaling | null;
     isValid: boolean;
     errors: string[];
   };
@@ -44,7 +44,7 @@ export const useDeckStore = create<DeckStoreState>((set, get) => ({
   deckName: 'New Deck',
   deckStats: null,
   deckRequirements: null,
-  attributeScaling: null,
+  natureScaling: null,
   validationErrors: [],
 
   createDeck: (name = 'New Deck') =>
@@ -53,7 +53,7 @@ export const useDeckStore = create<DeckStoreState>((set, get) => ({
       deckName: name,
       deckStats: null,
       deckRequirements: null,
-      attributeScaling: null,
+      natureScaling: null,
       validationErrors: [],
     }),
 
@@ -70,7 +70,7 @@ export const useDeckStore = create<DeckStoreState>((set, get) => ({
         currentDeck: newDeck,
         deckStats: stats,
         deckRequirements: requirements,
-        attributeScaling: scaling,
+        natureScaling: scaling,
         validationErrors: validation.errors,
       };
     }),
@@ -88,7 +88,7 @@ export const useDeckStore = create<DeckStoreState>((set, get) => ({
         currentDeck: newDeck,
         deckStats: stats,
         deckRequirements: requirements,
-        attributeScaling: scaling,
+        natureScaling: scaling,
         validationErrors: validation.errors,
       };
     }),
@@ -105,7 +105,7 @@ export const useDeckStore = create<DeckStoreState>((set, get) => ({
         currentDeck: cards,
         deckStats: stats,
         deckRequirements: requirements,
-        attributeScaling: scaling,
+        natureScaling: scaling,
         validationErrors: validation.errors,
       };
     }),
@@ -115,7 +115,7 @@ export const useDeckStore = create<DeckStoreState>((set, get) => ({
       currentDeck: [],
       deckStats: null,
       deckRequirements: null,
-      attributeScaling: null,
+      natureScaling: null,
       validationErrors: [],
     }),
 
@@ -130,7 +130,7 @@ export const useDeckStore = create<DeckStoreState>((set, get) => ({
 
   getDeckStats: () => get().deckStats,
 
-  getNatureScaling: () => get().attributeScaling,
+  getNatureScaling: () => get().natureScaling,
 
   getValidationErrors: () => get().validationErrors,
 
@@ -141,7 +141,7 @@ export const useDeckStore = create<DeckStoreState>((set, get) => ({
       cards: state.currentDeck,
       stats: state.deckStats,
       requirements: state.deckRequirements,
-      attributeScaling: state.attributeScaling,
+      natureScaling: state.natureScaling,
       isValid: state.validationErrors.length === 0,
       errors: state.validationErrors,
     };

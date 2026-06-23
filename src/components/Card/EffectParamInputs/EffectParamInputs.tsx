@@ -1,12 +1,13 @@
-import { NumberInput, Select, TextInput, MultiSelect, Badge, Group, Button, Checkbox } from '@mantine/core';
+import { Box, NumberInput, Select, TextInput, MultiSelect, Badge, Group, Button, Checkbox } from '@mantine/core';
 import { IconPlus, IconX } from '@tabler/icons-react';
-import { EffectType } from '../../logic/Effects';
-import type { ForEachConfig } from '../../logic/Effects';
-import colors from '../../styles/Colors';
-import type { EffectTarget } from '../../logic/Triggers';
-import { ConditionalTrigger } from '../../logic/Triggers';
+import { EffectType } from '../../../logic/Effects';
+import type { ForEachConfig } from '../../../logic/Effects';
+import colors from '../../../styles/Colors';
+import type { EffectTarget } from '../../../logic/Triggers';
+import { ConditionalTrigger } from '../../../logic/Triggers';
 import {
-  statTargetOptions,
+  numenStatTargetOptions,
+  playerStatTargetOptions,
   scryDeckOptions,
   etherealTypeOptions,
   findSourceOptions,
@@ -14,16 +15,32 @@ import {
   passiveTriggerOptions,
   isNumenEffectTarget,
   isHpManaEffectTarget,
-  summonFromOptions,
+  invokeFromOptions,
+  evokeFromOptions,
+  convokeFromOptions,
   familyOptions,
   natureOptions,
   rarityOptions,
   copyTargetTypeOptions,
   addDestinationOptions,
+  addFromOptions,
+  addTargetTypeOptions,
   getEffectTargetOptions,
-} from '../../logic/CardEditorOptions';
+  returnTargetOptions,
+  returnFieldTargetOptions,
+  returnCardTypeOptions,
+  returnDestinationOptions,
+  isReturnTargetField,
+  isReturnTargetZone,
+  isReturnAllFieldTarget,
+  increaseDecreaseTargetOptions,
+  getStatTargetOptions,
+  isNumenTarget,
+  isPlayerTarget,
+} from '../../../logic/CardEditorOptions';
+import * as styles from './EffectParamInputs.css';
 
-const summonCriteriaTypeOptions = [
+const invokeCriteriaTypeOptions = [
   { value: 'name', label: 'Name' },
   { value: 'level', label: 'Level (exact)' },
   { value: 'levelMin', label: 'Level (min)' },
@@ -54,7 +71,7 @@ const isExileCardTypeCriteria = (type: string) =>
   exileCardTypeCriteria.includes(type);
 
 const exileCriteriaTypeOptions = [
-  ...summonCriteriaTypeOptions,
+  ...invokeCriteriaTypeOptions,
   { value: 'any_numen', label: 'Any numen' },
   { value: 'any_ward', label: 'Any ward' },
   { value: 'any_rite', label: 'Any spell' },
@@ -154,15 +171,15 @@ export default function EffectParamInputs({ selectedEffect, effectParams, setEff
           />
         </>
       );
-    case EffectType.DESTROY:
-       const ALL_DESTROY_TARGETS: EffectTarget[] = [
+    case EffectType.FORGET:
+       const ALL_FORGET_TARGETS: EffectTarget[] = [
         'all_allied_numina', 'all_enemy_numina',
         'all_allied_magics', 'all_enemy_magics',
         'all_allied_rites', 'all_enemy_rites',
         'all_allied_wards', 'all_enemy_wards',
       ];
       return (
-        effectTarget && effectTarget !== 'self' && !ALL_DESTROY_TARGETS.includes(effectTarget) && (
+        effectTarget && effectTarget !== 'self' && !ALL_FORGET_TARGETS.includes(effectTarget) && (
           <NumberInput
             label="Count"
             value={effectParams.count}
@@ -222,7 +239,7 @@ export default function EffectParamInputs({ selectedEffect, effectParams, setEff
             styles={{ label: { color: colors.Black_1 } }}
           />
           <Select
-            data={summonFromOptions}
+            data={invokeFromOptions}
             value={effectParams.from}
             onChange={(val) => setEffectParams(prev => ({ ...prev, from: val }))}
             label="From"
@@ -235,7 +252,7 @@ export default function EffectParamInputs({ selectedEffect, effectParams, setEff
             min={1}
             styles={inputStyles}
           />
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <Box data-name="effect-param-group" style={styles.effectParamBox}>
             <Select
               data={exileCriteriaTypeOptions}
               value={effectParams._criteriaType}
@@ -313,11 +330,11 @@ export default function EffectParamInputs({ selectedEffect, effectParams, setEff
               </Button>
             )}
             {effectParams._criteriaItems && effectParams._criteriaItems.length > 0 && (
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              <Box data-name="criteria-list" style={styles.criteriaRow}>
                 {effectParams._criteriaItems.map((item: { type: string; value: any }, idx: number) => (
-                  <Badge key={idx} style={{ cursor: 'pointer' }}>
+                  <Badge key={idx} style={styles.criteriaBadge}>
                     {getCriteriaLabel(item.type, item.value)}
-                    <IconX size={12} style={{ marginLeft: 4, cursor: 'pointer' }} onClick={(e) => {
+                    <IconX size={12} style={styles.criteriaIcon} onClick={(e) => {
                       e.stopPropagation();
                       const updated = [...effectParams._criteriaItems];
                       updated.splice(idx, 1);
@@ -325,9 +342,9 @@ export default function EffectParamInputs({ selectedEffect, effectParams, setEff
                     }} />
                   </Badge>
                 ))}
-              </div>
+              </Box>
             )}
-          </div>
+          </Box>
         </>
       );
     }
@@ -342,28 +359,38 @@ export default function EffectParamInputs({ selectedEffect, effectParams, setEff
         />
       );
     case EffectType.DECREASE:
-      const isHpManaDecreaseTarget = isHpManaEffectTarget(effectTarget);
+      const decreaseTargetType = effectParams._targetType;
+      const decreaseStatTarget = effectParams.effectTarget;
+      const isNumenDecreaseTarget = isNumenTarget(decreaseTargetType);
+      const isPlayerDecreaseTarget = isPlayerTarget(decreaseTargetType);
       return (
         <>
-          {isNumenEffectTarget(effectTarget) && (
+          <Select
+            data={increaseDecreaseTargetOptions}
+            value={decreaseTargetType ?? null}
+            onChange={(val) => setEffectParams(prev => ({ ...prev, _targetType: val, effectTarget: undefined }))}
+            label="Target"
+            styles={inputStyles}
+          />
+          {isNumenDecreaseTarget && (
             <Select
-              data={[{ value: 'atk', label: 'ATK' }, { value: 'def', label: 'DEF' }]}
-              value={effectParams.target}
-              onChange={(val) => setEffectParams(prev => ({ ...prev, target: val }))}
+              data={numenStatTargetOptions}
+              value={decreaseStatTarget}
+              onChange={(val) => setEffectParams(prev => ({ ...prev, effectTarget: val }))}
               label="Stat"
               styles={inputStyles}
             />
           )}
-          {!isNumenEffectTarget(effectTarget) && !isHpManaEffectTarget(effectTarget) && (
+          {isPlayerDecreaseTarget && (
             <Select
-              data={statTargetOptions}
-              value={effectParams.target}
-              onChange={(val) => setEffectParams(prev => ({ ...prev, target: val }))}
-              label="Target"
+              data={playerStatTargetOptions}
+              value={decreaseStatTarget}
+              onChange={(val) => setEffectParams(prev => ({ ...prev, effectTarget: val }))}
+              label="Stat"
               styles={inputStyles}
             />
           )}
-          {!isHpManaDecreaseTarget && (
+          {isNumenDecreaseTarget && (
             <Select
               data={[{ value: 'temporary', label: 'Temporary' }, { value: 'permanent', label: 'Permanent' }, { value: 'while_on_field', label: 'While on Field' }]}
               value={effectParams.duration}
@@ -372,7 +399,7 @@ export default function EffectParamInputs({ selectedEffect, effectParams, setEff
               styles={inputStyles}
             />
           )}
-          {!isHpManaDecreaseTarget && effectParams.duration === 'temporary' && (
+          {isNumenDecreaseTarget && effectParams.duration === 'temporary' && (
             <NumberInput
               label="Turns"
               value={effectParams.durationTurns}
@@ -412,28 +439,38 @@ export default function EffectParamInputs({ selectedEffect, effectParams, setEff
         </>
       );
     case EffectType.INCREASE:
-      const isHpManaIncreaseTarget = isHpManaEffectTarget(effectTarget);
+      const increaseTargetType = effectParams._targetType;
+      const increaseStatTarget = effectParams.effectTarget;
+      const isNumenIncreaseTarget = isNumenTarget(increaseTargetType);
+      const isPlayerIncreaseTarget = isPlayerTarget(increaseTargetType);
       return (
         <>
-          {isNumenEffectTarget(effectTarget) && (
+          <Select
+            data={increaseDecreaseTargetOptions}
+            value={increaseTargetType ?? null}
+            onChange={(val) => setEffectParams(prev => ({ ...prev, _targetType: val, effectTarget: undefined }))}
+            label="Target"
+            styles={inputStyles}
+          />
+          {isNumenIncreaseTarget && (
             <Select
-              data={[{ value: 'atk', label: 'ATK' }, { value: 'def', label: 'DEF' }]}
-              value={effectParams.target}
-              onChange={(val) => setEffectParams(prev => ({ ...prev, target: val }))}
+              data={numenStatTargetOptions}
+              value={increaseStatTarget}
+              onChange={(val) => setEffectParams(prev => ({ ...prev, effectTarget: val }))}
               label="Stat"
               styles={inputStyles}
             />
           )}
-          {!isNumenEffectTarget(effectTarget) && !isHpManaEffectTarget(effectTarget) && (
+          {isPlayerIncreaseTarget && (
             <Select
-              data={statTargetOptions}
-              value={effectParams.target}
-              onChange={(val) => setEffectParams(prev => ({ ...prev, target: val }))}
-              label="Target"
+              data={playerStatTargetOptions}
+              value={increaseStatTarget}
+              onChange={(val) => setEffectParams(prev => ({ ...prev, effectTarget: val }))}
+              label="Stat"
               styles={inputStyles}
             />
           )}
-          {!isHpManaIncreaseTarget && (
+          {isNumenIncreaseTarget && (
             <Select
               data={[{ value: 'temporary', label: 'Temporary' }, { value: 'permanent', label: 'Permanent' }, { value: 'while_on_field', label: 'While on Field' }]}
               value={effectParams.duration}
@@ -442,7 +479,7 @@ export default function EffectParamInputs({ selectedEffect, effectParams, setEff
               styles={inputStyles}
             />
           )}
-          {!isHpManaIncreaseTarget && effectParams.duration === 'temporary' && (
+          {isNumenIncreaseTarget && effectParams.duration === 'temporary' && (
             <NumberInput
               label="Turns"
               value={effectParams.durationTurns}
@@ -517,15 +554,23 @@ export default function EffectParamInputs({ selectedEffect, effectParams, setEff
           />
         </>
       );
-    case EffectType.SUMMON:
-      const isCriteriaReady = effectParams._criteriaType &&
+    case EffectType.INVOKE:
+    case EffectType.EVOKE:
+    case EffectType.CONVOKE: {
+      const isCriteriaReadyInvoke = effectParams._criteriaType &&
         ((isNumericCriteria(effectParams._criteriaType) && effectParams._criteriaValue !== undefined && effectParams._criteriaValue !== null) ||
           (effectParams._criteriaType === 'name' && effectParams._criteriaValue) ||
           (isMultiSelectCriteria(effectParams._criteriaType) && effectParams._criteriaValue && effectParams._criteriaValue.length > 0));
+      const fromOptionsMap = {
+        [EffectType.INVOKE]: invokeFromOptions,
+        [EffectType.EVOKE]: evokeFromOptions,
+        [EffectType.CONVOKE]: convokeFromOptions,
+      };
+      const fromOptions = fromOptionsMap[selectedEffect] || invokeFromOptions;
       return (
         <>
           <Select
-            data={summonFromOptions}
+            data={fromOptions}
             value={effectParams.from}
             onChange={(val) => setEffectParams(prev => ({ ...prev, from: val }))}
             label="From"
@@ -538,9 +583,9 @@ export default function EffectParamInputs({ selectedEffect, effectParams, setEff
             min={1}
             styles={inputStyles}
           />
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <Box data-name="criteria-input-group" style={styles.criteriaGroup}>
             <Select
-              data={summonCriteriaTypeOptions}
+              data={invokeCriteriaTypeOptions}
               value={effectParams._criteriaType}
               onChange={(val) => setEffectParams(prev => ({ ...prev, _criteriaType: val, _criteriaValue: undefined }))}
               label="Criteria Type"
@@ -576,9 +621,9 @@ export default function EffectParamInputs({ selectedEffect, effectParams, setEff
             {effectParams._criteriaType && (
               <Button
                 leftSection={<IconPlus size={16} />}
-                disabled={!isCriteriaReady}
+                disabled={!isCriteriaReadyInvoke}
                 onClick={() => {
-                  if (!effectParams._criteriaType || !isCriteriaReady) return;
+                  if (!effectParams._criteriaType || !isCriteriaReadyInvoke) return;
                   const existing = effectParams._criteriaItems || [];
                   existing.push({
                     type: effectParams._criteriaType,
@@ -596,11 +641,11 @@ export default function EffectParamInputs({ selectedEffect, effectParams, setEff
               </Button>
             )}
             {effectParams._criteriaItems && effectParams._criteriaItems.length > 0 && (
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              <Box data-name="criteria-list" style={styles.criteriaRow}>
                 {effectParams._criteriaItems.map((item: { type: string; value: any }, idx: number) => (
-                  <Badge key={idx} style={{ cursor: 'pointer' }}>
+                  <Badge key={idx} style={styles.criteriaBadge}>
                     {getCriteriaLabel(item.type, item.value)}
-                    <IconX size={12} style={{ marginLeft: 4, cursor: 'pointer' }} onClick={(e) => {
+                    <IconX size={12} style={styles.criteriaIcon} onClick={(e) => {
                       e.stopPropagation();
                       const updated = [...effectParams._criteriaItems];
                       updated.splice(idx, 1);
@@ -608,11 +653,12 @@ export default function EffectParamInputs({ selectedEffect, effectParams, setEff
                     }} />
                   </Badge>
                 ))}
-              </div>
+              </Box>
             )}
-          </div>
+          </Box>
         </>
       );
+    }
     case EffectType.COPY:
       return (
         <>
@@ -643,6 +689,20 @@ export default function EffectParamInputs({ selectedEffect, effectParams, setEff
       return (
         <>
           <Select
+            data={addFromOptions}
+            value={effectParams.addFrom}
+            onChange={(val) => setEffectParams(prev => ({ ...prev, addFrom: val }))}
+            label="From"
+            styles={inputStyles}
+          />
+          <Select
+            data={addTargetTypeOptions}
+            value={effectParams.addTargetType}
+            onChange={(val) => setEffectParams(prev => ({ ...prev, addTargetType: val }))}
+            label="Target Type"
+            styles={inputStyles}
+          />
+          <Select
             data={addDestinationOptions}
             value={effectParams.destination}
             onChange={(val) => setEffectParams(prev => ({ ...prev, destination: val }))}
@@ -658,28 +718,61 @@ export default function EffectParamInputs({ selectedEffect, effectParams, setEff
           />
         </>
       );
-    case EffectType.RETURN:
+    case EffectType.RETURN: {
+      const isSelfTarget = effectTarget === 'self' || effectParams.returnTarget === 'self';
+      const returnTarget = effectParams.returnTarget;
+      const isFieldTarget = isReturnTargetField(returnTarget);
+      const isZoneTarget = isReturnTargetZone(returnTarget);
+      const isAllFieldTarget = isFieldTarget && isReturnAllFieldTarget(effectParams.returnFieldTarget);
+      const isAllZoneTarget = isZoneTarget && effectParams.returnCardType === 'any';
       return (
         <>
           <Select
-            data={[
-              { value: 'hand', label: 'Hand' },
-              { value: 'deck', label: 'Deck' },
-            ]}
-            value={effectParams.destination}
-            onChange={(val) => setEffectParams(prev => ({ ...prev, destination: val }))}
-            label="Destination"
+            data={returnTargetOptions}
+            value={isSelfTarget ? 'self' : (effectParams.returnTarget || null)}
+            onChange={(val) => setEffectParams(prev => ({ ...prev, returnTarget: val, returnFieldTarget: undefined, returnCardType: undefined }))}
+            label="Return Target"
             styles={inputStyles}
           />
-          <NumberInput
-            label="Count"
-            value={effectParams.count}
-            onChange={(val) => setEffectParams(prev => ({ ...prev, count: val }))}
-            min={1}
-            styles={inputStyles}
-          />
+          {isFieldTarget && (
+            <Select
+              data={returnFieldTargetOptions}
+              value={effectParams.returnFieldTarget ?? null}
+              onChange={(val) => setEffectParams(prev => ({ ...prev, returnFieldTarget: val, returnCardType: undefined }))}
+              label="Field Target"
+              styles={inputStyles}
+            />
+          )}
+          {isZoneTarget && (
+            <Select
+              data={returnCardTypeOptions}
+              value={effectParams.returnCardType ?? null}
+              onChange={(val) => setEffectParams(prev => ({ ...prev, returnCardType: val, returnFieldTarget: undefined }))}
+              label="Target Type"
+              styles={inputStyles}
+            />
+          )}
+          {(isFieldTarget || isZoneTarget || isSelfTarget) && (
+            <Select
+              data={returnDestinationOptions}
+              value={effectParams.returnDestination ?? 'hand'}
+              onChange={(val) => setEffectParams(prev => ({ ...prev, returnDestination: val }))}
+              label="Destination"
+              styles={inputStyles}
+            />
+          )}
+          {!isAllFieldTarget && !isAllZoneTarget && !isSelfTarget && (
+            <NumberInput
+              label="Count"
+              value={effectParams.count}
+              onChange={(val) => setEffectParams(prev => ({ ...prev, count: val }))}
+              min={1}
+              styles={inputStyles}
+            />
+          )}
         </>
       );
+    }
     case EffectType.CHOOSE_ONE:
       return (
         <>
@@ -736,7 +829,7 @@ export function OtherwiseEffectInputs({ setEffectParams, effectParams, currentTr
             data={[
               { value: EffectType.DRAW, label: 'Draw' },
               { value: EffectType.SCRY, label: 'Scry' },
-              { value: EffectType.DESTROY, label: 'Destroy' },
+              { value: EffectType.FORGET, label: 'Forget' },
               { value: EffectType.EXILE, label: 'Exile' },
               { value: EffectType.PETRIFY, label: 'Petrify' },
               { value: EffectType.DECREASE, label: 'Decrease' },
@@ -745,7 +838,9 @@ export function OtherwiseEffectInputs({ setEffectParams, effectParams, currentTr
               { value: EffectType.ETHEREAL, label: 'Ethereal' },
               { value: EffectType.FIND, label: 'Find' },
               { value: EffectType.ADD_TRIGGER, label: 'Add Trigger' },
-              { value: EffectType.SUMMON, label: 'Summon' },
+              { value: EffectType.INVOKE, label: 'Invoke' },
+              { value: EffectType.EVOKE, label: 'Evoke' },
+              { value: EffectType.CONVOKE, label: 'Convoke' },
               { value: EffectType.COPY, label: 'Copy' },
               { value: EffectType.ADD, label: 'Add' },
               { value: EffectType.RETURN, label: 'Return' },
@@ -755,7 +850,7 @@ export function OtherwiseEffectInputs({ setEffectParams, effectParams, currentTr
             label="Otherwise Effect"
             styles={inputStyles}
           />
-          {otherwiseEffectType && otherwiseEffectType !== EffectType.DRAW && otherwiseEffectType !== EffectType.SCRY && otherwiseEffectType !== EffectType.SUMMON && otherwiseEffectType !== EffectType.EXILE && (
+          {otherwiseEffectType && otherwiseEffectType !== EffectType.DRAW && otherwiseEffectType !== EffectType.SCRY && otherwiseEffectType !== EffectType.INVOKE && otherwiseEffectType !== EffectType.EVOKE && otherwiseEffectType !== EffectType.CONVOKE && otherwiseEffectType !== EffectType.EXILE && (
             <Select
               data={dynamicOtherwiseTargetOptions}
               value={otherwiseEffectTarget ?? null}
@@ -812,7 +907,7 @@ export function OrEffectInputs({ setEffectParams, effectParams, currentTrigger, 
             data={[
               { value: EffectType.DRAW, label: 'Draw' },
               { value: EffectType.SCRY, label: 'Scry' },
-              { value: EffectType.DESTROY, label: 'Destroy' },
+              { value: EffectType.FORGET, label: 'Forget' },
               { value: EffectType.EXILE, label: 'Exile' },
               { value: EffectType.PETRIFY, label: 'Petrify' },
               { value: EffectType.DECREASE, label: 'Decrease' },
@@ -821,7 +916,9 @@ export function OrEffectInputs({ setEffectParams, effectParams, currentTrigger, 
               { value: EffectType.ETHEREAL, label: 'Ethereal' },
               { value: EffectType.FIND, label: 'Find' },
               { value: EffectType.ADD_TRIGGER, label: 'Add Trigger' },
-              { value: EffectType.SUMMON, label: 'Summon' },
+              { value: EffectType.INVOKE, label: 'Invoke' },
+              { value: EffectType.EVOKE, label: 'Evoke' },
+              { value: EffectType.CONVOKE, label: 'Convoke' },
               { value: EffectType.COPY, label: 'Copy' },
               { value: EffectType.ADD, label: 'Add' },
               { value: EffectType.RETURN, label: 'Return' },
@@ -831,7 +928,7 @@ export function OrEffectInputs({ setEffectParams, effectParams, currentTrigger, 
             label="Or Effect"
             styles={inputStyles}
           />
-          {orEffectType && orEffectType !== EffectType.DRAW && orEffectType !== EffectType.SCRY && orEffectType !== EffectType.SUMMON && orEffectType !== EffectType.EXILE && (
+          {orEffectType && orEffectType !== EffectType.DRAW && orEffectType !== EffectType.SCRY && orEffectType !== EffectType.INVOKE && orEffectType !== EffectType.EVOKE && orEffectType !== EffectType.CONVOKE && orEffectType !== EffectType.EXILE && (
             <Select
               data={dynamicOrTargetOptions}
               value={orEffectTarget ?? null}
@@ -890,7 +987,7 @@ export function ForEachInputs({ setEffectParams, effectParams }: ForEachInputsPr
           />
           <Select
             data={[
-              { value: 'graveyard', label: 'Graveyard' },
+              { value: 'memora', label: 'Memora' },
               { value: 'field', label: 'Field' },
               { value: 'exile', label: 'Exile' },
               { value: 'deck', label: 'Deck' },

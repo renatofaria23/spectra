@@ -1,4 +1,4 @@
-import type { CardData } from "../components/Card/CardTemplate";
+import type { CardData } from "../components/Card/CardTemplate/CardTemplate";
 import decksData from "../data/decks.json";
 
 function isElectron() {
@@ -71,18 +71,6 @@ export function validateDeck(
 
   if (mythicCount > 1) {
     errors.push("Deck can only contain 1 Mythic card total.");
-  }
-
-  const legendaryCount = deckCards.reduce((sum, entry) => {
-    const card = allCards.find((c) => c.id === entry.cardId);
-    if (card && card.rarity === "legendary") {
-      return sum + entry.quantity;
-    }
-    return sum;
-  }, 0);
-
-  if (legendaryCount > 1) {
-    errors.push("Deck can only contain 1 Legendary card total.");
   }
 
   for (const entry of deckCards) {

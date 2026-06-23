@@ -4,7 +4,7 @@ import { IconFlame, IconDroplet, IconMountain, IconTornado, IconMoon, IconStar }
 import {
   Blue_4, Blue_5, Blue_7, Gray_4, Gray_5, Blue_3, Orange_4, Orange_3, Gray_4 as CommonGray_4,
   White_1, Black_1, Beige_5, Orange_8, Teal_2, Yellow_1,
-} from '../../styles/Colors';
+} from '../../../styles/Colors';
 
 interface CardProps {
   card: unknown;
@@ -14,7 +14,7 @@ interface CardProps {
   size?: 'xs' | 'sm' | 'md' | 'lg';
 }
 
-const ATTRIBUTE_ICONS_OBJ: Record<string, React.ReactNode> = {
+const NATURE_ICONS_OBJ: Record<string, React.ReactNode> = {
   fire: <IconFlame size={14} />,
   water: <IconDroplet size={14} />,
   earth: <IconMountain size={14} />,
@@ -62,7 +62,7 @@ export const Card = React.memo(
 
     const rarityColor = getRarityColor((card as any).rarity);
 
-    const attrKey = ((card as any).attribute || '').toLowerCase();
+    const attrKey = ((card as any).nature || '').toLowerCase();
     const attrValue = attrKey;
 
     return (
@@ -96,7 +96,7 @@ export const Card = React.memo(
           {isNumen && showStats && (
             <Group justify="space-between" gap="xs">
               <Badge size="xs" color={attrValue}>
-                {ATTRIBUTE_ICONS_OBJ[attrKey] || ATTRIBUTE_ICONS_OBJ['fire']}
+                {NATURE_ICONS_OBJ[attrKey] || NATURE_ICONS_OBJ['fire']}
               </Badge>
               <Box className="card-stats">
                 <span>{(card as any).baseAttack || 0}</span>

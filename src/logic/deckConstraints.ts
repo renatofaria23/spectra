@@ -12,7 +12,7 @@ export interface Card {
   id: string;
   type: 'numen' | 'rite' | 'ward';
   name: string;
-  attribute?: Nature;
+  nature?: Nature;
   numenFamily?: string;
   rarity?: string;
   level?: number;
@@ -27,14 +27,14 @@ export interface Card {
 
 export interface DeckRequirements {
   numenFamilies?: Record<string, number>;
-  attributes?: Record<string, number>;
+  natures?: Record<string, number>;
   rites: number;
   wards: number;
   totalRequired: number;
 }
 
 interface ValidationResult {
-  canSummon: Record<string, boolean>;
+  canInvoke: Record<string, boolean>;
   missingRequirements: Record<string, string[]>;
 }
 
@@ -45,12 +45,12 @@ export interface DeckStats {
   riteCount: number;
   wardCount: number;
   typeCounts: Record<string, number>;
-  attributeCounts: Record<string, number>;
+  natureCounts: Record<string, number>;
 }
 
 export interface BattleResults {
   totalDecrease: number;
-  destroyedNumina: { numenId: string; destroyedBy: string }[];
+  forgetedNumina: { numenId: string; forgetedBy: string }[];
   interactions: CombatInteraction[];
 }
 
@@ -109,7 +109,7 @@ export const validateDeckComposition = (deck: Card[]): {
 export const calculateDeckRequirements = (deck: Card[]): DeckRequirements => {
   const requirements: DeckRequirements = {
     numenFamilies: {},
-    attributes: {},
+    natures: {},
     rites: 0,
     wards: 0,
     totalRequired: 0,
@@ -145,11 +145,11 @@ export const calculateDeckRequirements = (deck: Card[]): DeckRequirements => {
 };
 
 export const validateCardRequirements = (deck: Card[], mythicCardIds: string[]): ValidationResult => {
-  const canSummon: Record<string, boolean> = {};
+  const canInvoke: Record<string, boolean> = {};
   const missingRequirements: Record<string, string[]> = {};
 
   const typeCounts: Record<string, number> = {};
-  const attributeCounts: Record<string, number> = {};
+  const natureCounts: Record<string, number> = {};
   let riteCount = 0;
   let wardCount = 0;
 
@@ -158,9 +158,9 @@ export const validateCardRequirements = (deck: Card[], mythicCardIds: string[]):
       if (card.numenFamily) {
         typeCounts[card.numenFamily] = (typeCounts[card.numenFamily] || 0) + 1;
       }
-      if (card.attribute) {
-        attributeCounts[card.attribute] =
-          (attributeCounts[card.attribute] || 0) + 1;
+      if (card.nature) {
+        natureCounts[card.nature] =
+          (natureCounts[card.nature] || 0) + 1;
       }
     } else if (card.type === 'rite') {
       riteCount += 1;
@@ -172,7 +172,7 @@ export const validateCardRequirements = (deck: Card[], mythicCardIds: string[]):
   mythicCardIds.forEach((mythicId) => {
     const mythic = deck.find((c) => c.id === mythicId && c.isMythic);
     if (!mythic || !mythic.mythicQuest) {
-      canSummon[mythicId] = false;
+      canInvoke[mythicId] = false;
       missingRequirements[mythicId] = ['Card not found or not mythic'];
       return;
     }
@@ -182,7 +182,7 @@ export const validateCardRequirements = (deck: Card[], mythicCardIds: string[]):
 
     if (deckRequirements) {
       Object.entries(deckRequirements).forEach(([type, required]) => {
-        const actual = typeCounts[type] || attributeCounts[type] || 0;
+        const actual = typeCounts[type] || natureCounts[type] || 0;
         if (actual < required) {
           missing.push(
             `Need ${required} ${type}, have ${actual}`
@@ -203,11 +203,11 @@ export const validateCardRequirements = (deck: Card[], mythicCardIds: string[]):
       }
     }
 
-    canSummon[mythicId] = missing.length === 0;
+    canInvoke[mythicId] = missing.length === 0;
     missingRequirements[mythicId] = missing;
   });
 
-  return { canSummon, missingRequirements };
+  return { canInvoke, missingRequirements };
 };
 
 export const getDeckStats = (deck: Card[]): DeckStats => {
@@ -216,7 +216,7 @@ export const getDeckStats = (deck: Card[]): DeckStats => {
     riteCount: 0,
     wardCount: 0,
     typeCounts: {},
-    attributeCounts: {},
+    natureCounts: {},
   };
 
   deck.forEach((card) => {
@@ -226,9 +226,9 @@ export const getDeckStats = (deck: Card[]): DeckStats => {
         stats.typeCounts[card.numenFamily] =
           (stats.typeCounts[card.numenFamily] || 0) + 1;
       }
-      if (card.attribute) {
-        stats.attributeCounts[card.attribute] =
-          (stats.attributeCounts[card.attribute] || 0) + 1;
+      if (card.nature) {
+        stats.natureCounts[card.nature] =
+          (stats.natureCounts[card.nature] || 0) + 1;
       }
     } else if (card.type === 'rite') {
       stats.riteCount += 1;

@@ -1,6 +1,6 @@
 import React from 'react';
-import { CardSpot } from './CardSpot';
-import colors from '../../styles/Colors';
+import { CardSpot } from '../CardSpot/CardSpot';
+import colors from '../../../styles/Colors';
 
 interface FieldProps {}
 
@@ -20,7 +20,7 @@ export const Field = React.memo(() => {
     extraDeck: [colors.Gray_7, colors.Gray_8],
     special: [colors.Green_4, colors.Green_5],
     exile: [colors.Purple_9, colors.Purple_10],
-    graveyard: [colors.Gray_9, colors.Gray_10],
+    memora: [colors.Gray_9, colors.Gray_10],
     magic: [colors.Blue_16, colors.Blue_17],
     deck: [colors.Brown_8, colors.Brown_9],
   } as const;
@@ -37,7 +37,7 @@ export const Field = React.memo(() => {
     extraDeck: { backgroundColor: colors.Gray_1 },
     special: { backgroundColor: colors.Green_1 },
     exile: { backgroundColor: colors.Purple_1 },
-    graveyard: { backgroundColor: colors.Gray_2 },
+    memora: { backgroundColor: colors.Gray_2 },
     magic: { backgroundColor: colors.Blue_1 },
     deck: { backgroundColor: colors.Brown_1 },
   } as const;
@@ -49,7 +49,7 @@ export const Field = React.memo(() => {
 
     if (!spotType) {
       if (text === 'Extra Deck') resolvedType = 'extraDeck';
-      else if (text === 'Graveyard') resolvedType = 'graveyard';
+      else if (text === 'Memora') resolvedType = 'memora';
       else if (text === 'Exile') resolvedType = 'exile';
       else if (text === 'Deck') resolvedType = 'deck';
       else if (text.includes('Zone')) resolvedType = 'magic';
@@ -71,7 +71,7 @@ export const Field = React.memo(() => {
 const row2m = [
   createSpot('Deck'),
   ...Array.from({ length: 5 }, () => createSpot('Magic Zone')),
-  createSpot('Graveyard'),
+  createSpot('Memora'),
 ];
 
 const row1m = [
@@ -91,7 +91,7 @@ const row1 = [
 ];
 
 const row2 = [
-  createSpot('Graveyard'),
+  createSpot('Memora'),
   ...Array.from({ length: 5 }, () => createSpot('Magic Zone')),
   createSpot('Deck'),
 ];

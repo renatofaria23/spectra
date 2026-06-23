@@ -1,12 +1,12 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { Box, Text, TextInput, Group, Button, Badge } from '@mantine/core';
 import { IconPlus, IconSearch, IconTrash, IconPencil } from '@tabler/icons-react';
-import colors from '../styles/Colors';
+import colors from '../../styles/Colors';
 import { Link, useNavigate } from 'react-router-dom';
-import { readDecksAsync, deleteDeck, validateDeck, type Deck } from '../services/decksAPI';
-import { readCards } from '../services/cardsAPI';
-import type { CardData } from '../components/Card/CardTemplate';
-import { generateDescription } from '../logic/DescriptionEngine';
+import { readDecksAsync, deleteDeck, validateDeck, type Deck } from '../../services/decksAPI';
+import { readCards } from '../../services/cardsAPI';
+import type { CardData } from '../../components/Card/CardTemplate/CardTemplate';
+import { generateDescription } from '../../logic/DescriptionEngine';
 
 export const DeckList = () => {
   const navigate = useNavigate();
@@ -59,6 +59,7 @@ export const DeckList = () => {
 
   return (
     <Box
+      data-name="deck-list-container"
       style={{
         display: 'flex',
         flexDirection: 'column',
@@ -79,7 +80,7 @@ export const DeckList = () => {
         Total: {filteredDecks.length} deck{filteredDecks.length !== 1 ? 's' : ''}
       </Text>
 
-      <Group gap="md" style={{ flexWrap: 'wrap', justifyContent: 'center', width: '100%' }}>
+      <Group data-name="filter-group" gap="md" style={{ flexWrap: 'wrap', justifyContent: 'center', width: '100%' }}>
         <TextInput
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
@@ -98,6 +99,7 @@ export const DeckList = () => {
       </Group>
 
       <Box
+        data-name="deck-list-grid"
         style={{
           display: 'flex',
           flexDirection: 'column',
@@ -113,6 +115,7 @@ export const DeckList = () => {
 
            return (
              <Box
+               data-name="deck-item"
                key={deck.id}
                style={{
                  display: 'flex',
@@ -124,11 +127,11 @@ export const DeckList = () => {
                  border: `2px solid ${validation.isValid ? colors.Green_6 : colors.Red_8}`,
                }}
              >
-               <Box style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+               <Box data-name="deck-info-box" style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
                  <Text c={colors.White_1} size="lg" fw={600}>
                    {deck.name}
                  </Text>
-                 <Group gap="sm">
+                 <Group data-name="deck-badges-group" gap="sm">
                    <Badge c={colors.White_1} style={{ backgroundColor: colors.Blue_5 }}>
                      {count} cards
                    </Badge>
@@ -149,7 +152,7 @@ export const DeckList = () => {
                    )}
                  </Group>
                  {validation.errors.length > 0 && (
-                   <Box style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                   <Box data-name="validation-errors-box" style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
                      {validation.errors.map((err, i) => (
                        <Text key={i} c={colors.Red_4} size="xs" fw={500}>
                          {err}
@@ -159,7 +162,7 @@ export const DeckList = () => {
                  )}
                </Box>
 
-              <Group gap="sm">
+              <Group data-name="deck-action-group" gap="sm">
                 <Button
                   size="xs"
                   leftSection={<IconPencil size={12} />}

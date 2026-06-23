@@ -11,8 +11,8 @@
   --shadow:
     rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.5) 0 4px 6px -2px;
 
-  --sans: "Crimson Text", "Lora", system-ui, "Segoe UI", Roboto, sans-serif;
-  --heading: "Crimson Text", "Lora", system-ui, "Segoe UI", Roboto, sans-serif;
+  --sans: Roboto, sans-serif;
+  --heading: Roboto, sans-serif;
   --mono: ui-monospace, Consolas, monospace;
 
   font: 20px/160% var(--sans);
@@ -113,4 +113,15 @@ code {
   line-height: 160%;
   padding: 4px 8px;
   background: var(--code-bg);
+}
+
+@keyframes fadeInScale {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
 }

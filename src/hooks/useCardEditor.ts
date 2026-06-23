@@ -4,9 +4,9 @@ import { PassiveTrigger, ConditionalTrigger } from '../logic/Triggers';
 import type { EffectEntry } from '../logic/Effects';
 import type { TriggerEntry } from '../logic/Triggers';
 import type { ConditionalTriggerEffect } from '../logic/Triggers';
-import type { CardData } from '../components/Card/CardTemplate';
+import type { CardData } from '../components/Card/CardTemplate/CardTemplate';
 import { generateDescription } from '../logic/DescriptionEngine';
-import { isPassiveValue, isHpManaEffectTarget } from '../logic/CardEditorOptions';
+import { isPassiveValue, isHpManaEffectTarget, isNumenTarget } from '../logic/CardEditorOptions';
 import type { CardTypeOption, EffectSlot } from '../logic/CardEditorOptions';
 import type { AttackTarget } from '../logic/Triggers';
 import type { EffectTarget } from '../logic/Triggers';
@@ -25,7 +25,7 @@ export function useCardEditor() {
   const [level, setLevel] = useState<number | ''>('');
   const [attack, setAttack] = useState<number | ''>('');
   const [defense, setDefense] = useState<number | ''>('');
-  const [attribute, setAttribute] = useState('dark');
+  const [nature, setnature] = useState('dark');
   const [family, setFamily] = useState('');
   const [rarity, setRarity] = useState('');
   const [artFilename, setArtFilename] = useState<string>('placeholder.svg');
@@ -43,6 +43,8 @@ export function useCardEditor() {
   const [pendingEffects, setPendingEffects] = useState<PendingEffect[]>([]);
   const [effectSlots, setEffectSlots] = useState<EffectSlot[]>([]);
   const [editingSlotIndex, setEditingSlotIndex] = useState<number | null>(null);
+  const [editingEffectIndex, setEditingEffectIndex] = useState<number | null>(null);
+  const [addingEffectToSlot, setAddingEffectToSlot] = useState(false);
 
   const buildPreviewTriggers = (): TriggerEntry[] => {
     const triggers: TriggerEntry[] = [];
@@ -83,7 +85,7 @@ export function useCardEditor() {
 
     if (cardType === 'numen') {
       base.level = level || 1;
-      base.attribute = attribute;
+      base.nature = nature;
       if (family) base.family = family;
       base.attack = attack || 0;
       base.defense = defense || 0;
@@ -93,7 +95,7 @@ export function useCardEditor() {
     if (rarity) base.rarity = rarity;
 
     return base as CardData;
-  }, [cardType, name, mana, level, attack, defense, attribute, family, rarity, previewDescription, previewTriggers, artFilename]);
+  }, [cardType, name, mana, level, attack, defense, nature, family, rarity, previewDescription, previewTriggers, artFilename]);
 
   const handleTriggerTypeChange = (value: TriggerType | null) => {
     if (!value) return;
@@ -136,8 +138,8 @@ export function useCardEditor() {
         return { effect: EffectType.DRAW, count: op.count || 1, target: op.target || 'player' };
       case EffectType.SCRY:
         return { effect: EffectType.SCRY, count: op.count || 1, deck: op.deck || 'player' };
-      case EffectType.DESTROY:
-        return otTarget ? { effect: EffectType.DESTROY, count: op.count || 1, effectTarget: otTarget } : { effect: EffectType.DESTROY, count: op.count || 1 };
+      case EffectType.FORGET:
+        return otTarget ? { effect: EffectType.FORGET, count: op.count || 1, effectTarget: otTarget } : { effect: EffectType.FORGET, count: op.count || 1 };
       case EffectType.EXILE: {
         const exileFromField = (op as any).exileFromField !== false;
         if (exileFromField) {
@@ -166,56 +168,54 @@ export function useCardEditor() {
       }
       case EffectType.PETRIFY:
         return otTarget ? { effect: EffectType.PETRIFY, turns: op.turns || 1, effectTarget: otTarget } : { effect: EffectType.PETRIFY, turns: op.turns || 1 };
-      case EffectType.DECREASE:
-        return otTarget
-          ? { effect: EffectType.DECREASE, target: op.target || 'hp', amount: op.amount || 100, duration: isHpManaEffectTarget(otTarget) ? undefined : (op.duration || 'permanent'), durationTurns: isHpManaEffectTarget(otTarget) ? undefined : op.durationTurns, effectTarget: otTarget }
-          : { effect: EffectType.DECREASE, target: op.target || 'hp', amount: op.amount || 100, duration: op.duration || 'permanent' };
+      case EffectType.DECREASE: {
+        const decTargetType = op._targetType || 'self';
+        const decStatTarget = op.effectTarget;
+        const decIsNumen = isNumenTarget(decTargetType);
+        const decBase: any = { effect: EffectType.DECREASE, target: decTargetType, effectTarget: decStatTarget || (decIsNumen ? 'atk' : 'hp'), amount: op.amount || 100 };
+        if (decIsNumen) { decBase.duration = op.duration || 'permanent'; if (op.durationTurns) decBase.durationTurns = op.durationTurns; }
+        if (otTarget) decBase.effectTarget = otTarget;
+        return decBase;
+      }
       case EffectType.LOCK:
         return otTarget
           ? { effect: EffectType.LOCK, duration: op.duration || 'permanent', turns: op.turns, effectTarget: otTarget }
           : { effect: EffectType.LOCK, duration: op.duration || 'permanent', turns: op.turns };
-      case EffectType.INCREASE:
-        return otTarget
-          ? { effect: EffectType.INCREASE, target: op.target || 'atk', amount: op.amount || 100, duration: isHpManaEffectTarget(otTarget) ? undefined : (op.duration || 'permanent'), durationTurns: isHpManaEffectTarget(otTarget) ? undefined : op.durationTurns, effectTarget: otTarget }
-          : { effect: EffectType.INCREASE, target: op.target || 'atk', amount: op.amount || 100, duration: op.duration || 'permanent' };
+      case EffectType.INCREASE: {
+        const incTargetType = op._targetType || 'self';
+        const incStatTarget = op.effectTarget;
+        const incIsNumen = isNumenTarget(incTargetType);
+        const incBase: any = { effect: EffectType.INCREASE, target: incTargetType, effectTarget: incStatTarget || (incIsNumen ? 'atk' : 'hp'), amount: op.amount || 100 };
+        if (incIsNumen) { incBase.duration = op.duration || 'permanent'; if (op.durationTurns) incBase.durationTurns = op.durationTurns; }
+        if (otTarget) incBase.effectTarget = otTarget;
+        return incBase;
+      }
       case EffectType.ETHEREAL:
         return otTarget ? { effect: EffectType.ETHEREAL, count: op.count || 1, type: op.type || 'rite', effectTarget: otTarget } : { effect: EffectType.ETHEREAL, count: op.count || 1, type: op.type || 'rite' };
       case EffectType.FIND:
         return otTarget ? { effect: EffectType.FIND, count: op.count || 1, source: op.source || 'deck', effectTarget: otTarget } : { effect: EffectType.FIND, count: op.count || 1, source: op.source || 'deck' };
-      case EffectType.ADD_TRIGGER:
-        return otTarget ? { effect: EffectType.ADD_TRIGGER, trigger_type: op.trigger_type || 'CHALLENGE', duration: op.duration || 1, effectTarget: otTarget } : { effect: EffectType.ADD_TRIGGER, trigger_type: op.trigger_type || 'CHALLENGE', duration: op.duration || 1 };
-      case EffectType.SUMMON: {
-        const criteriaItems = op._criteriaItems || [];
-        const mergedCriteria: Record<string, any> = {};
-        for (const item of criteriaItems) {
-          if (item.type === 'name' && item.value) {
-            mergedCriteria.name = item.value;
-          } else if (item.type && item.value !== undefined && item.value !== null) {
-            if (mergedCriteria[item.type]) {
-              if (Array.isArray(mergedCriteria[item.type])) {
-                mergedCriteria[item.type] = [...new Set([...mergedCriteria[item.type], ...item.value])];
-              }
-            } else {
-              mergedCriteria[item.type] = item.value;
-            }
-          }
-        }
-        return otTarget
-          ? { effect: EffectType.SUMMON, from: op.from || 'player_deck', criteria: mergedCriteria, count: op.count || 1, effectTarget: otTarget }
-          : { effect: EffectType.SUMMON, from: op.from || 'player_deck', criteria: mergedCriteria, count: op.count || 1 };
-      }
-      case EffectType.COPY:
-        return otTarget
-          ? { effect: EffectType.COPY, copyTarget: op.copyTarget || 'numen', destination: op.destination || 'player_deck', count: op.count || 1, effectTarget: otTarget }
-          : { effect: EffectType.COPY, copyTarget: op.copyTarget || 'numen', destination: op.destination || 'player_deck', count: op.count || 1 };
       case EffectType.ADD:
         return otTarget
-          ? { effect: EffectType.ADD, destination: op.destination || 'player_deck', count: op.count || 1, effectTarget: otTarget }
-          : { effect: EffectType.ADD, destination: op.destination || 'player_deck', count: op.count || 1 };
-      case EffectType.RETURN:
-        return otTarget
-          ? { effect: EffectType.RETURN, destination: op.destination || 'hand', count: op.count || 1, effectTarget: otTarget }
-          : { effect: EffectType.RETURN, destination: op.destination || 'hand', count: op.count || 1 };
+          ? { effect: EffectType.ADD, addFrom: op.addFrom || 'player_field', addTargetType: op.addTargetType || 'any', destination: op.destination || 'player_deck', count: op.count || 1, effectTarget: otTarget }
+          : { effect: EffectType.ADD, addFrom: op.addFrom || 'player_field', addTargetType: op.addTargetType || 'any', destination: op.destination || 'player_deck', count: op.count || 1 };
+      case EffectType.RETURN: {
+        const returnTarget = effectParams.returnTarget || 'player_memora';
+        const returnFieldTarget = effectParams.returnFieldTarget;
+        const returnCardType = effectParams.returnCardType;
+        const returnDestination = effectParams.returnDestination || 'hand';
+        const isFieldTarget = returnTarget === 'player_field' || returnTarget === 'opponent_field';
+        const isZoneTarget = returnTarget.includes('_memora') || returnTarget.includes('_exile');
+        const isAllField = isFieldTarget && returnFieldTarget && returnFieldTarget.startsWith('all_');
+        const isAllZone = isZoneTarget && returnCardType === 'any';
+        const baseReturn: any = { effect: EffectType.RETURN, returnTarget, returnDestination, count: (isAllField || isAllZone) ? 1 : (op.count || 1) };
+        if (isFieldTarget && returnFieldTarget) {
+          baseReturn.returnFieldTarget = returnFieldTarget;
+        } else if (isZoneTarget) {
+          baseReturn.returnCardType = returnCardType;
+        }
+        if (otTarget) baseReturn.effectTarget = otTarget;
+        return baseReturn;
+      }
       default:
         return null;
     }
@@ -237,8 +237,8 @@ export function useCardEditor() {
       case EffectType.SCRY:
         effect = { effect: EffectType.SCRY, count: effectParams.count || 1, deck: effectParams.deck || 'player' };
         break;
-      case EffectType.DESTROY:
-        effect = target ? { effect: EffectType.DESTROY, count: effectParams.count || 1, effectTarget: target } : { effect: EffectType.DESTROY, count: effectParams.count || 1 };
+      case EffectType.FORGET:
+        effect = target ? { effect: EffectType.FORGET, count: effectParams.count || 1, effectTarget: target } : { effect: EffectType.FORGET, count: effectParams.count || 1 };
         break;
       case EffectType.EXILE: {
         const exileFromField = effectParams.exileFromField !== false;
@@ -271,21 +271,29 @@ export function useCardEditor() {
       case EffectType.PETRIFY:
         effect = target ? { effect: EffectType.PETRIFY, turns: effectParams.turns || 1, effectTarget: target } : { effect: EffectType.PETRIFY, turns: effectParams.turns || 1 };
         break;
-      case EffectType.DECREASE:
-        effect = target
-          ? { effect: EffectType.DECREASE, target: effectParams.target || 'hp', amount: effectParams.amount || 100, duration: isHpManaEffectTarget(target) ? undefined : (effectParams.duration || 'permanent'), durationTurns: isHpManaEffectTarget(target) ? undefined : effectParams.durationTurns, effectTarget: target }
-          : { effect: EffectType.DECREASE, target: effectParams.target || 'hp', amount: effectParams.amount || 100, duration: isHpManaEffectTarget(target) ? undefined : (effectParams.duration || 'permanent'), durationTurns: isHpManaEffectTarget(target) ? undefined : effectParams.durationTurns };
+      case EffectType.DECREASE: {
+        const decTargetType = effectParams._targetType || 'self';
+        const decStatTarget = effectParams.effectTarget;
+        const decIsNumen = isNumenTarget(decTargetType);
+        const decEffect: any = { effect: EffectType.DECREASE, target: decTargetType, effectTarget: decStatTarget || (decIsNumen ? 'atk' : 'hp'), amount: effectParams.amount || 100 };
+        if (decIsNumen) { decEffect.duration = effectParams.duration || 'permanent'; if (effectParams.durationTurns) decEffect.durationTurns = effectParams.durationTurns; }
+        effect = decEffect;
         break;
+      }
       case EffectType.LOCK:
         effect = target
           ? { effect: EffectType.LOCK, duration: effectParams.duration || 'permanent', turns: effectParams.turns, effectTarget: target }
           : { effect: EffectType.LOCK, duration: effectParams.duration || 'permanent', turns: effectParams.turns };
         break;
-      case EffectType.INCREASE:
-        effect = target
-          ? { effect: EffectType.INCREASE, target: effectParams.target || 'atk', amount: effectParams.amount || 100, duration: isHpManaEffectTarget(target) ? undefined : (effectParams.duration || 'permanent'), durationTurns: isHpManaEffectTarget(target) ? undefined : effectParams.durationTurns, effectTarget: target }
-          : { effect: EffectType.INCREASE, target: effectParams.target || 'atk', amount: effectParams.amount || 100, duration: isHpManaEffectTarget(target) ? undefined : (effectParams.duration || 'permanent'), durationTurns: isHpManaEffectTarget(target) ? undefined : effectParams.durationTurns };
+      case EffectType.INCREASE: {
+        const incTargetType = effectParams._targetType || 'self';
+        const incStatTarget = effectParams.effectTarget;
+        const incIsNumen = isNumenTarget(incTargetType);
+        const incEffect: any = { effect: EffectType.INCREASE, target: incTargetType, effectTarget: incStatTarget || (incIsNumen ? 'atk' : 'hp'), amount: effectParams.amount || 100 };
+        if (incIsNumen) { incEffect.duration = effectParams.duration || 'permanent'; if (effectParams.durationTurns) incEffect.durationTurns = effectParams.durationTurns; }
+        effect = incEffect;
         break;
+      }
       case EffectType.ETHEREAL:
          effect = target ? { effect: EffectType.ETHEREAL, count: effectParams.count || 1, type: effectParams.type || 'rite', effectTarget: target } : { effect: EffectType.ETHEREAL, count: effectParams.count || 1, type: effectParams.type || 'rite' };
         break;
@@ -295,25 +303,52 @@ export function useCardEditor() {
       case EffectType.ADD_TRIGGER:
         effect = target ? { effect: EffectType.ADD_TRIGGER, trigger_type: effectParams.trigger_type || 'CHALLENGE', duration: effectParams.duration || 1, effectTarget: target } : { effect: EffectType.ADD_TRIGGER, trigger_type: effectParams.trigger_type || 'CHALLENGE', duration: effectParams.duration || 1 };
         break;
-      case EffectType.SUMMON: {
-        const criteriaItems = effectParams._criteriaItems || [];
-        const mergedCriteria: Record<string, any> = {};
-        for (const item of criteriaItems) {
-          if (item.type === 'name' && item.value) {
-            mergedCriteria.name = item.value;
-          } else if (item.type && item.value !== undefined && item.value !== null) {
-            if (mergedCriteria[item.type]) {
-              if (Array.isArray(mergedCriteria[item.type])) {
-                mergedCriteria[item.type] = [...new Set([...mergedCriteria[item.type], ...item.value])];
-              }
-            } else {
-              mergedCriteria[item.type] = item.value;
-            }
+      case EffectType.INVOKE: {
+        const invokeCriteriaItems = effectParams._criteriaItems || [];
+        const mergedInvokeCriteria: Record<string, any> = {};
+        for (const item of invokeCriteriaItems) {
+          if (item.type === 'name' && item.value) mergedInvokeCriteria.name = item.value;
+          else if (item.type && item.value !== undefined && item.value !== null) {
+            if (mergedInvokeCriteria[item.type]) {
+              if (Array.isArray(mergedInvokeCriteria[item.type])) mergedInvokeCriteria[item.type] = [...new Set([...mergedInvokeCriteria[item.type], ...item.value])];
+            } else { mergedInvokeCriteria[item.type] = item.value; }
           }
         }
         effect = target
-          ? { effect: EffectType.SUMMON, from: effectParams.from || 'player_deck', criteria: mergedCriteria, count: effectParams.count || 1, effectTarget: target }
-          : { effect: EffectType.SUMMON, from: effectParams.from || 'player_deck', criteria: mergedCriteria, count: effectParams.count || 1 };
+          ? { effect: EffectType.INVOKE, from: effectParams.from || 'player_hand', criteria: mergedInvokeCriteria, count: effectParams.count || 1, effectTarget: target }
+          : { effect: EffectType.INVOKE, from: effectParams.from || 'player_hand', criteria: mergedInvokeCriteria, count: effectParams.count || 1 };
+        break;
+      }
+      case EffectType.EVOKE: {
+        const evokeCriteriaItems = effectParams._criteriaItems || [];
+        const mergedEvokeCriteria: Record<string, any> = {};
+        for (const item of evokeCriteriaItems) {
+          if (item.type === 'name' && item.value) mergedEvokeCriteria.name = item.value;
+          else if (item.type && item.value !== undefined && item.value !== null) {
+            if (mergedEvokeCriteria[item.type]) {
+              if (Array.isArray(mergedEvokeCriteria[item.type])) mergedEvokeCriteria[item.type] = [...new Set([...mergedEvokeCriteria[item.type], ...item.value])];
+            } else { mergedEvokeCriteria[item.type] = item.value; }
+          }
+        }
+        effect = target
+          ? { effect: EffectType.EVOKE, from: effectParams.from || 'player_memora', criteria: mergedEvokeCriteria, count: effectParams.count || 1, effectTarget: target }
+          : { effect: EffectType.EVOKE, from: effectParams.from || 'player_memora', criteria: mergedEvokeCriteria, count: effectParams.count || 1 };
+        break;
+      }
+      case EffectType.CONVOKE: {
+        const convokeCriteriaItems = effectParams._criteriaItems || [];
+        const mergedConvokeCriteria: Record<string, any> = {};
+        for (const item of convokeCriteriaItems) {
+          if (item.type === 'name' && item.value) mergedConvokeCriteria.name = item.value;
+          else if (item.type && item.value !== undefined && item.value !== null) {
+            if (mergedConvokeCriteria[item.type]) {
+              if (Array.isArray(mergedConvokeCriteria[item.type])) mergedConvokeCriteria[item.type] = [...new Set([...mergedConvokeCriteria[item.type], ...item.value])];
+            } else { mergedConvokeCriteria[item.type] = item.value; }
+          }
+        }
+        effect = target
+          ? { effect: EffectType.CONVOKE, from: effectParams.from || 'player_deck', criteria: mergedConvokeCriteria, count: effectParams.count || 1, effectTarget: target }
+          : { effect: EffectType.CONVOKE, from: effectParams.from || 'player_deck', criteria: mergedConvokeCriteria, count: effectParams.count || 1 };
         break;
       }
       case EffectType.COPY:
@@ -323,14 +358,35 @@ export function useCardEditor() {
         break;
       case EffectType.ADD:
         effect = target
-          ? { effect: EffectType.ADD, destination: effectParams.destination || 'player_deck', count: effectParams.count || 1, effectTarget: target }
-          : { effect: EffectType.ADD, destination: effectParams.destination || 'player_deck', count: effectParams.count || 1 };
+          ? { effect: EffectType.ADD, addFrom: effectParams.addFrom || 'player_field', addTargetType: effectParams.addTargetType || 'any', destination: effectParams.destination || 'player_deck', count: effectParams.count || 1, effectTarget: target }
+          : { effect: EffectType.ADD, addFrom: effectParams.addFrom || 'player_field', addTargetType: effectParams.addTargetType || 'any', destination: effectParams.destination || 'player_deck', count: effectParams.count || 1 };
         break;
-      case EffectType.RETURN:
-        effect = target
-          ? { effect: EffectType.RETURN, destination: effectParams.destination || 'hand', count: effectParams.count || 1, effectTarget: target }
-          : { effect: EffectType.RETURN, destination: effectParams.destination || 'hand', count: effectParams.count || 1 };
+      case EffectType.RETURN: {
+        const isSelfReturn = target === 'self';
+        if (isSelfReturn) {
+          effect = { effect: EffectType.RETURN, effectTarget: 'self', returnDestination: effectParams.returnDestination || 'hand' };
+        } else {
+          const returnTarget = effectParams.returnTarget || 'player_memora';
+          const returnFieldTarget = effectParams.returnFieldTarget;
+          const returnCardType = effectParams.returnCardType;
+          const returnDestination = effectParams.returnDestination || 'hand';
+          const isFieldTarget = returnTarget === 'player_field' || returnTarget === 'opponent_field';
+          const isZoneTarget = returnTarget.includes('_memora') || returnTarget.includes('_exile');
+          const isAllField = isFieldTarget && returnFieldTarget && returnFieldTarget.startsWith('all_');
+          const isAllZone = isZoneTarget && returnCardType === 'any';
+          const baseReturn: any = { effect: EffectType.RETURN, returnTarget, returnDestination, count: (isAllField || isAllZone) ? 1 : (effectParams.count || 1) };
+          if (isFieldTarget && returnFieldTarget) {
+            baseReturn.returnFieldTarget = returnFieldTarget;
+          } else if (isZoneTarget) {
+            baseReturn.returnCardType = returnCardType;
+          }
+          if (target) baseReturn.effectTarget = target;
+          effect = baseReturn;
+        }
         break;
+      }
+      default:
+        effect = null;
     }
 
     if (!effect) return;
@@ -378,6 +434,19 @@ export function useCardEditor() {
   };
 
   const addEffectToSlot = () => {
+    if (cardType === 'rite' || cardType === 'ward') {
+      if (pendingEffects.length === 0) return;
+
+      const slot: EffectSlot = {
+        trigger: ConditionalTrigger.DECREE,
+        effects: pendingEffects.map(p => p.effect),
+      };
+
+      setEffectSlots(prev => [...prev, slot]);
+      resetEffectForm();
+      return;
+    }
+
     if (triggerType === 'passive') {
       if (!selectedPassiveTrigger) return;
       const slot: EffectSlot = {
@@ -411,15 +480,88 @@ export function useCardEditor() {
     }
   };
 
+
+  const removeEffectInSlot = (slotIndex: number, effectIndex: number) => {
+    setEffectSlots(prev => {
+      const next = [...prev];
+      const slot = next[slotIndex]!;
+      const effectsList = slot.effects || (slot.effect ? [slot.effect] : []);
+      effectsList.splice(effectIndex, 1);
+      if (effectsList.length === 0) {
+        next.splice(slotIndex, 1);
+      } else {
+        next[slotIndex] = { ...slot, effects: effectsList };
+      }
+      return next;
+    });
+  };
+
+  const moveEffectInSlot = (slotIndex: number, effectIndex: number, direction: -1 | 1) => {
+    setEffectSlots(prev => {
+      const next = [...prev];
+      const slot = next[slotIndex]!;
+      const effectsList = slot.effects || (slot.effect ? [slot.effect] : []);
+      const newEffectIndex = effectIndex + direction;
+      if (newEffectIndex < 0 || newEffectIndex >= effectsList.length) return prev;
+      const temp: EffectEntry = effectsList[effectIndex]!;
+      effectsList[effectIndex] = effectsList[newEffectIndex]!;
+      effectsList[newEffectIndex] = temp;
+      next[slotIndex] = { ...slot, effects: effectsList };
+      return next;
+    });
+  };
+
   const removeEffectSlot = (index: number) => {
     setEffectSlots(prev => prev.filter((_, i) => i !== index));
   };
 
-  const loadEffectForEditing = (index: number) => {
+  const moveEffectSlot = (index: number, direction: -1 | 1) => {
+    setEffectSlots(prev => {
+      const newIndex = index + direction;
+      if (newIndex < 0 || newIndex >= prev.length) return prev;
+      const next = [...prev];
+      const temp: EffectSlot = next[index]!;
+      next[index] = next[newIndex]!;
+      next[newIndex] = temp;
+      return next;
+    });
+  };
+
+  const loadSlotForAddingEffect = (index: number) => {
+    const slot = effectSlots[index];
+    if (!slot) return;
+    if (isPassiveValue(slot.trigger as string)) return;
+
+    setEditingSlotIndex(index);
+    setEditingEffectIndex(null);
+    setAddingEffectToSlot(true);
+
+    setTriggerType('active');
+    setSelectedPassiveTrigger(null);
+
+    const trigger = slot.trigger as ConditionalTrigger;
+    setSelectedActiveTriggers(new Set([trigger]));
+
+    if (slot.attackTarget) {
+      setSelectedAttackTarget(slot.attackTarget);
+    } else {
+      setSelectedAttackTarget(null);
+    }
+
+    setSelectedEffectTarget(null);
+    setSelectedEffectType(null);
+    setPendingEffects([]);
+    setEffectParams({});
+    setWhenTarget('');
+    setWhenCondition('');
+  };
+
+  const loadEffectForEditing = (index: number, effectIndex?: number) => {
     const slot = effectSlots[index];
     if (!slot) return;
 
     setEditingSlotIndex(index);
+    setEditingEffectIndex(effectIndex ?? null);
 
     const isPassive = isPassiveValue(slot.trigger as string);
 
@@ -448,31 +590,31 @@ export function useCardEditor() {
       }
 
       const effectsList = slot.effects || (slot.effect ? [slot.effect] : []);
-      const firstEffect = effectsList[0];
+      const targetEffect = effectIndex !== undefined ? effectsList[effectIndex] : effectsList[0];
 
-      if (firstEffect) {
-        setSelectedEffectTarget(slot.effectTarget || (firstEffect as any).effectTarget || null);
-        setSelectedEffectType(firstEffect.effect as EffectType);
+      if (targetEffect) {
+        setSelectedEffectTarget(slot.effectTarget || (targetEffect as any).effectTarget || null);
+        setSelectedEffectType(targetEffect.effect as EffectType);
 
         const params: Record<string, any> = {};
-        switch (firstEffect.effect) {
+        switch (targetEffect.effect) {
           case EffectType.DRAW:
-            params.count = (firstEffect as any).count;
-            params.target = (firstEffect as any).target || 'player';
+            params.count = (targetEffect as any).count;
+            params.target = (targetEffect as any).target || 'player';
             break;
           case EffectType.SCRY:
-            params.count = (firstEffect as any).count;
-            params.deck = (firstEffect as any).deck || 'player';
+            params.count = (targetEffect as any).count;
+            params.deck = (targetEffect as any).deck || 'player';
             break;
-          case EffectType.DESTROY:
-            params.count = (firstEffect as any).count || 1;
+          case EffectType.FORGET:
+            params.count = (targetEffect as any).count || 1;
             break;
           case EffectType.EXILE:
-            params.count = (firstEffect as any).count || 1;
-            params.from = (firstEffect as any).from;
-            if ((firstEffect as any).criteria) {
+            params.count = (targetEffect as any).count || 1;
+            params.from = (targetEffect as any).from;
+            if ((targetEffect as any).criteria) {
               params.exileFromField = false;
-              const criteria = (firstEffect as any).criteria;
+              const criteria = (targetEffect as any).criteria;
               params._criteriaItems = [];
               if (criteria.name) params._criteriaItems.push({ type: 'name', value: criteria.name });
               if (criteria.level) params._criteriaItems.push({ type: 'level', value: criteria.level });
@@ -484,41 +626,43 @@ export function useCardEditor() {
             }
             break;
           case EffectType.PETRIFY:
-            params.turns = (firstEffect as any).turns;
+            params.turns = (targetEffect as any).turns;
             break;
           case EffectType.DECREASE:
-            params.target = (firstEffect as any).target || 'hp';
-            params.amount = (firstEffect as any).amount;
-            params.duration = (firstEffect as any).duration || 'permanent';
-            if ((firstEffect as any).durationTurns) params.durationTurns = (firstEffect as any).durationTurns;
+            params._targetType = (targetEffect as any).target || 'self';
+            params.effectTarget = (targetEffect as any).effectTarget || 'atk';
+            params.amount = (targetEffect as any).amount;
+            params.duration = (targetEffect as any).duration || 'permanent';
+            if ((targetEffect as any).durationTurns) params.durationTurns = (targetEffect as any).durationTurns;
             break;
           case EffectType.LOCK:
-            params.duration = (firstEffect as any).duration || 'permanent';
-            if ((firstEffect as any).turns) params.turns = (firstEffect as any).turns;
+            params.duration = (targetEffect as any).duration || 'permanent';
+            if ((targetEffect as any).turns) params.turns = (targetEffect as any).turns;
             break;
           case EffectType.INCREASE:
-            params.target = (firstEffect as any).target || 'atk';
-            params.amount = (firstEffect as any).amount;
-            params.duration = (firstEffect as any).duration || 'permanent';
-            if ((firstEffect as any).durationTurns) params.durationTurns = (firstEffect as any).durationTurns;
+            params._targetType = (targetEffect as any).target || 'self';
+            params.effectTarget = (targetEffect as any).effectTarget || 'atk';
+            params.amount = (targetEffect as any).amount;
+            params.duration = (targetEffect as any).duration || 'permanent';
+            if ((targetEffect as any).durationTurns) params.durationTurns = (targetEffect as any).durationTurns;
             break;
           case EffectType.ETHEREAL:
-            params.count = (firstEffect as any).count;
-            params.type = (firstEffect as any).type || 'rite';
+            params.count = (targetEffect as any).count;
+            params.type = (targetEffect as any).type || 'rite';
             break;
           case EffectType.FIND:
-            params.count = (firstEffect as any).count;
-            params.source = (firstEffect as any).source || 'deck';
+            params.count = (targetEffect as any).count;
+            params.source = (targetEffect as any).source || 'deck';
             break;
           case EffectType.ADD_TRIGGER:
-            params.trigger_type = (firstEffect as any).trigger_type || 'CHALLENGE';
-            params.duration = (firstEffect as any).duration || 1;
+            params.trigger_type = (targetEffect as any).trigger_type || 'CHALLENGE';
+            params.duration = (targetEffect as any).duration || 1;
             break;
-          case EffectType.SUMMON:
-            params.from = (firstEffect as any).from || 'player_deck';
-            params.count = (firstEffect as any).count || 1;
-            if ((firstEffect as any).criteria) {
-              const criteria = (firstEffect as any).criteria;
+          case EffectType.INVOKE:
+            params.from = (targetEffect as any).from || 'player_deck';
+            params.count = (targetEffect as any).count || 1;
+            if ((targetEffect as any).criteria) {
+              const criteria = (targetEffect as any).criteria;
               params._criteriaItems = [];
               if (criteria.name) params._criteriaItems.push({ type: 'name', value: criteria.name });
               if (criteria.level) params._criteriaItems.push({ type: 'level', value: criteria.level });
@@ -528,22 +672,27 @@ export function useCardEditor() {
             }
             break;
           case EffectType.COPY:
-            params.copyTarget = (firstEffect as any).copyTarget || 'numen';
-            params.destination = (firstEffect as any).destination || 'player_deck';
-            params.count = (firstEffect as any).count || 1;
+            params.copyTarget = (targetEffect as any).copyTarget || 'numen';
+            params.destination = (targetEffect as any).destination || 'player_deck';
+            params.count = (targetEffect as any).count || 1;
             break;
           case EffectType.ADD:
-            params.destination = (firstEffect as any).destination || 'player_deck';
-            params.count = (firstEffect as any).count || 1;
+            params.addFrom = (targetEffect as any).addFrom || 'player_field';
+            params.addTargetType = (targetEffect as any).addTargetType || 'any';
+            params.destination = (targetEffect as any).destination || 'player_deck';
+            params.count = (targetEffect as any).count || 1;
             break;
           case EffectType.RETURN:
-            params.destination = (firstEffect as any).destination || 'hand';
-            params.count = (firstEffect as any).count || 1;
+            params.returnTarget = (targetEffect as any).returnTarget || ((targetEffect as any).effectTarget === 'self' ? 'self' : 'memora');
+            params.returnFieldTarget = (targetEffect as any).returnFieldTarget;
+            params.returnCardType = (targetEffect as any).returnCardType;
+            params.returnDestination = (targetEffect as any).returnDestination || 'hand';
+            params.count = (targetEffect as any).count || 1;
             break;
         }
 
-        if ((firstEffect as any).otherwise && (firstEffect as any).otherwise_effect) {
-          const oe = (firstEffect as any).otherwise_effect;
+        if ((targetEffect as any).otherwise && (targetEffect as any).otherwise_effect) {
+          const oe = (targetEffect as any).otherwise_effect;
           params.otherwise = true;
           params.otherwise_effect_type = oe.effect;
           params.otherwise_effect_params = {};
@@ -564,8 +713,8 @@ export function useCardEditor() {
           params.otherwise = false;
         }
 
-        if ((firstEffect as any).or && (firstEffect as any).or_effect) {
-          const orE = (firstEffect as any).or_effect;
+        if ((targetEffect as any).or && (targetEffect as any).or_effect) {
+          const orE = (targetEffect as any).or_effect;
           params.or = true;
           params.or_effect_type = orE.effect;
           params.or_effect_params = {};
@@ -586,9 +735,9 @@ export function useCardEditor() {
           params.or = false;
         }
 
-        if ((firstEffect as any).forEach && (firstEffect as any).forEachConfig) {
+        if ((targetEffect as any).forEach && (targetEffect as any).forEachConfig) {
           params.forEach = true;
-          params.forEachConfig = (firstEffect as any).forEachConfig;
+          params.forEachConfig = (targetEffect as any).forEachConfig;
         } else {
           params.forEach = false;
         }
@@ -604,6 +753,8 @@ export function useCardEditor() {
 
   const cancelEditing = () => {
     setEditingSlotIndex(null);
+    setEditingEffectIndex(null);
+    setAddingEffectToSlot(false);
     setSelectedPassiveTrigger(null);
     setSelectedActiveTriggers(new Set());
     setSelectedAttackTarget(null);
@@ -613,6 +764,21 @@ export function useCardEditor() {
     setEffectParams({});
     setWhenTarget('');
     setWhenCondition('');
+  };
+
+  const addPendingEffectToSlot = () => {
+    if (editingSlotIndex === null) return;
+    if (pendingEffects.length === 0) return;
+
+    setEffectSlots(prev => {
+      const next = [...prev];
+      const slot = next[editingSlotIndex]!;
+      const effectsList = slot.effects || (slot.effect ? [slot.effect] : []);
+      effectsList.push(...pendingEffects.map(p => p.effect));
+      next[editingSlotIndex] = { ...slot, effects: effectsList };
+      return next;
+    });
+    cancelEditing();
   };
 
   const replaceEffectSlot = () => {
@@ -638,19 +804,25 @@ export function useCardEditor() {
       setEffectSlots(prev => {
         const next = [...prev];
         const oldSlot = next[editingSlotIndex];
-        const triggers = oldSlot && oldSlot.trigger ? [oldSlot.trigger] : Array.from(selectedActiveTriggers);
 
-        for (const trigger of triggers) {
-          const slotIndex = next.findIndex((s, i) => i === editingSlotIndex || (s.trigger === trigger && i >= editingSlotIndex));
-          const slot: EffectSlot = {
-            trigger,
-            effects: pendingEffects.map(p => p.effect),
-          };
-          if (selectedAttackTarget) {
-            slot.attackTarget = selectedAttackTarget;
-          }
-          if (slotIndex !== -1) {
-            next[slotIndex] = slot;
+        if (editingEffectIndex !== null && oldSlot) {
+          const effectsList = oldSlot.effects || (oldSlot.effect ? [oldSlot.effect] : []);
+          effectsList[editingEffectIndex] = pendingEffects[0]?.effect || effectsList[editingEffectIndex]!;
+          next[editingSlotIndex] = { ...oldSlot, effects: effectsList };
+        } else {
+          const triggers = oldSlot && oldSlot.trigger ? [oldSlot.trigger] : Array.from(selectedActiveTriggers);
+          for (const trigger of triggers) {
+            const slotIndex = next.findIndex((s, i) => i === editingSlotIndex || (s.trigger === trigger && i >= editingSlotIndex));
+            const slot: EffectSlot = {
+              trigger,
+              effects: pendingEffects.map(p => p.effect),
+            };
+            if (selectedAttackTarget) {
+              slot.attackTarget = selectedAttackTarget;
+            }
+            if (slotIndex !== -1) {
+              next[slotIndex] = slot;
+            }
           }
         }
         return next;
@@ -662,14 +834,13 @@ export function useCardEditor() {
 
   const isEffectComplete = (): boolean => {
     if (!selectedEffectType) return false;
-    if (selectedActiveTriggers.size === 0) return false;
 
     switch (selectedEffectType) {
       case EffectType.DRAW:
         return !!effectParams.count && !!effectParams.target;
       case EffectType.SCRY:
         return !!effectParams.count && !!effectParams.deck;
-      case EffectType.DESTROY:
+      case EffectType.FORGET:
         return true;
       case EffectType.EXILE: {
         const exileFromField = effectParams.exileFromField !== false;
@@ -679,12 +850,14 @@ export function useCardEditor() {
       case EffectType.PETRIFY:
         return !!effectParams.turns;
       case EffectType.DECREASE: {
-        const isHpManaTarget = isHpManaEffectTarget(selectedEffectTarget);
-        const hasStat = !selectedEffectTarget || isNumenEffectTarget(selectedEffectTarget) ? !!effectParams.target : true;
-        const hasDuration = isHpManaTarget ? true : !!effectParams.duration;
+        const hasTargetType = !!effectParams._targetType;
+        const decTargetType = effectParams._targetType;
+        const hasStatTarget = !!effectParams.effectTarget;
+        const decIsNumen = isNumenTarget(decTargetType);
+        const hasDuration = decIsNumen ? !!effectParams.duration : true;
         const hasDurationTurns = effectParams.duration === 'temporary' ? !!effectParams.durationTurns : true;
         const hasAmount = !!effectParams.amount;
-        return hasStat && hasDuration && hasDurationTurns && hasAmount;
+        return hasTargetType && hasStatTarget && hasDuration && hasDurationTurns && hasAmount;
       }
       case EffectType.LOCK: {
         const hasDuration = !!effectParams.duration;
@@ -692,12 +865,14 @@ export function useCardEditor() {
         return hasDuration && hasTurns;
       }
       case EffectType.INCREASE: {
-        const isHpManaTarget = isHpManaEffectTarget(selectedEffectTarget);
-        const hasStat = !selectedEffectTarget || isNumenEffectTarget(selectedEffectTarget) ? !!effectParams.target : true;
-        const hasDuration = isHpManaTarget ? true : !!effectParams.duration;
+        const hasTargetType = !!effectParams._targetType;
+        const incTargetType = effectParams._targetType;
+        const hasStatTarget = !!effectParams.effectTarget;
+        const incIsNumen = isNumenTarget(incTargetType);
+        const hasDuration = incIsNumen ? !!effectParams.duration : true;
         const hasDurationTurns = effectParams.duration === 'temporary' ? !!effectParams.durationTurns : true;
         const hasAmount = !!effectParams.amount;
-        return hasStat && hasDuration && hasDurationTurns && hasAmount;
+        return hasTargetType && hasStatTarget && hasDuration && hasDurationTurns && hasAmount;
       }
       case EffectType.ETHEREAL:
         return !!effectParams.count && !!effectParams.type;
@@ -705,14 +880,29 @@ export function useCardEditor() {
         return !!effectParams.count && !!effectParams.source;
       case EffectType.ADD_TRIGGER:
         return !!effectParams.trigger_type && !!effectParams.duration;
-      case EffectType.SUMMON:
+      case EffectType.INVOKE:
+      case EffectType.EVOKE:
+      case EffectType.CONVOKE:
         return !!effectParams.from && !!effectParams.count;
       case EffectType.COPY:
         return !!effectParams.copyTarget && !!effectParams.destination && !!effectParams.count;
       case EffectType.ADD:
-        return !!effectParams.destination && !!effectParams.count;
-      case EffectType.RETURN:
-        return !!effectParams.destination && !!effectParams.count;
+        return !!effectParams.addFrom && !!effectParams.addTargetType && !!effectParams.destination && !!effectParams.count;
+      case EffectType.RETURN: {
+        const isSelfReturn = effectParams.returnTarget === 'self';
+        if (isSelfReturn) {
+          return true;
+        }
+        const hasReturnTarget = !!effectParams.returnTarget;
+        const returnTarget = effectParams.returnTarget;
+        const isField = returnTarget === 'field';
+        const isZone = returnTarget === 'memora' || returnTarget === 'exile';
+        const hasFieldTarget = isField ? !!effectParams.returnFieldTarget : true;
+        const hasZoneTarget = isZone ? !!effectParams.returnCardType : true;
+        const isAll = isField && effectParams.returnFieldTarget && effectParams.returnFieldTarget.startsWith('all_');
+        const hasCount = isAll ? true : !!effectParams.count;
+        return hasReturnTarget && hasFieldTarget && hasZoneTarget && hasCount;
+      }
       default:
         return false;
     }
@@ -735,7 +925,7 @@ export function useCardEditor() {
     level, setLevel,
     attack, setAttack,
     defense, setDefense,
-    attribute, setAttribute,
+    nature, setnature,
     family, setFamily,
     rarity, setRarity,
     artFilename, setArtFilename,
@@ -750,6 +940,8 @@ export function useCardEditor() {
     pendingEffects, setPendingEffects,
     effectSlots, setEffectSlots,
     editingSlotIndex,
+    editingEffectIndex,
+    addingEffectToSlot,
     previewTriggers,
     previewDescription,
     buildPreviewCard,
@@ -760,9 +952,14 @@ export function useCardEditor() {
     removePendingEffect,
     addEffectToSlot,
     removeEffectSlot,
+    moveEffectSlot,
+    removeEffectInSlot,
+    moveEffectInSlot,
     loadEffectForEditing,
+    loadSlotForAddingEffect,
     cancelEditing,
     replaceEffectSlot,
+    addPendingEffectToSlot,
     isEffectComplete,
     isEffectAndForEachComplete,
     whenTarget, setWhenTarget,

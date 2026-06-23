@@ -135,7 +135,7 @@ export const effectTargetOptions = [
     { value: 'opponent_hp', label: "Opponent's HP" },
     { value: 'opponent_hand', label: "Opponent's Hand" },
     { value: 'opponent_deck', label: "Opponent's Deck" },
-    { value: 'opponent_graveyard', label: "Opponent's Graveyard" },
+    { value: 'opponent_memora', label: "Opponent's Memora" },
     { value: 'opponent_exile', label: "Opponent's Exile" },
     { value: 'opponent_mana', label: "Opponent's Mana" },
   ]},
@@ -143,7 +143,7 @@ export const effectTargetOptions = [
     { value: 'player_hp', label: "Player's HP" },
     { value: 'player_hand', label: "Player's Hand" },
     { value: 'player_deck', label: "Player's Deck" },
-    { value: 'player_graveyard', label: "Player's Graveyard" },
+    { value: 'player_memora', label: "Player's Memora" },
     { value: 'player_exile', label: "Player's Exile" },
     { value: 'player_mana', label: "Player's Mana" },
   ]},
@@ -162,6 +162,39 @@ const INCREASE_DECREASE_PLAYER_TARGETS: EffectTarget[] = [
   'opponent_hp', 'opponent_mana', 'player_hp', 'player_mana',
 ];
 
+export const increaseDecreaseTargetOptions = [
+  { value: 'self', label: 'Self (this card)' },
+  { value: 'numen', label: 'Numen' },
+  { value: 'player', label: 'Player' },
+  { value: 'opponent', label: 'Opponent' },
+];
+
+export const numenStatOptions = [
+  { value: 'atk', label: 'ATK' },
+  { value: 'def', label: 'DEF' },
+  { value: 'both', label: 'ATK and DEF' },
+];
+
+export const playerStatOptions = [
+  { value: 'hp', label: 'HP' },
+  { value: 'mana', label: 'Mana' },
+];
+
+export const getStatTargetOptions = (target: string | undefined): { value: string; label: string }[] => {
+  if (target === 'self' || target === 'numen') {
+    return numenStatOptions;
+  }
+  return playerStatOptions;
+};
+
+export const isNumenTarget = (target: string | null | undefined): boolean => {
+  return target === 'self' || target === 'numen';
+};
+
+export const isPlayerTarget = (target: string | null | undefined): boolean => {
+  return target === 'player' || target === 'opponent';
+};
+
 const EXILE_EXCLUDED_TARGETS: EffectTarget[] = [
   'player_hp', 'player_mana', 'opponent_hp', 'opponent_mana',
   'global_allied_numina', 'global_enemy_numina',
@@ -177,7 +210,7 @@ const RETURN_ADD_FIELD_TARGETS: EffectTarget[] = [
   'allied_ward', 'enemy_ward', 'all_allied_wards', 'all_enemy_wards',
 ];
 
-const DESTROY_EXILE_FIELD_TARGETS: EffectTarget[] = [
+const FORGET_EXILE_FIELD_TARGETS: EffectTarget[] = [
   'self', 'attack_target', 'any_card', 'all_cards',
   'any_numen',
   'allied_numen', 'enemy_numen', 'all_allied_numina', 'all_enemy_numina',
@@ -195,7 +228,7 @@ export const getEffectTargetOptions = (
   const isNonAttack = trigger && NON_ATTACK_TRIGGERS.includes(trigger);
   const isIncreaseDecrease = effectType === EffectType.INCREASE || effectType === EffectType.DECREASE;
   const isExile = effectType === EffectType.EXILE;
-  const isDestroy = effectType === EffectType.DESTROY;
+  const isForget = effectType === EffectType.FORGET;
   const isReturn = effectType === EffectType.RETURN;
   const isAdd = effectType === EffectType.ADD;
 
@@ -282,7 +315,7 @@ export const getEffectTargetOptions = (
     }
   }
 
-  if (isExile || isDestroy) {
+  if (isExile || isForget) {
     const allLabels = effectTargetOptions.flatMap(g => g.items);
     filtered = [
       { group: 'This Card', items: [{ value: 'self', label: allLabels.find(i => i.value === 'self')?.label || 'Self' }] },
@@ -343,7 +376,7 @@ export const isHpManaEffectTarget = (target: EffectTarget | null | undefined): b
 export const effectOptions = [
   { value: EffectType.DRAW, label: 'Draw' },
   { value: EffectType.SCRY, label: 'Scry' },
-  { value: EffectType.DESTROY, label: 'Destroy' },
+  { value: EffectType.FORGET, label: 'Forget' },
   { value: EffectType.EXILE, label: 'Exile' },
   { value: EffectType.PETRIFY, label: 'Petrify' },
   { value: EffectType.DECREASE, label: 'Decrease' },
@@ -352,21 +385,27 @@ export const effectOptions = [
   { value: EffectType.ETHEREAL, label: 'Ethereal' },
   { value: EffectType.FIND, label: 'Find' },
   { value: EffectType.ADD_TRIGGER, label: 'Add Trigger' },
-  { value: EffectType.SUMMON, label: 'Summon' },
+  { value: EffectType.INVOKE, label: 'Invoke' },
+  { value: EffectType.EVOKE, label: 'Evoke' },
+  { value: EffectType.CONVOKE, label: 'Convoke' },
   { value: EffectType.COPY, label: 'Copy' },
   { value: EffectType.ADD, label: 'Add' },
   { value: EffectType.RETURN, label: 'Return' },
 ];
 
-export const summonFromOptions = [
-  { value: 'player_deck', label: "Your Deck" },
+export const invokeFromOptions = [
   { value: 'player_hand', label: "Your Hand" },
-  { value: 'player_graveyard', label: "Your Graveyard" },
-  { value: 'player_exile', label: "Your Exile" },
-  { value: 'opponent_deck', label: "Opponent's Deck" },
   { value: 'opponent_hand', label: "Opponent's Hand" },
-  { value: 'opponent_graveyard', label: "Opponent's Graveyard" },
-  { value: 'opponent_exile', label: "Opponent's Exile" },
+];
+
+export const evokeFromOptions = [
+  { value: 'player_memora', label: "Your Memora" },
+  { value: 'opponent_memora', label: "Opponent's Memora" },
+];
+
+export const convokeFromOptions = [
+  { value: 'player_deck', label: "Your Deck" },
+  { value: 'opponent_deck', label: "Opponent's Deck" },
 ];
 
 export const copyTargetTypeOptions = [
@@ -384,13 +423,88 @@ export const copyTargetTypeOptions = [
 export const addDestinationOptions = [
   { value: 'player_deck', label: "Your Deck" },
   { value: 'opponent_deck', label: "Opponent's Deck" },
-  { value: 'player_graveyard', label: "Your Graveyard" },
-  { value: 'opponent_graveyard', label: "Opponent's Graveyard" },
+  { value: 'player_memora', label: "Your Memora" },
+  { value: 'opponent_memora', label: "Opponent's Memora" },
   { value: 'player_exile', label: "Your Exile" },
   { value: 'opponent_exile', label: "Opponent's Exile" },
   { value: 'player_hand', label: "Your Hand" },
   { value: 'opponent_hand', label: "Opponent's Hand" },
 ];
+
+export const addFromOptions = [
+  { value: 'player_field', label: "Your Field" },
+  { value: 'opponent_field', label: "Opponent's Field" },
+  { value: 'any_field', label: "Any Field" },
+  { value: 'player_memora', label: "Your Memora" },
+  { value: 'opponent_memora', label: "Opponent's Memora" },
+  { value: 'any_memora', label: "Any Memora" },
+  { value: 'player_exile', label: "Your Exile" },
+  { value: 'opponent_exile', label: "Opponent's Exile" },
+  { value: 'any_exile', label: "Any Exile" },
+  { value: 'player_deck', label: "Your Deck" },
+  { value: 'opponent_deck', label: "Opponent's Deck" },
+  { value: 'any_deck', label: "Any Deck" },
+  { value: 'player_hand', label: "Your Hand" },
+  { value: 'opponent_hand', label: "Opponent's Hand" },
+  { value: 'any_hand', label: "Any Hand" },
+];
+
+export const returnTargetOptions = [
+  { value: 'self', label: "Self (this card)" },
+  { value: 'player_field', label: "Your Field" },
+  { value: 'opponent_field', label: "Opponent's Field" },
+  { value: 'player_memora', label: "Your Memora" },
+  { value: 'opponent_memora', label: "Opponent's Memora" },
+  { value: 'player_exile', label: "Your Exile" },
+  { value: 'opponent_exile', label: "Opponent's Exile" },
+];
+
+export const returnFieldTargetOptions = [
+  { value: 'all_enemy_numina', label: 'All Enemy Numina' },
+  { value: 'all_allied_numina', label: 'All Allied Numina' },
+  { value: 'all_enemy_rites', label: 'All Enemy Rites' },
+  { value: 'all_allied_rites', label: 'All Allied Rites' },
+  { value: 'all_enemy_wards', label: 'All Enemy Wards' },
+  { value: 'all_allied_wards', label: 'All Allied Wards' },
+  { value: 'enemy_numen', label: 'An Enemy Numen' },
+  { value: 'allied_numen', label: 'An Allied Numen' },
+  { value: 'enemy_rite', label: 'An Enemy Rite' },
+  { value: 'allied_rite', label: 'An Allied Rite' },
+  { value: 'enemy_ward', label: 'An Enemy Ward' },
+  { value: 'allied_ward', label: 'An Allied Ward' },
+];
+
+export const returnCardTypeOptions = [
+  { value: 'numen', label: 'Numen' },
+  { value: 'rite', label: 'Rite' },
+  { value: 'ward', label: 'Ward' },
+  { value: 'any', label: 'Any' },
+];
+
+export const returnDestinationOptions = [
+  { value: 'hand', label: 'Hand' },
+  { value: 'deck', label: 'Deck' },
+];
+
+export const isReturnTargetField = (target: string | undefined): boolean => {
+  if (!target) return false;
+  return target === 'player_field' || target === 'opponent_field';
+};
+
+export const isReturnTargetZone = (target: string | undefined): boolean => {
+  if (!target) return false;
+  return target === 'player_memora' || target === 'opponent_memora' || target === 'player_exile' || target === 'opponent_exile';
+};
+
+export const isReturnAllTarget = (target: string | undefined): boolean => {
+  if (!target) return false;
+  return target.startsWith('all_');
+};
+
+export const isReturnAllFieldTarget = (target: string | undefined): boolean => {
+  if (!target) return false;
+  return target.startsWith('all_');
+};
 
 export const passiveTriggerOptions = [
   { value: PassiveTrigger.CHALLENGE, label: 'Challenge' },
@@ -402,9 +516,10 @@ export const passiveTriggerOptions = [
   { value: PassiveTrigger.RECLUSE, label: 'Recluse' },
   { value: PassiveTrigger.LEGION, label: 'Legion' },
   { value: PassiveTrigger.RELENTLESS, label: 'Relentless' },
+  { value: PassiveTrigger.SHROUDED, label: 'Shrouded' },
 ];
 
-export const destroyTargetTypes = [
+export const forgetTargetTypes = [
   { value: 'numen', label: 'Numen' },
   { value: 'another_numen', label: 'Another Numen' },
   { value: 'rite', label: 'Rite' },
@@ -420,10 +535,15 @@ export const destroyTargetTypes = [
   { value: 'defending_numina', label: 'Defending Numina' },
 ];
 
-export const statTargetOptions = [
+export const numenStatTargetOptions = [
   { value: 'atk', label: 'ATK' },
   { value: 'def', label: 'DEF' },
+  { value: 'both', label: 'ATK and DEF' },
+];
+
+export const playerStatTargetOptions = [
   { value: 'hp', label: 'HP' },
+  { value: 'mana', label: 'Mana' },
 ];
 
 export const scryDeckOptions = [
@@ -439,19 +559,20 @@ export const etherealTypeOptions = [
 
 export const findSourceOptions = [
   { value: 'deck', label: 'Deck' },
-  { value: 'graveyard', label: 'Graveyard' },
+  { value: 'memora', label: 'Memora' },
   { value: 'exile', label: 'Exile' },
 ];
 
 export const familyOptions = [
-  { value: 'angel', label: 'Angel' },
+  { value: 'deity', label: 'Deity' },
   { value: 'beast', label: 'Beast' },
   { value: 'bug', label: 'Bug' },
-  { value: 'demon', label: 'Demon' },
+  { value: 'larva', label: 'Larva' },
   { value: 'dragon', label: 'Dragon' },
   { value: 'elemental', label: 'Elemental' },
   { value: 'god', label: 'God' },
   { value: 'human', label: 'Human' },
+  { value: 'lemur', label: 'Lemur' },
   { value: 'plant', label: 'Plant' },
   { value: 'undead', label: 'Undead' },
 ];
@@ -557,13 +678,13 @@ export const effectTargetLabels: Record<string, string> = {
   opponent_hp: "Opponent's HP",
   opponent_hand: "Opponent's Hand",
   opponent_deck: "Opponent's Deck",
-  opponent_graveyard: "Opponent's Graveyard",
+  opponent_memora: "Opponent's Memora",
   opponent_exile: "Opponent's Exile",
   opponent_mana: "Opponent's Mana",
   player_hp: "Player's HP",
   player_hand: "Player's Hand",
   player_deck: "Player's Deck",
-  player_graveyard: "Player's Graveyard",
+  player_memora: "Player's Memora",
   player_exile: "Player's Exile",
   player_mana: "Player's Mana",
 };
@@ -572,6 +693,13 @@ export const getEffectTargetLabel = (target: string | null | undefined): string 
   if (!target) return '';
   return effectTargetLabels[target] || target;
 };
+
+export const addTargetTypeOptions = [
+  { value: 'numen', label: 'Numen' },
+  { value: 'rite', label: 'Rite' },
+  { value: 'ward', label: 'Ward' },
+  { value: 'any', label: 'Any' },
+];
 
 export const inputStyles = {
   input: {

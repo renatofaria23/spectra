@@ -1,7 +1,8 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Box, Text } from '@mantine/core';
-import colors from '../../styles/Colors';
+import colors from '../../../styles/Colors';
+import * as styles from './CardSpot.css.ts';
 
 interface CardSpotProps {
   x?: number;
@@ -95,29 +96,26 @@ export const CardSpot = React.memo(
       }
 
       return (
-        <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 0 }}>
+        <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" style={styles.spotOverlay}>
           {rings}
         </svg>
       );
     };
 
     return (
-      <Box onClick={handleClick} style={{ pointerEvents: handleClick ? 'auto' : 'none' }}>
+      <Box data-name="cardspot-root" onClick={handleClick} style={styles.spotRoot}>
         <div
+          data-name="cardspot-wrapper"
           style={{
+            ...styles.spotWrapper,
+            ...styles.spotWrapperNoise,
             position: absolutePositioning ? 'absolute' : 'relative',
             ...(absolutePositioning ? { transform: 'translate(-50%, -50%)' } : {}),
             backgroundColor,
-            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.08'/%3E%3C/svg%3E")`,
-            borderRadius: '8px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
             cursor: handleClick ? 'pointer' : 'default',
             border: `1px solid ${isSelected ? effectiveSelectedBorder : borderColor}`,
             ...positionStyle,
             ...dimensions,
-            transition: 'all 0.15s ease-out',
             ...(additionalStyle || {}),
           }}
         >
@@ -128,11 +126,11 @@ export const CardSpot = React.memo(
             animate={{ opacity: 1, scale: 1 }}
             whileHover={{ scale: isSelected ? 1 : 1.02 }}
             whileTap={{ scale: isSelected ? 1 : 0.98 }}
-            style={{ width: '100%', height: '100%' }}
+            style={styles.spotContent as any}
           >
             {text && (
-              <Box style={{ zIndex: 1, position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Text c={color} size="xs" fw={700} style={{ textShadow: `1px 1px 2px ${colors.Black_5_50}`, pointerEvents: 'none' }}>
+              <Box data-name="cardspot-text" style={styles.spotTextOverlay}>
+                <Text c={color} size="xs" fw={700} style={styles.spotText}>
                   {text}
                 </Text>
               </Box>
@@ -141,17 +139,17 @@ export const CardSpot = React.memo(
             {card && !children ? (
               React.isValidElement(card) && card.type === 'Card' && 'props' in card
                 ? React.cloneElement(card as any, { style: { position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' } })
-                : <Box style={{ width: '100%', height: '100%', backgroundColor: color, opacity: 0.3 }} />
+                : <Box style={styles.spotFallback} />
             ) : null}
 
             {children ? (
-              <Box style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Box data-name="cardspot-child-wrapper" style={styles.spotChildWrapper}>
                 {children}
               </Box>
             ) : null}
 
             {!card && !children && !text ? (
-              <Text c={colors.White_1} size="lg" fw={900} style={{ textShadow: `2px 2px 4px ${colors.Black_6_70}` }}>
+              <Text c={colors.White_1} size="lg" fw={900} style={styles.spotNumberText}>
                 {String(y + 1).padStart(2, '0')}
               </Text>
             ) : null}

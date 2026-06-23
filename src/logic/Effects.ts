@@ -1,7 +1,7 @@
 export enum EffectType {
   DRAW = "DRAW",
   SCRY = "SCRY",
-  DESTROY = "DESTROY",
+  FORGET = "FORGET",
   EXILE = "EXILE",
   PETRIFY = "PETRIFY",
   DECREASE = "DECREASE",
@@ -11,7 +11,9 @@ export enum EffectType {
   FIND = "FIND",
   CHOOSE_ONE = "CHOOSE_ONE",
   ADD_TRIGGER = "ADD_TRIGGER",
-  SUMMON = "SUMMON",
+  INVOKE = "INVOKE",
+  EVOKE = "EVOKE",
+  CONVOKE = "CONVOKE",
   COPY = "COPY",
   ADD = "ADD",
   RETURN = "RETURN"
@@ -29,8 +31,8 @@ export interface ScryEffect {
   deck: "player" | "opponent";
 }
 
-export interface DestroyEffect {
-  effect: EffectType.DESTROY;
+export interface ForgetEffect {
+  effect: EffectType.FORGET;
   count?: number;
   effectTarget?: string;
 }
@@ -40,7 +42,7 @@ export interface ExileEffect {
   count?: number;
   effectTarget?: string;
   from?: string;
-  criteria?: SummonCriteria;
+  criteria?: InvokeCriteria;
 }
 
 export interface PetrifyEffect {
@@ -51,11 +53,11 @@ export interface PetrifyEffect {
 
 export interface DecreaseEffect {
   effect: EffectType.DECREASE;
-  target: "atk" | "def" | "hp" | "mana";
+  target: "numen" | "self" | "player" | "opponent";
+  effectTarget: "atk" | "def" | "hp" | "mana";
   amount: number;
-  duration: "temporary" | "permanent" | "while_on_field";
+  duration?: "temporary" | "permanent" | "while_on_field";
   durationTurns?: number;
-  effectTarget?: string;
 }
 
 export interface LockEffect {
@@ -68,11 +70,11 @@ export interface LockEffect {
 
 export interface IncreaseEffect {
   effect: EffectType.INCREASE;
-  target: "atk" | "def" | "hp" | "mana";
+  target: "numen" | "self" | "player" | "opponent";
+  effectTarget: "atk" | "def" | "hp" | "mana";
   amount: number;
-  duration: "temporary" | "permanent" | "while_on_field";
+  duration?: "temporary" | "permanent" | "while_on_field";
   durationTurns?: number;
-  effectTarget?: string;
 }
 
 
@@ -86,7 +88,7 @@ export interface EtherealEffect {
 export interface FindEffect {
   effect: EffectType.FIND;
   count: number;
-  source: "deck" | "graveyard" | "exile";
+  source: "deck" | "memora" | "exile";
   effectTarget?: string;
 }
 
@@ -102,7 +104,7 @@ export interface AddTriggerEffect {
   effectTarget?: string;
 }
 
-export interface SummonCriteria {
+export interface InvokeCriteria {
   name?: string;
   level?: number;
   levelMin?: number;
@@ -121,10 +123,26 @@ export interface SummonCriteria {
   excludeRarities?: string[];
 }
 
-export interface SummonEffect {
-  effect: EffectType.SUMMON;
-  from: "player_deck" | "player_hand" | "player_graveyard" | "player_exile" | "opponent_deck" | "opponent_hand" | "opponent_graveyard" | "opponent_exile";
-  criteria: SummonCriteria;
+export interface InvokeEffect {
+  effect: EffectType.INVOKE;
+  from: "player_hand" | "opponent_hand";
+  criteria: InvokeCriteria;
+  count: number;
+  effectTarget?: string;
+}
+
+export interface EvokeEffect {
+  effect: EffectType.EVOKE;
+  from: "player_memora" | "opponent_memora";
+  criteria: InvokeCriteria;
+  count: number;
+  effectTarget?: string;
+}
+
+export interface ConvokeEffect {
+  effect: EffectType.CONVOKE;
+  from: "player_deck" | "opponent_deck";
+  criteria: InvokeCriteria;
   count: number;
   effectTarget?: string;
 }
@@ -139,28 +157,34 @@ export interface CopyEffect {
 
 export interface AddEffect {
   effect: EffectType.ADD;
-  destination: "player_deck" | "opponent_deck" | "player_graveyard" | "opponent_graveyard" | "player_exile" | "opponent_exile" | "player_hand" | "opponent_hand";
+  addFrom: "player_field" | "opponent_field" | "any_field" | "player_memora" | "opponent_memora" | "any_memora" | "player_exile" | "opponent_exile" | "any_exile" | "player_deck" | "opponent_deck" | "any_deck" | "player_hand" | "opponent_hand" | "any_hand";
+  addTargetType: "numen" | "rite" | "ward" | "any";
+  destination: "player_deck" | "opponent_deck" | "player_memora" | "opponent_memora" | "player_exile" | "opponent_exile" | "player_hand" | "opponent_hand";
   count: number;
   effectTarget?: string;
 }
 
 export interface ReturnEffect {
   effect: EffectType.RETURN;
-  destination: string;
+  destination?: string;
+  returnDestination?: string;
+  returnTarget?: string;
+  returnFieldTarget?: string;
+  returnCardType?: string;
   count?: number;
   effectTarget?: string;
 }
 
 export interface ForEachConfig {
   cardType: "numen" | "ward" | "rite" | "magic" | "any";
-  zone: "graveyard" | "field" | "exile" | "deck" | "hand";
+  zone: "memora" | "field" | "exile" | "deck" | "hand";
   owner: "player" | "opponent" | "both";
 }
 
 export type EffectEntry =
   | (DrawEffect & { otherwise?: boolean; otherwise_effect?: EffectEntry; or?: boolean; or_effect?: EffectEntry; forEach?: boolean; forEachConfig?: ForEachConfig })
   | (ScryEffect & { otherwise?: boolean; otherwise_effect?: EffectEntry; or?: boolean; or_effect?: EffectEntry; forEach?: boolean; forEachConfig?: ForEachConfig })
-  | (DestroyEffect & { otherwise?: boolean; otherwise_effect?: EffectEntry; or?: boolean; or_effect?: EffectEntry; forEach?: boolean; forEachConfig?: ForEachConfig })
+  | (ForgetEffect & { otherwise?: boolean; otherwise_effect?: EffectEntry; or?: boolean; or_effect?: EffectEntry; forEach?: boolean; forEachConfig?: ForEachConfig })
   | (ExileEffect & { otherwise?: boolean; otherwise_effect?: EffectEntry; or?: boolean; or_effect?: EffectEntry; forEach?: boolean; forEachConfig?: ForEachConfig })
   | (PetrifyEffect & { otherwise?: boolean; otherwise_effect?: EffectEntry; or?: boolean; or_effect?: EffectEntry; forEach?: boolean; forEachConfig?: ForEachConfig })
   | (DecreaseEffect & { otherwise?: boolean; otherwise_effect?: EffectEntry; or?: boolean; or_effect?: EffectEntry; forEach?: boolean; forEachConfig?: ForEachConfig })
@@ -170,7 +194,9 @@ export type EffectEntry =
   | (FindEffect & { otherwise?: boolean; otherwise_effect?: EffectEntry; or?: boolean; or_effect?: EffectEntry; forEach?: boolean; forEachConfig?: ForEachConfig })
   | (ChooseOneEffect & { otherwise?: boolean; otherwise_effect?: EffectEntry; or?: boolean; or_effect?: EffectEntry; forEach?: boolean; forEachConfig?: ForEachConfig })
   | (AddTriggerEffect & { otherwise?: boolean; otherwise_effect?: EffectEntry; or?: boolean; or_effect?: EffectEntry; forEach?: boolean; forEachConfig?: ForEachConfig })
-  | (SummonEffect & { otherwise?: boolean; otherwise_effect?: EffectEntry; or?: boolean; or_effect?: EffectEntry; forEach?: boolean; forEachConfig?: ForEachConfig })
+  | (InvokeEffect & { otherwise?: boolean; otherwise_effect?: EffectEntry; or?: boolean; or_effect?: EffectEntry; forEach?: boolean; forEachConfig?: ForEachConfig })
+  | (EvokeEffect & { otherwise?: boolean; otherwise_effect?: EffectEntry; or?: boolean; or_effect?: EffectEntry; forEach?: boolean; forEachConfig?: ForEachConfig })
+  | (ConvokeEffect & { otherwise?: boolean; otherwise_effect?: EffectEntry; or?: boolean; or_effect?: EffectEntry; forEach?: boolean; forEachConfig?: ForEachConfig })
   | (CopyEffect & { otherwise?: boolean; otherwise_effect?: EffectEntry; or?: boolean; or_effect?: EffectEntry; forEach?: boolean; forEachConfig?: ForEachConfig })
   | (AddEffect & { otherwise?: boolean; otherwise_effect?: EffectEntry; or?: boolean; or_effect?: EffectEntry; forEach?: boolean; forEachConfig?: ForEachConfig })
   | (ReturnEffect & { otherwise?: boolean; otherwise_effect?: EffectEntry; or?: boolean; or_effect?: EffectEntry; forEach?: boolean; forEachConfig?: ForEachConfig });
@@ -183,8 +209,8 @@ export function isScryEffect(entry: EffectEntry): entry is ScryEffect {
   return entry.effect === EffectType.SCRY;
 }
 
-export function isDestroyEffect(entry: EffectEntry): entry is DestroyEffect {
-  return entry.effect === EffectType.DESTROY;
+export function isForgetEffect(entry: EffectEntry): entry is ForgetEffect {
+  return entry.effect === EffectType.FORGET;
 }
 
 export function isExileEffect(entry: EffectEntry): entry is ExileEffect {
@@ -223,8 +249,16 @@ export function isAddTriggerEffect(entry: EffectEntry): entry is AddTriggerEffec
   return entry.effect === EffectType.ADD_TRIGGER;
 }
 
-export function isSummonEffect(entry: EffectEntry): entry is SummonEffect {
-  return entry.effect === EffectType.SUMMON;
+export function isInvokeEffect(entry: EffectEntry): entry is InvokeEffect {
+  return entry.effect === EffectType.INVOKE;
+}
+
+export function isEvokeEffect(entry: EffectEntry): entry is EvokeEffect {
+  return entry.effect === EffectType.EVOKE;
+}
+
+export function isConvokeEffect(entry: EffectEntry): entry is ConvokeEffect {
+  return entry.effect === EffectType.CONVOKE;
 }
 
 export function isCopyEffect(entry: EffectEntry): entry is CopyEffect {
@@ -245,7 +279,7 @@ export function handleEffect(entry: EffectEntry) {
       return;
     case EffectType.SCRY:
       return;
-    case EffectType.DESTROY:
+    case EffectType.FORGET:
       return;
     case EffectType.EXILE:
       return;
@@ -265,7 +299,11 @@ export function handleEffect(entry: EffectEntry) {
       return;
     case EffectType.ADD_TRIGGER:
       return;
-    case EffectType.SUMMON:
+    case EffectType.INVOKE:
+      return;
+    case EffectType.EVOKE:
+      return;
+    case EffectType.CONVOKE:
       return;
     case EffectType.COPY:
       return;

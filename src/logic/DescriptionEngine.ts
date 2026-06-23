@@ -9,20 +9,21 @@ import {
 } from './Triggers';
 import type { TriggerEntry } from './Triggers';
 import type { EffectTarget } from './Triggers';
-import { EffectType, type SummonCriteria, type ForEachConfig } from './Effects';
-import { isDirectValueTarget } from './CardEditorOptions';
+import { EffectType, type InvokeCriteria, type ForEachConfig } from './Effects';
+import { isDirectValueTarget, isNumenTarget } from './CardEditorOptions';
 import type { EffectEntry } from './Effects';
 
 const passiveDescriptions: Record<PassiveTrigger, string> = {
   [PassiveTrigger.CHALLENGE]: "This numen must be attacked before other numina.",
   [PassiveTrigger.VEILED]: "This numen cannot be targeted by the opponent, unless it's the only numen on its owners field.",
-  [PassiveTrigger.CELERITY]: "This numen can attack the turn it is summoned.",
+  [PassiveTrigger.CELERITY]: "This numen can attack the turn it is invokeed.",
   [PassiveTrigger.STUNNED]: "This numen cannot attack or activate effects.",
   [PassiveTrigger.NULLIFY]: "Negates all card effects.",
   [PassiveTrigger.LOCKED]: "This numen cannot change battle position, unless by the effect of another card.",
   [PassiveTrigger.RECLUSE]: "This numen cannot attack in groups.",
   [PassiveTrigger.LEGION]: "This numen can only attack in groups.",
-  [PassiveTrigger.RELENTLESS]: "After being attacked, this numen recoups its stats to full."
+  [PassiveTrigger.RELENTLESS]: "After being attacked, this numen recoups its stats to full.",
+  [PassiveTrigger.SHROUDED]: "Your opponent can't know what numen this is and can't target it until it attacks or you target it with a card effect."
 };
 
 const passiveLabels: Record<PassiveTrigger, string> = {
@@ -34,7 +35,8 @@ const passiveLabels: Record<PassiveTrigger, string> = {
   [PassiveTrigger.LOCKED]: "Locked",
   [PassiveTrigger.RECLUSE]: "Recluse",
   [PassiveTrigger.LEGION]: "Legion",
-  [PassiveTrigger.RELENTLESS]: "Relentless"
+  [PassiveTrigger.RELENTLESS]: "Relentless",
+  [PassiveTrigger.SHROUDED]: "Shrouded"
 };
 
 const triggerLabels: Record<ConditionalTrigger, string> = {
@@ -103,13 +105,13 @@ const effectTargetDescriptions: Record<EffectTarget, string> = {
   'opponent_hp': "the opponent's HP",
   'opponent_hand': "the opponent's hand",
   'opponent_deck': "the opponent's deck",
-  'opponent_graveyard': "the opponent's graveyard",
+  'opponent_memora': "the opponent's memora",
   'opponent_exile': "the opponent's exile",
   'opponent_mana': "the opponent's mana",
   'player_hp': "your HP",
   'player_hand': "your hand",
   'player_deck': "your deck",
-  'player_graveyard': "your graveyard",
+  'player_memora': "your memora",
   'player_exile': "your exile",
   'player_mana': "your mana",
 };
@@ -153,7 +155,7 @@ const getEffectTargetDescription = (effectTarget: EffectTarget | undefined, sele
   return 'the target';
 };
 
-const DESTROY_TARGET_DESCRIPTIONS: Record<string, string> = {
+const FORGET_TARGET_DESCRIPTIONS: Record<string, string> = {
   'all': 'all cards on the field',
   'all_enemy_numina': 'all enemy numina',
   'all_enemy_face_up_numina': 'all enemy face-up numina',
@@ -165,7 +167,7 @@ const DESTROY_TARGET_DESCRIPTIONS: Record<string, string> = {
   'defending_numina': 'all defending numina',
 };
 
-const SELECTIVE_DESTROY_TARGETS = ['numen', 'another_numen', 'rite', 'ward'];
+const SELECTIVE_FORGET_TARGETS = ['numen', 'another_numen', 'rite', 'ward'];
 
 const ATTACK_TRIGGERS = [
   ConditionalTrigger.BEFORE_ATTACK,
@@ -189,8 +191,43 @@ const describeForEachPrefix = (config: ForEachConfig | undefined): string => {
   if (!config) return '';
   const cardTypeLabel = config.cardType === 'any' ? 'card' : config.cardType;
   const ownerLabel = config.owner === 'player' ? 'your' : config.owner === 'opponent' ? "the opponent's" : 'both players\'';
-  return `For each ${cardTypeLabel} in ${ownerLabel} ${config.zone}, `;
+  return `for each ${cardTypeLabel} in ${ownerLabel} ${config.zone}, `;
 };
+
+function getEffectGroupKey(effect: any, triggerEffectTarget: EffectTarget | undefined): string {
+  const effTarget = effect.effectTarget || triggerEffectTarget;
+  const duration = effect.duration || '';
+  const forEachJson = JSON.stringify((effect as any).forEachConfig || null);
+  const amount = effect.amount ?? 0;
+
+  let subTarget = effect.target || '';
+  if ((effect.effect === EffectType.INCREASE || effect.effect === EffectType.DECREASE) && (subTarget === 'atk' || subTarget === 'def')) {
+    subTarget = 'stat';
+  }
+
+  if (effect.effect === EffectType.RETURN) {
+    const returnTarget = effect.returnTarget || '';
+    const returnDestination = effect.returnDestination || '';
+    const returnCardType = effect.returnCardType || '';
+    const count = effect.count ?? 0;
+    return `${effect.effect}|${effTarget}|${duration}|${subTarget}|${amount}|${forEachJson}|${returnTarget}|${returnDestination}|${returnCardType}|${count}`;
+  }
+
+  return `${effect.effect}|${effTarget}|${duration}|${subTarget}|${amount}|${forEachJson}`;
+}
+
+function mergeGroupEffects(effects: any[]): any {
+  if (effects.length === 1) return effects[0];
+
+  const base = { ...effects[0] };
+  const targets = effects.map(e => e.target).filter(Boolean);
+
+  if (targets.includes('atk') && targets.includes('def')) {
+    base.target = 'both';
+  }
+
+  return base;
+}
 
 const describeEffect = (
   effect: EffectEntry,
@@ -201,7 +238,7 @@ const describeEffect = (
 ): string => {
   const effectOwnTarget = (effect as any).effectTarget;
   const resolvedTarget = effectOwnTarget || effectTarget;
-  const skipSub = (effect.effect === EffectType.EXILE || effect.effect === EffectType.DESTROY) && isSelectableNumenTarget(resolvedTarget);
+  const skipSub = (effect.effect === EffectType.EXILE || effect.effect === EffectType.FORGET) && isSelectableNumenTarget(resolvedTarget);
   const targetDesc = getEffectTargetDescription(resolvedTarget, selectedTarget, skipSub);
 
   let baseText: string;
@@ -225,29 +262,29 @@ const describeEffect = (
       baseText = `scry ${effect.count} ${scryWord} from ${deckDesc} deck`;
       break;
 
-    case EffectType.DESTROY: {
-      const destroyCount = (effect as any).count ?? 1;
-      const destroyWord = destroyCount === 1 ? 'card' : 'cards';
+    case EffectType.FORGET: {
+      const forgetCount = (effect as any).count ?? 1;
+      const forgetWord = forgetCount === 1 ? 'card' : 'cards';
       const targetType = getTargetTypeLabel(resolvedTarget);
       const isMagicTarget = resolvedTarget && (resolvedTarget.includes('magic') || resolvedTarget.includes('rite') || resolvedTarget.includes('ward'));
       if (resolvedTarget === 'self') {
-        baseText = `destroy this card`;
+        baseText = `forget this card`;
       } else if (resolvedTarget === 'attack_target') {
-        baseText = `destroy the attack target`;
+        baseText = `forget the attack target`;
       } else if (!isMagicTarget && trigger === ConditionalTrigger.WHEN_ATTACKED) {
-        baseText = `destroy the attacking ${targetType}`;
+        baseText = `forget the attacking ${targetType}`;
       } else if (!isMagicTarget && trigger && isAttackTrigger(trigger)) {
-        baseText = `destroy the attacked ${targetType}`;
-      } else if (isSelectableNumenTarget(resolvedTarget)) {
-        baseText = `Select and destroy ${targetDesc}`;
-      } else if (isMagicTarget && resolvedTarget) {
-        baseText = `Select and destroy ${targetDesc}`;
+        baseText = `forget the attacked ${targetType}`;
       } else if (resolvedTarget && resolvedTarget.startsWith('all_')) {
-        baseText = `destroy ${targetDesc}`;
+        baseText = `forget ${targetDesc}`;
+      } else if (isSelectableNumenTarget(resolvedTarget)) {
+        baseText = `Select and forget ${targetDesc}`;
+      } else if (isMagicTarget && resolvedTarget) {
+        baseText = `Select and forget ${targetDesc}`;
       } else if (resolvedTarget) {
-        baseText = `destroy ${destroyCount} ${destroyWord} from ${targetDesc}`;
+        baseText = `forget ${forgetCount} ${forgetWord} from ${targetDesc}`;
       } else {
-        baseText = `destroy ${destroyCount} ${destroyWord}`;
+        baseText = `forget ${forgetCount} ${forgetWord}`;
       }
       break;
     }
@@ -255,13 +292,13 @@ const describeEffect = (
     case EffectType.EXILE: {
       const exileEffect = effect as any;
       if (exileEffect.from) {
-        const fromDesc = describeSummonFrom(exileEffect.from);
+        const fromDesc = describeInvokeFrom(exileEffect.from);
         const exileCount = exileEffect.count ?? 1;
         const exileWord = exileCount === 1 ? 'numen' : 'numina';
         if (exileEffect.criteria && exileEffect.criteria.name) {
           baseText = `exile ${exileCount} <i>${exileEffect.criteria.name}</i> from ${fromDesc}`;
         } else {
-          const criteriaDesc = exileEffect.criteria ? describeSummonCriteria(exileEffect.criteria, exileCount) : '';
+          const criteriaDesc = exileEffect.criteria ? describeInvokeCriteria(exileEffect.criteria, exileCount) : '';
           if (criteriaDesc) {
             baseText = `exile ${exileCount} ${criteriaDesc} from ${fromDesc}`;
           } else {
@@ -281,12 +318,12 @@ const describeEffect = (
           baseText = `exile the attacking ${exileTargetType}`;
         } else if (!isMagicTarget && trigger && isAttackTrigger(trigger)) {
           baseText = `exile the attacked ${exileTargetType}`;
+        } else if (resolvedTarget && resolvedTarget.startsWith('all_')) {
+          baseText = `exile ${targetDesc}`;
         } else if (isSelectableNumenTarget(resolvedTarget)) {
           baseText = `Select and exile ${targetDesc}`;
         } else if (isMagicTarget && resolvedTarget) {
           baseText = `Select and exile ${targetDesc}`;
-        } else if (resolvedTarget && resolvedTarget.startsWith('all_')) {
-          baseText = `exile ${targetDesc}`;
         } else if (resolvedTarget) {
           baseText = `exile ${exileCount} ${exileWord} from ${targetDesc}`;
         } else {
@@ -305,7 +342,7 @@ const describeEffect = (
       const lockDuration = (effect as any).duration;
       const lockTurns = effect.turns === 1 ? 'turn' : 'turns';
       if (lockDuration === 'while_on_field') {
-        baseText = `While this card is on the field, ${targetDesc} is locked`;
+        baseText = `while this card is on the field, ${targetDesc} is locked`;
       } else if (lockDuration === 'temporary' && effect.turns) {
         baseText = `lock ${targetDesc} for ${effect.turns} ${lockTurns}`;
       } else {
@@ -316,6 +353,9 @@ const describeEffect = (
 
     case EffectType.DECREASE: {
       const decreaseEffect = effect as any;
+      const decEntity = decreaseEffect.target;
+      const decStat = decreaseEffect.effectTarget || decreaseEffect.target;
+      const decIsNumen = isNumenTarget(decEntity);
       const isPerm = decreaseEffect.duration === 'permanent';
       const isTemp = decreaseEffect.duration === 'temporary';
       const isWhileOnField = decreaseEffect.duration === 'while_on_field';
@@ -323,33 +363,40 @@ const describeEffect = (
       let durationText = '';
       if (isPerm) durationText = ' permanently';
       if (isTemp && durationTurns) durationText = ` for ${durationTurns} turns`;
-      const whilePrefix = isWhileOnField ? 'While this card is on the field, ' : '';
-      if (isDirectValueTarget(resolvedTarget)) {
-        baseText = `${whilePrefix}decrease ${targetDesc} by ${decreaseEffect.amount}${durationText}`;
-      } else if (effectOwnTarget === 'self' || effectTarget === 'self') {
-        if (decreaseEffect.target === 'hp') baseText = `${whilePrefix}lose ${decreaseEffect.amount} HP${durationText}`;
-        else if (decreaseEffect.target === 'atk') baseText = `${whilePrefix}lose ${decreaseEffect.amount} ATK${durationText}`;
-        else if (decreaseEffect.target === 'def') baseText = `${whilePrefix}lose ${decreaseEffect.amount} DEF${durationText}`;
-        else if (decreaseEffect.target === 'both') baseText = `${whilePrefix}lose ${decreaseEffect.amount} ATK and DEF${durationText}`;
+      const whilePrefix = isWhileOnField ? 'while this card is on the field, ' : '';
+      if (decEntity === 'self') {
+        if (decStat === 'hp') baseText = `${whilePrefix}lose ${decreaseEffect.amount} HP${durationText}`;
+        else if (decStat === 'atk') baseText = `${whilePrefix}lose ${decreaseEffect.amount} ATK${durationText}`;
+        else if (decStat === 'def') baseText = `${whilePrefix}lose ${decreaseEffect.amount} DEF${durationText}`;
+        else if (decStat === 'both') baseText = `${whilePrefix}lose ${decreaseEffect.amount} ATK and DEF${durationText}`;
+        else if (decStat === 'mana') baseText = `${whilePrefix}lose ${decreaseEffect.amount} mana${durationText}`;
         else baseText = `${whilePrefix}lose ${decreaseEffect.amount}${durationText}`;
-      } else if (decreaseEffect.target === 'hp') {
-        baseText = `${whilePrefix}decrease ${targetDesc}'s HP by ${decreaseEffect.amount}${durationText}`;
-      } else if (decreaseEffect.target === 'atk') {
-        baseText = `${whilePrefix}decrease ${targetDesc}'s ATK by ${decreaseEffect.amount}${durationText}`;
-      } else if (decreaseEffect.target === 'def') {
-        baseText = `${whilePrefix}decrease ${targetDesc}'s DEF by ${decreaseEffect.amount}${durationText}`;
-      } else if (decreaseEffect.target === 'both') {
-        baseText = `${whilePrefix}decrease ${targetDesc}'s ATK and DEF by ${decreaseEffect.amount}${durationText}`;
-      } else if (decreaseEffect.target === 'mana') {
-        baseText = `${whilePrefix}decrease ${targetDesc} by ${decreaseEffect.amount}${durationText}`;
+      } else if (decIsNumen) {
+        const numenDesc = decEntity === 'numen' ? targetDesc : targetDesc;
+        if (decStat === 'hp') baseText = `${whilePrefix}decrease ${numenDesc}'s HP by ${decreaseEffect.amount}${durationText}`;
+        else if (decStat === 'atk') baseText = `${whilePrefix}decrease ${numenDesc}'s ATK by ${decreaseEffect.amount}${durationText}`;
+        else if (decStat === 'def') baseText = `${whilePrefix}decrease ${numenDesc}'s DEF by ${decreaseEffect.amount}${durationText}`;
+        else if (decStat === 'both') baseText = `${whilePrefix}decrease ${numenDesc}'s ATK and DEF by ${decreaseEffect.amount}${durationText}`;
+        else baseText = `${whilePrefix}decrease ${numenDesc}'s stats by ${decreaseEffect.amount}${durationText}`;
+      } else if (decEntity === 'player') {
+        if (decStat === 'hp') baseText = `${whilePrefix}decrease your HP by ${decreaseEffect.amount}${durationText}`;
+        else if (decStat === 'mana') baseText = `${whilePrefix}decrease your mana by ${decreaseEffect.amount}${durationText}`;
+        else baseText = `${whilePrefix}decrease your stats by ${decreaseEffect.amount}${durationText}`;
+      } else if (decEntity === 'opponent') {
+        if (decStat === 'hp') baseText = `${whilePrefix}decrease the opponent's HP by ${decreaseEffect.amount}${durationText}`;
+        else if (decStat === 'mana') baseText = `${whilePrefix}decrease the opponent's mana by ${decreaseEffect.amount}${durationText}`;
+        else baseText = `${whilePrefix}decrease the opponent's stats by ${decreaseEffect.amount}${durationText}`;
       } else {
-        baseText = `${whilePrefix}deal ${decreaseEffect.amount} decrease to ${targetDesc}${durationText}`;
+        baseText = `${whilePrefix}decrease ${targetDesc} by ${decreaseEffect.amount}${durationText}`;
       }
       break;
     }
 
     case EffectType.INCREASE: {
       const increaseEffect = effect as any;
+      const incEntity = increaseEffect.target;
+      const incStat = increaseEffect.effectTarget || increaseEffect.target;
+      const incIsNumen = isNumenTarget(incEntity);
       const isPerm = increaseEffect.duration === 'permanent';
       const isTemp = increaseEffect.duration === 'temporary';
       const isWhileOnField = increaseEffect.duration === 'while_on_field';
@@ -357,27 +404,31 @@ const describeEffect = (
       let durationText = '';
       if (isPerm) durationText = ' permanently';
       if (isTemp && durationTurns) durationText = ` for ${durationTurns} turns`;
-      const whilePrefix = isWhileOnField ? 'While this card is on the field, ' : '';
-      if (isDirectValueTarget(resolvedTarget)) {
-        baseText = `${whilePrefix}increase ${targetDesc} by ${increaseEffect.amount}${durationText}`;
-      } else if (effectOwnTarget === 'self' || effectTarget === 'self') {
-        if (increaseEffect.target === 'hp') baseText = `${whilePrefix}gain ${increaseEffect.amount} HP${durationText}`;
-        else if (increaseEffect.target === 'atk') baseText = `${whilePrefix}gain ${increaseEffect.amount} ATK${durationText}`;
-        else if (increaseEffect.target === 'def') baseText = `${whilePrefix}gain ${increaseEffect.amount} DEF${durationText}`;
-        else if (increaseEffect.target === 'both') baseText = `${whilePrefix}gain ${increaseEffect.amount} ATK and DEF${durationText}`;
+      const whilePrefix = isWhileOnField ? 'while this card is on the field, ' : '';
+      if (incEntity === 'self') {
+        if (incStat === 'hp') baseText = `${whilePrefix}gain ${increaseEffect.amount} HP${durationText}`;
+        else if (incStat === 'atk') baseText = `${whilePrefix}gain ${increaseEffect.amount} ATK${durationText}`;
+        else if (incStat === 'def') baseText = `${whilePrefix}gain ${increaseEffect.amount} DEF${durationText}`;
+        else if (incStat === 'both') baseText = `${whilePrefix}gain ${increaseEffect.amount} ATK and DEF${durationText}`;
+        else if (incStat === 'mana') baseText = `${whilePrefix}gain ${increaseEffect.amount} mana${durationText}`;
         else baseText = `${whilePrefix}gain ${increaseEffect.amount}${durationText}`;
-      } else if (increaseEffect.target === 'hp') {
-        baseText = `${whilePrefix}increase ${targetDesc}'s HP by ${increaseEffect.amount}${durationText}`;
-      } else if (increaseEffect.target === 'atk') {
-        baseText = `${whilePrefix}increase ${targetDesc}'s ATK by ${increaseEffect.amount}${durationText}`;
-      } else if (increaseEffect.target === 'def') {
-        baseText = `${whilePrefix}increase ${targetDesc}'s DEF by ${increaseEffect.amount}${durationText}`;
-      } else if (increaseEffect.target === 'both') {
-        baseText = `${whilePrefix}increase ${targetDesc}'s ATK and DEF by ${increaseEffect.amount}${durationText}`;
-      } else if (increaseEffect.target === 'mana') {
-        baseText = `${whilePrefix}increase ${targetDesc} by ${increaseEffect.amount}${durationText}`;
+      } else if (incIsNumen) {
+        const numenDesc = incEntity === 'numen' ? targetDesc : targetDesc;
+        if (incStat === 'hp') baseText = `${whilePrefix}increase ${numenDesc}'s HP by ${increaseEffect.amount}${durationText}`;
+        else if (incStat === 'atk') baseText = `${whilePrefix}increase ${numenDesc}'s ATK by ${increaseEffect.amount}${durationText}`;
+        else if (incStat === 'def') baseText = `${whilePrefix}increase ${numenDesc}'s DEF by ${increaseEffect.amount}${durationText}`;
+        else if (incStat === 'both') baseText = `${whilePrefix}increase ${numenDesc}'s ATK and DEF by ${increaseEffect.amount}${durationText}`;
+        else baseText = `${whilePrefix}increase ${numenDesc}'s stats by ${increaseEffect.amount}${durationText}`;
+      } else if (incEntity === 'player') {
+        if (incStat === 'hp') baseText = `${whilePrefix}increase your HP by ${increaseEffect.amount}${durationText}`;
+        else if (incStat === 'mana') baseText = `${whilePrefix}increase your mana by ${increaseEffect.amount}${durationText}`;
+        else baseText = `${whilePrefix}increase your stats by ${increaseEffect.amount}${durationText}`;
+      } else if (incEntity === 'opponent') {
+        if (incStat === 'hp') baseText = `${whilePrefix}increase the opponent's HP by ${increaseEffect.amount}${durationText}`;
+        else if (incStat === 'mana') baseText = `${whilePrefix}increase the opponent's mana by ${increaseEffect.amount}${durationText}`;
+        else baseText = `${whilePrefix}increase the opponent's stats by ${increaseEffect.amount}${durationText}`;
       } else {
-        baseText = `${whilePrefix}increase ${targetDesc}'s stats by ${increaseEffect.amount}${durationText}`;
+        baseText = `${whilePrefix}increase ${targetDesc} by ${increaseEffect.amount}${durationText}`;
       }
       break;
     }
@@ -403,8 +454,16 @@ const describeEffect = (
       baseText = `grant ${triggerName} for ${effect.duration} ${triggerDuration} to ${targetDesc}`;
       break;
 
-    case EffectType.SUMMON:
-      baseText = describeSummonEffect(effect as any, targetDesc);
+    case EffectType.INVOKE:
+      baseText = describeInvokeEffect(effect as any, targetDesc, 'invoke');
+      break;
+
+    case EffectType.EVOKE:
+      baseText = describeInvokeEffect(effect as any, targetDesc, 'evoke');
+      break;
+
+    case EffectType.CONVOKE:
+      baseText = describeInvokeEffect(effect as any, targetDesc, 'convoke');
       break;
 
     case EffectType.COPY:
@@ -451,36 +510,38 @@ const describeEffect = (
   return baseText;
 };
 
-const describeSummonEffect = (effect: { from: string; criteria: SummonCriteria; count: number }, targetDesc: string): string => {
+const describeInvokeEffect = (effect: { from: string; criteria: InvokeCriteria; count: number }, targetDesc: string, action: string): string => {
   const countWord = effect.count === 1 ? 'numen' : 'numina';
-  const fromDesc = describeSummonFrom(effect.from);
+  const isPlayerZone = effect.from.startsWith('player_');
+  const fromDesc = describeInvokeFrom(effect.from);
+  const fromSuffix = isPlayerZone ? '' : ` from ${fromDesc}`;
 
   if (effect.criteria.name) {
-    return `summon ${effect.count} <i>${effect.criteria.name}</i> from ${fromDesc}`;
+    return `${action} ${effect.count} <i>${effect.criteria.name}</i>${fromSuffix}`;
   }
 
-  const criteriaDesc = describeSummonCriteria(effect.criteria, effect.count);
+  const criteriaDesc = describeInvokeCriteria(effect.criteria, effect.count);
   if (criteriaDesc) {
-    return `summon ${effect.count} ${criteriaDesc} from ${fromDesc}`;
+    return `${action} ${effect.count} ${criteriaDesc}${fromSuffix}`;
   }
-  return `summon ${effect.count} ${countWord} from ${fromDesc}`;
+  return `${action} ${effect.count} ${countWord}${fromSuffix}`;
 };
 
-const describeSummonFrom = (from: string): string => {
+const describeInvokeFrom = (from: string): string => {
   const fromMap: Record<string, string> = {
     'player_deck': 'your deck',
     'player_hand': 'your hand',
-    'player_graveyard': 'your graveyard',
+    'player_memora': 'your memora',
     'player_exile': 'your exile',
     'opponent_deck': "opponent's deck",
     'opponent_hand': "opponent's hand",
-    'opponent_graveyard': "opponent's graveyard",
+    'opponent_memora': "opponent's memora",
     'opponent_exile': "opponent's exile",
   };
   return fromMap[from] || from;
 };
 
-const describeSummonCriteria = (criteria: SummonCriteria, count?: number): string => {
+const describeInvokeCriteria = (criteria: InvokeCriteria, count?: number): string => {
   const parts: string[] = [];
 
   if ((criteria as any).any_numen) {
@@ -595,8 +656,8 @@ const destinationToLabel = (destination: string): string => {
   const map: Record<string, string> = {
     'player_deck': 'your deck',
     'opponent_deck': "opponent's deck",
-    'player_graveyard': 'your graveyard',
-    'opponent_graveyard': "opponent's graveyard",
+    'player_memora': 'your memora',
+    'opponent_memora': "opponent's memora",
     'player_exile': 'your exile',
     'opponent_exile': "opponent's exile",
     'player_hand': 'your hand',
@@ -605,22 +666,95 @@ const destinationToLabel = (destination: string): string => {
   return map[destination] || destination;
 };
 
-const describeAddEffect = (effect: { destination: string; count: number }, targetDesc: string): string => {
-  const destinationLabel = destinationToLabel(effect.destination);
-  const countWord = effect.count === 1 ? 'copy' : 'copies';
-  return `Add ${effect.count} ${countWord} of it into ${destinationLabel}`;
+const describeAddFrom = (addFrom: string): string => {
+  const map: Record<string, string> = {
+    'player_field': 'your field',
+    'opponent_field': "opponent's field",
+    'any_field': 'any field',
+    'player_memora': 'your memora',
+    'opponent_memora': "opponent's memora",
+    'any_memora': 'any memora',
+    'player_exile': 'your exile',
+    'opponent_exile': "opponent's exile",
+    'any_exile': 'any exile',
+    'player_deck': 'your deck',
+    'opponent_deck': "opponent's deck",
+    'any_deck': 'any deck',
+    'player_hand': 'your hand',
+    'opponent_hand': "opponent's hand",
+    'any_hand': 'any hand',
+  };
+  return map[addFrom] || addFrom;
 };
 
-const describeReturnEffect = (effect: { destination: string; count?: number }, targetDesc: string, resolvedTarget: EffectTarget | undefined): string => {
-  const dest = effect.destination || '';
-  const destLabel = dest.includes('hand') ? 'hand' : 'deck';
+const describeAddEffect = (effect: { addFrom: string; destination: string; count: number; addTargetType?: string }, targetDesc: string): string => {
+  const fromLabel = describeAddFrom(effect.addFrom);
+  const destinationLabel = destinationToLabel(effect.destination);
+  const countWord = effect.count === 1 ? 'copy' : 'copies';
+  const targetTypeLabel = effect.addTargetType && effect.addTargetType !== 'any' ? effect.addTargetType : 'card';
+  return `Select a ${targetTypeLabel} from ${fromLabel}. Add ${effect.count} ${countWord} of it into ${destinationLabel}`;
+};
 
-  if (resolvedTarget === 'self') {
+const describeReturnEffect = (effect: any, targetDesc: string, resolvedTarget: EffectTarget | undefined): string => {
+  const returnTarget = effect.returnTarget;
+  const returnFieldTarget = effect.returnFieldTarget;
+  const returnCardType = effect.returnCardType;
+  const returnDestination = effect.returnDestination || 'hand';
+
+  if (resolvedTarget === 'self' || returnTarget === 'self') {
+    const destLabel = returnDestination === 'hand' ? 'hand' : returnDestination === 'deck' ? 'deck' : returnDestination || 'memora';
     return `return this to your ${destLabel}`;
   }
 
   const count = effect.count ?? 1;
   const countWord = count === 1 ? 'card' : 'cards';
+
+  if (returnTarget === 'player_field' || returnTarget === 'opponent_field') {
+    const fieldOwner = returnTarget === 'player_field' ? 'your' : "the opponent's";
+    const isAll = returnFieldTarget && returnFieldTarget.startsWith('all_');
+    const fieldTargetLabels: Record<string, string> = {
+      'all_enemy_numina': 'all enemy numina',
+      'all_allied_numina': 'all allied numina',
+      'all_enemy_rites': 'all enemy rites',
+      'all_allied_rites': 'all allied rites',
+      'all_enemy_wards': 'all enemy wards',
+      'all_allied_wards': 'all allied wards',
+      'all_enemy_magics': 'all enemy magics',
+      'all_allied_magics': 'all allied magics',
+      'enemy_numen': 'an enemy numen',
+      'allied_numen': 'an allied numen',
+      'enemy_rite': 'an enemy rite',
+      'allied_rite': 'an allied rite',
+      'enemy_ward': 'an enemy ward',
+      'allied_ward': 'an allied ward',
+      'enemy_magic': 'an enemy magic',
+      'allied_magic': 'an allied magic',
+    };
+    if (returnFieldTarget && fieldTargetLabels[returnFieldTarget]) {
+      if (isAll) {
+        return `return ${fieldTargetLabels[returnFieldTarget]} from ${fieldOwner} field to ${fieldOwner} ${returnDestination}`;
+      }
+      return `return ${count} ${countWord} from ${fieldTargetLabels[returnFieldTarget]} on ${fieldOwner} field to ${fieldOwner} ${returnDestination}`;
+    }
+    return `return ${count} ${countWord} from ${fieldOwner} field to ${fieldOwner} ${returnDestination}`;
+  }
+
+  if (returnTarget === 'player_memora' || returnTarget === 'opponent_memora' || returnTarget === 'player_exile' || returnTarget === 'opponent_exile') {
+    const zoneOwner = returnTarget.startsWith('player') ? 'your' : "the opponent's";
+    const zoneName = returnTarget.includes('memora') ? 'memora' : 'exile';
+    const zoneTargetLabels: Record<string, string> = {
+      'numen': count === 1 ? 'numen' : 'numina',
+      'rite': count === 1 ? 'rite' : 'rites',
+      'ward': count === 1 ? 'ward' : 'wards',
+      'magic': count === 1 ? 'magic' : 'magics',
+      'any': countWord,
+    };
+    const zoneLabel = returnCardType && zoneTargetLabels[returnCardType] ? zoneTargetLabels[returnCardType] : countWord;
+    return `return ${count} ${zoneLabel} from ${zoneOwner} ${zoneName} to ${zoneOwner} ${returnDestination}`;
+  }
+
+  const dest = returnTarget || effect.destination || 'memora';
+  const destLabel = dest === 'hand' ? 'hand' : dest === 'deck' ? 'deck' : dest.includes('memora') ? 'memora' : dest.includes('exile') ? 'exile' : 'memora';
   let destinationLabel: string;
   if (isAllyTarget(resolvedTarget)) {
     destinationLabel = `your ${destLabel}`;
@@ -748,12 +882,22 @@ export function generateDescription(triggers: TriggerEntry[], cardType?: string)
       }
 
       const effectTexts: string[] = [];
+
+      const effectGroups = new Map<string, any[]>();
       for (const singleEffect of effectsList) {
-        const resolvedEffectTarget = entry.effectTarget || (singleEffect as any).effectTarget;
+        const key = getEffectGroupKey(singleEffect, entry.effectTarget);
+        const group = effectGroups.get(key) || [];
+        group.push(singleEffect);
+        effectGroups.set(key, group);
+      }
+
+      for (const group of effectGroups.values()) {
+        const merged = mergeGroupEffects(group);
+        const resolvedEffectTarget = entry.effectTarget || (merged as any).effectTarget;
         const selectableTarget = isSelectableNumenTarget(resolvedEffectTarget) ? resolvedEffectTarget : null;
 
         const effectText = describeEffect(
-          singleEffect,
+          merged,
           entry.trigger,
           entry.attackTarget,
           entry.effectTarget,
@@ -761,7 +905,7 @@ export function generateDescription(triggers: TriggerEntry[], cardType?: string)
         );
 
         let selectPrefix = '';
-        const isSelectIncorporated = (singleEffect.effect === EffectType.EXILE || singleEffect.effect === EffectType.DESTROY) && isSelectableNumenTarget(resolvedEffectTarget);
+        const isSelectIncorporated = (merged.effect === EffectType.EXILE || merged.effect === EffectType.FORGET) && isSelectableNumenTarget(resolvedEffectTarget);
         if (selectableTarget && !isWhen && !isSelectIncorporated) {
           selectPrefix = getSelectPrefix(selectableTarget) + ' ';
         }

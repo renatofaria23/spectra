@@ -1,7 +1,7 @@
-import { GAME_CONSTANTS, PHASES, TRIBUTE_REQUIREMENTS } from '../types/constants';
+import { GAME_CONSTANTS, PHASES, SACRIFICE_REQUIREMENTS } from '../types/constants';
 
-export const getTributeRequirement = (level: number): number => {
-  return TRIBUTE_REQUIREMENTS[level] || 0;
+export const getSacrificeRequirement = (level: number): number => {
+  return SACRIFICE_REQUIREMENTS[level] || 0;
 };
 
 export const canPlayerDraw = (deckSize: number, handSize: number): {
@@ -33,18 +33,19 @@ export const hasPlayerLost = (currentHP: number): boolean => {
 };
 
 export const getNextPhase = (currentPhase: string): string => {
-  const phaseNames = ['DRAW', 'STANDBY', 'MAIN1', 'BATTLE', 'MAIN2', 'END'];
+  const visiblePhaseOrder: string[] = ['preparation', 'combat', 'post_combat'];
 
-  const currentIndex = phaseNames.findIndex(name => 
-    name.toLowerCase() === currentPhase.toLowerCase().replace('_', '')
-  );
+  const normalized = currentPhase.toLowerCase();
+  const currentIndex = visiblePhaseOrder.findIndex(name => name === normalized);
 
-  const nextIndex = (currentIndex + 1) % phaseNames.length;
-  return PHASES[phaseNames[nextIndex] as keyof typeof PHASES];
+  if (currentIndex === -1) return PHASES.PREPARATION;
+
+  const nextIndex = (currentIndex + 1) % visiblePhaseOrder.length;
+  return visiblePhaseOrder[nextIndex]!;
 };
 
-export const canNormalSummon = (normalSummonsUsed: number): boolean => {
-  return normalSummonsUsed < GAME_CONSTANTS.NORMAL_SUMMONS_PER_TURN;
+export const canNormalInvoke = (normalInvokesUsed: number): boolean => {
+  return normalInvokesUsed < GAME_CONSTANTS.NORMAL_INVOKES_PER_TURN;
 };
 
 export const validateFieldPosition = (position: string): { isValid: boolean } => {
@@ -97,11 +98,11 @@ export const checkWinCondition = (playerHP: number, opponentHP: number): {
   return { hasWinner: false, winner: null };
 };
 
-export const validateNumenSummon = (
+export const validateNumenInvoke = (
   numen: unknown,
   fieldNumenCount: number,
-  tributes: number,
-  canNormalSummon: boolean
+  sacrifices: number,
+  canNormalInvoke: boolean
 ): { valid: boolean; reason: string } => {
   const { isFull } = checkFieldCapacity(fieldNumenCount);
 
@@ -109,16 +110,16 @@ export const validateNumenSummon = (
     return { valid: false, reason: 'Field numen zone full' };
   }
 
-  if (!canNormalSummon) {
-    return { valid: false, reason: 'Normal summon already used this turn' };
+  if (!canNormalInvoke) {
+    return { valid: false, reason: 'Normal invoke already used this turn' };
   }
 
   const level = (numen as any)?.level || 1;
-  const required = getTributeRequirement(level);
-  if (tributes < required) {
+  const required = getSacrificeRequirement(level);
+  if (sacrifices < required) {
     return {
       valid: false,
-      reason: `Need ${required} tributes, have ${tributes}`,
+      reason: `Need ${required} sacrifices, have ${sacrifices}`,
     };
   }
 

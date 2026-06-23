@@ -13,7 +13,7 @@ export interface CombatInteraction {
 
 export interface BattleResultSummary {
   totalDecrease: number;
-  destroyedNumina: { numenId: string; destroyedBy: string }[];
+  forgetedNumina: { numenId: string; forgetedBy: string }[];
   interactions: CombatInteraction[];
   validationErrors: string[];
 }
@@ -21,7 +21,7 @@ export interface BattleResultSummary {
 export interface QuestProgressTracker {
   mythicId: string;
   wardsActivated: number;
-  numinaDestroyed: number;
+  numinaForgeted: number;
   decreaseDealt: number;
   cardsDrawn: number;
   customProgress: Record<string, unknown>;
@@ -114,7 +114,7 @@ export const useCombatStore = create<CombatState>((set, get) => ({
       const current = state.questProgress[mythicId] || {
         mythicId,
         wardsActivated: 0,
-        numinaDestroyed: 0,
+        numinaForgeted: 0,
         decreaseDealt: 0,
         cardsDrawn: 0,
         customProgress: {},

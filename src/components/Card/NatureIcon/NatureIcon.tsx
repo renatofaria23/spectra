@@ -8,7 +8,8 @@ import {
   IconMoon,
 } from '@tabler/icons-react';
 import { Box } from '@mantine/core';
-import colors from '../../styles/Colors';
+import colors from '../../../styles/Colors';
+import * as styles from './NatureIcon.css.ts';
 
 interface NatureIconProps {
   type: string;
@@ -23,7 +24,7 @@ interface NatureConfig {
   gradientEnd: string;
 }
 
-const ATTRIBUTE_CONFIGS: Record<string, NatureConfig> = {
+const NATURE_CONFIGS: Record<string, NatureConfig> = {
   fire: {
     icon: <IconFlame size={24} />,
     iconColor: colors.Fire_6,
@@ -70,7 +71,7 @@ const ATTRIBUTE_CONFIGS: Record<string, NatureConfig> = {
 
 export const NatureIcon = React.memo((props: NatureIconProps) => {
   const { type, size = 48 } = props;
-  const config = ATTRIBUTE_CONFIGS[type.toLowerCase()];
+  const config = NATURE_CONFIGS[type.toLowerCase()];
 
   if (!config) {
     return null;
@@ -93,12 +94,11 @@ export const NatureIcon = React.memo((props: NatureIconProps) => {
 
   return (
     <Box
+      data-name="nature-icon-root"
       style={{
+        ...styles.natureIconRoot,
         width: size,
         height: size,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
       }}
     >
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
@@ -116,12 +116,10 @@ export const NatureIcon = React.memo((props: NatureIconProps) => {
         />
       </svg>
       <Box
+        data-name="nature-icon-overlay"
         style={{
-          position: 'absolute',
+          ...styles.natureIconOverlay,
           color: config.iconColor,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
           transform: `scale(${size / 48})`,
         }}
       >

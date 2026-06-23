@@ -1,13 +1,13 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { Box, Text, Select, Button, TextInput, Group } from '@mantine/core';
 import { IconPlus, IconSearch, IconTrash, IconPencil } from '@tabler/icons-react';
-import colors from '../styles/Colors';
-import { CardTemplate, type CardData } from '../components/Card/CardTemplate';
-import { generateDescription } from '../logic/DescriptionEngine';
-import rawCardsData from '../data/cards.json';
+import colors from '../../styles/Colors';
+import { CardTemplate, type CardData } from '../../components/Card/CardTemplate/CardTemplate';
+import { generateDescription } from '../../logic/DescriptionEngine';
+import rawCardsData from '../../data/cards.json';
 import { Link, useNavigate } from 'react-router-dom';
-import { readCards, deleteCard } from '../services/cardsAPI';
-import { NATURES, NUMEN_FAMILIES } from '../types/constants';
+import { readCards, deleteCard } from '../../services/cardsAPI';
+import { NATURES, NUMEN_FAMILIES } from '../../types/constants';
 
 const baseCards: CardData[] = (rawCardsData as any[]).map((raw) => ({
   ...raw,
@@ -38,6 +38,14 @@ export const CardList = () => {
     loadCards();
   }, []);
 
+  const cardStats = useMemo(() => {
+    const filtered = cards;
+    const numenCount = filtered.filter((c) => c.type?.toLowerCase() === 'numen').length;
+    const riteCount = filtered.filter((c) => c.type?.toLowerCase() === 'rite').length;
+    const wardCount = filtered.filter((c) => c.type?.toLowerCase() === 'ward').length;
+    return { total: filtered.length, numen: numenCount, rite: riteCount, ward: wardCount };
+  }, [cards]);
+
   const filteredCards = useMemo(() => {
     let result = cards;
 
@@ -46,7 +54,7 @@ export const CardList = () => {
     }
 
     if (filterType === 'numen' && filterNature !== 'all') {
-      result = result.filter((card) => card.attribute?.toLowerCase() === filterNature);
+      result = result.filter((card) => card.nature?.toLowerCase() === filterNature);
     }
 
     if (filterType === 'numen' && filterFamily !== 'all') {
@@ -68,8 +76,8 @@ export const CardList = () => {
       if (orderA !== orderB) return orderA - orderB;
 
       if (typeA === 'numen') {
-        const natureA = (a.attribute || '').toLowerCase();
-        const natureB = (b.attribute || '').toLowerCase();
+        const natureA = (a.nature || '').toLowerCase();
+        const natureB = (b.nature || '').toLowerCase();
         if (natureA !== natureB) return natureA.localeCompare(natureB);
 
         const familyA = (a.family || '').toLowerCase();
@@ -89,6 +97,7 @@ export const CardList = () => {
 
   return (
     <Box
+      data-name="card-list-container"
       style={{
         display: 'flex',
         flexDirection: 'column',
@@ -106,10 +115,18 @@ export const CardList = () => {
       </Text>
 
       <Text c={colors.Gray_3} size="md" fw={500}>
-        Total: {filteredCards.length} / {cards.length} cards
+        Total: {filteredCards.length} / {cardStats.total} cards ({cardStats.numen} numen, {cardStats.rite} rites, {cardStats.ward} wards)
       </Text>
 
-      <Group gap="md" style={{ flexWrap: 'wrap', justifyContent: 'center', width: '100%' }}>
+      <Button
+        leftSection={<IconPlus size={16} />}
+        onClick={() => navigate('/card-creation')}
+        styles={{ root: { backgroundColor: colors.Green_6, '&:hover': { backgroundColor: colors.Green_5 } } }}
+      >
+        Create New Card
+      </Button>
+
+      <Group data-name="filter-group" gap="md" style={{ flexWrap: 'wrap', justifyContent: 'center', width: '100%' }}>
         <TextInput
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
@@ -203,6 +220,7 @@ export const CardList = () => {
       </Group>
 
       <Box
+        data-name="card-grid"
         style={{
           display: 'flex',
           gap: '2rem',
@@ -212,6 +230,7 @@ export const CardList = () => {
       >
         {filteredCards.map((card) => (
           <Box
+            data-name="card-item-wrapper"
             key={card.id}
             style={{
               display: 'flex',
@@ -221,7 +240,7 @@ export const CardList = () => {
             }}
           >
             <CardTemplate card={card} size="lg" artImage={card.art ? `/src/assets/art/${card.art}` : null} />
-            <Group gap="sm">
+            <Group data-name="card-action-group" gap="sm">
               <Button
                 size="xs"
                 leftSection={<IconPencil size={12} />}
@@ -245,14 +264,6 @@ export const CardList = () => {
           </Box>
         ))}
       </Box>
-
-      <Button
-        leftSection={<IconPlus size={16} />}
-        onClick={() => navigate('/card-creation')}
-        styles={{ root: { backgroundColor: colors.Green_6, '&:hover': { backgroundColor: colors.Green_5 } } }}
-      >
-        Create New Card
-      </Button>
 
       <Link to="/" style={{ textDecoration: 'none', marginTop: '2rem' }}>
         <Text c={colors.Blue_3} size="lg" fw={600}>

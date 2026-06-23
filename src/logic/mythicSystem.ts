@@ -3,7 +3,7 @@ import { validateCardRequirements } from './deckConstraints';
 export interface MythicQuestTracker {
   mythicId: string;
   wardsActivated: number;
-  numinaDestroyed: number;
+  numinaForgeted: number;
   decreaseDealt: number;
   cardsDrawn: number;
   customProgress: Record<string, unknown>;
@@ -13,7 +13,7 @@ export const initializeMythicTracker = (mythicId: string): MythicQuestTracker =>
   return {
     mythicId,
     wardsActivated: 0,
-    numinaDestroyed: 0,
+    numinaForgeted: 0,
     decreaseDealt: 0,
     cardsDrawn: 0,
     customProgress: {},
@@ -50,8 +50,8 @@ export const updateQuestProgress = (tracker: MythicQuestTracker, eventType: stri
     case 'wardActivated':
       updated.wardsActivated += amount;
       break;
-    case 'numenDestroyed':
-      updated.numinaDestroyed += amount;
+    case 'numenForgeted':
+      updated.numinaForgeted += amount;
       break;
     case 'decreaseDealt':
       updated.decreaseDealt += amount;
@@ -66,7 +66,7 @@ export const updateQuestProgress = (tracker: MythicQuestTracker, eventType: stri
   return updated;
 };
 
-export const getMythicSummonEligibility = (deck: unknown[], activeMythics: any[] = []): {
+export const getMythicInvokeEligibility = (deck: unknown[], activeMythics: any[] = []): {
   available: any[];
   ineligible: any[];
   reasons: Record<string, string>;
@@ -89,7 +89,7 @@ export const getMythicSummonEligibility = (deck: unknown[], activeMythics: any[]
       [mythicCard.id]
     );
 
-    if (!validationResult.canSummon[mythicCard.id]) {
+    if (!validationResult.canInvoke[mythicCard.id]) {
       ineligible.push(mythicCard);
       const missing = validationResult.missingRequirements[mythicCard.id];
       reasons[mythicCard.id] = Array.isArray(missing)
@@ -104,10 +104,10 @@ export const getMythicSummonEligibility = (deck: unknown[], activeMythics: any[]
   return { available, ineligible, reasons };
 };
 
-export const getKryokScalingBuff = (wardsRemoved: number): { darkBonus: number; demonBonus: number } => {
+export const getKryokScalingBuff = (wardsRemoved: number): { darkBonus: number; larvaBonus: number } => {
   return {
     darkBonus: wardsRemoved * 66,
-    demonBonus: wardsRemoved * 66,
+    larvaBonus: wardsRemoved * 66,
   };
 };
 
@@ -120,9 +120,9 @@ export const checkMythicConstraint = (mythic: any, action: string): { allowed: b
     }
   }
 
-  if (action === 'destroy') {
-    if (constraints.includes('cannotBeDestroyed')) {
-      return { allowed: false, reason: 'This mythic cannot be destroyed' };
+  if (action === 'forget') {
+    if (constraints.includes('cannotBeForgeted')) {
+      return { allowed: false, reason: 'This mythic cannot be forgeted' };
     }
   }
 
@@ -135,8 +135,8 @@ export const checkMythicConstraint = (mythic: any, action: string): { allowed: b
   return { allowed: true, reason: '' };
 };
 
-export const getMythicTributeCost = (mythic: any): number => {
-  const tributes: Record<number, number> = {
+export const getMythicSacrificeCost = (mythic: any): number => {
+  const sacrifices: Record<number, number> = {
     1: 0,
     2: 0,
     3: 1,
@@ -149,7 +149,7 @@ export const getMythicTributeCost = (mythic: any): number => {
     10: 5,
   };
 
-  return tributes[mythic.level || 0] || 0;
+  return sacrifices[mythic.level || 0] || 0;
 };
 
 export const activateMythic = (tracker: MythicQuestTracker): {

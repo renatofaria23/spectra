@@ -1,4 +1,4 @@
-import { NATURES, NUMEN_FAMILIES, POSITIONS, RITE_TYPES, WARD_TYPES, RARITY } from './constants';
+import { NATURES, NUMEN_FAMILIES, POSITIONS, RARITY } from './constants';
 
 export const CARD_TYPE = {
   numen: 'numen' as const,
@@ -11,8 +11,6 @@ export type CardType = typeof CARD_TYPE[keyof typeof CARD_TYPE];
 export type Nature = typeof NATURES[keyof typeof NATURES];
 export type NumenFamily = typeof NUMEN_FAMILIES[keyof typeof NUMEN_FAMILIES];
 export type Position = typeof POSITIONS[keyof typeof POSITIONS];
-export type RiteType = typeof RITE_TYPES[keyof typeof RITE_TYPES];
-export type WardType = typeof WARD_TYPES[keyof typeof WARD_TYPES];
 export type Rarity = typeof RARITY[keyof typeof RARITY];
 
 export interface BaseCard {
@@ -24,7 +22,7 @@ export interface BaseCard {
 
 export interface NumenCard extends BaseCard {
   type: 'numen';
-  attribute: Nature;
+  nature: Nature;
   numenFamily: NumenFamily;
   level: number;
   baseAttack: number;
@@ -43,13 +41,11 @@ export interface NumenCard extends BaseCard {
 
 export interface RiteCard extends BaseCard {
   type: 'rite';
-  riteType: 'normal' | 'continuous' | 'equip' | 'quick_play';
   effects: string[];
 };
 
 export interface WardCard extends BaseCard {
   type: 'ward';
-  wardType: 'normal' | 'continuous' | 'counter';
   effects: string[];
 };
 
@@ -66,16 +62,15 @@ export interface MythicQuestCondition {
 export interface PlayerState {
   playerId: string;
   currentHP: number;
-  maxHP: number;
   fieldNumina: NumenCard[];
   fieldRites: (RiteCard | WardCard)[];
   hand: Card[];
   deck: Card[];
-  graveyard: Card[];
+  memora: Card[];
   exiled: Card[];
   numenPositions: Record<string, Position>;
   fatigueDecrease: number;
-  attributeCount: Record<Nature, number>;
+  natureCount: Record<Nature, number>;
   typeCount: Record<NumenFamily, number>;
 };
 

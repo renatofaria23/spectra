@@ -1,13 +1,14 @@
 import React from "react";
 import { Box, Text } from "@mantine/core";
 import { IconApiApp } from "@tabler/icons-react";
-import colors from "../../styles/Colors";
-import { NatureIcon } from "./NatureIcon";
-import { RaritySymbol } from "./RaritySymbol";
-import type { TriggerEntry } from "../../logic/Triggers";
+import colors from "../../../styles/Colors";
+import * as styles from './CardTemplate.css.ts';
+import { NatureIcon } from "../NatureIcon/NatureIcon";
+import { RaritySymbol } from "../RaritySymbol/RaritySymbol";
+import type { TriggerEntry } from "../../../logic/Triggers";
 
 type CardType = "numen" | "rite" | "ward";
-type CardSize = "xs" | "sm" | "md" | "lg";
+type CardSize = "xs" | "sm" | "md" | "lg" | "xl";
 
 export interface CardData {
   id: string;
@@ -19,7 +20,7 @@ export interface CardData {
   family?: string;
   rarity?: string;
   level?: number;
-  attribute?: string;
+  nature?: string;
   attack?: number;
   defense?: number;
   mana?: number;
@@ -38,9 +39,10 @@ const sizeDimensions: Record<CardSize, { width: number; height: number }> = {
   sm: { width: 100, height: 150 },
   md: { width: 150, height: 225 },
   lg: { width: 200, height: 300 },
+  xl: { width: 400, height: 600 },
 };
 
-const attributeThemeMap: Record<string, string[]> = {
+const natureThemeMap: Record<string, string[]> = {
   fire: colors.FireTheme,
   water: colors.WaterTheme,
   earth: colors.EarthTheme,
@@ -80,8 +82,8 @@ interface CardTheme {
   dividerColor: string;
 }
 
-const getNumenTheme = (attribute: string = "dark"): CardTheme => {
-  const theme = attributeThemeMap[attribute.toLowerCase()];
+const getNumenTheme = (nature: string = "dark"): CardTheme => {
+  const theme = natureThemeMap[nature.toLowerCase()];
   if (!theme) {
     return {
       border: colors.Gray_6,
@@ -100,7 +102,7 @@ const getNumenTheme = (attribute: string = "dark"): CardTheme => {
       dividerColor: colors.Gray_6,
     };
   }
-  const isLightNature = LIGHT_NATURES.includes(attribute.toLowerCase());
+  const isLightNature = LIGHT_NATURES.includes(nature.toLowerCase());
   const c0 = theme[0] || colors.Gray_7;
   const c1 = theme[1] || c0;
   const c2 = theme[2] || c1;
@@ -175,8 +177,8 @@ const getWardTheme = (): CardTheme => {
   };
 };
 
-const getTheme = (cardType: CardType, attribute?: string): CardTheme => {
-  if (cardType === "numen") return getNumenTheme(attribute);
+const getTheme = (cardType: CardType, nature?: string): CardTheme => {
+  if (cardType === "numen") return getNumenTheme(nature);
   if (cardType === "rite") return getRiteTheme();
   return getWardTheme();
 };
@@ -186,20 +188,16 @@ export const CardTemplate = React.memo(
     const dims = sizeDimensions[size];
 
     const isNumen = card.type === "numen";
-    const theme = getTheme(card.type, card.attribute);
+    const theme = getTheme(card.type, card.nature);
 
     return (
       <Box
         data-name="card-outer-frame"
         style={{
+          ...styles.cardOuterFrame,
           width: dims.width,
           height: dims.height,
-          display: "flex",
-          flexDirection: "column",
           background: theme.borderGradient,
-          borderRadius: "12px",
-          padding: "3px",
-          boxSizing: "border-box",
           boxShadow: `0 0 8px ${theme.accentGlow}66, inset 0 0 8px ${theme.accentGlow}33`,
           ...style,
         }}
@@ -207,53 +205,28 @@ export const CardTemplate = React.memo(
         <Box
           data-name="card-main-content"
           style={{
-            width: "100%",
-            height: "100%",
-            display: "flex",
-            flexDirection: "column",
+            ...styles.cardMainContent,
             background: theme.backgroundGradient,
-            borderRadius: "9px",
-            overflow: "hidden",
-            position: "relative",
           }}
         >
           <Box
             style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
+              ...styles.radialGlowOverlay,
               background: createRadialGlow(theme.accentColor),
-              pointerEvents: 'none',
-              zIndex: 0,
             }}
           />
 
           <Box
             data-name="level-rarity-section"
             style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              minHeight: "14px",
-              padding: "2px 6px",
+              ...styles.levelRaritySection,
               background: theme.sectionBgGradient,
-              width: "100%",
-              boxSizing: "border-box",
-              position: 'relative',
-              zIndex: 1,
-              gap: "4px",
             }}
           >
             {isNumen && card.level ? (
               <Box
                 data-name="level-icons-container"
-                style={{
-                  display: "flex",
-                  gap: "1px",
-                  flexShrink: 0,
-                }}
+                style={styles.levelIconsContainer}
               >
                 {Array.from({ length: Math.min(card.level, 10) }).map(
                   (_, i) => (
@@ -270,7 +243,7 @@ export const CardTemplate = React.memo(
           <Box
             data-name="level-name-divider"
             style={{
-              height: "1px",
+              ...styles.levelNameDivider,
               background: `linear-gradient(90deg, transparent 0%, ${theme.dividerColor} 50%, transparent 100%)`,
             }}
           />
@@ -278,15 +251,8 @@ export const CardTemplate = React.memo(
           <Box
             data-name="card-name-section"
             style={{
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              padding: "4px 8px",
+              ...styles.cardNameSection,
               background: theme.sectionBgGradient,
-              width: "100%",
-              boxSizing: "border-box",
-              position: 'relative',
-              zIndex: 1,
             }}
           >
             <Text
@@ -294,69 +260,63 @@ export const CardTemplate = React.memo(
               size="xs"
               fw={700}
               style={{
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-                textAlign: "center",
-                lineHeight: "1",
-                marginTop: "2px",
+                ...styles.cardNameText,
+                textAlign: 'left',
               }}
             >
               {card.name}
+            </Text>
+            <Text
+              c={theme.textColor}
+              size="xs"
+              fw={500}
+              style={{
+                textAlign: 'right',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {isNumen
+                ? (card.family
+                    ? card.family.charAt(0).toUpperCase() + card.family.slice(1)
+                    : card.cardType)
+                : card.type.charAt(0).toUpperCase() + card.type.slice(1)}
             </Text>
           </Box>
 
           <Box
             data-name="name-art-divider"
             style={{
-              height: "1px",
+              ...styles.nameArtDivider,
               background: `linear-gradient(90deg, transparent 0%, ${theme.accentColor} 50%, transparent 100%)`,
             }}
           />
 
           <Box
             data-name="art-image-section"
-            style={{
-              position: "relative",
-              zIndex: 1,
-              width: "100%",
-              flex: 1,
-              alignSelf: "stretch",
-              overflow: "hidden",
-              minHeight: 0,
-            }}
+            style={styles.artImageSection}
           >
             {artImageProp ? (
               <img
                 src={artImageProp}
                 alt="Card art"
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "cover",
-                  objectPosition: "center",
-                }}
+                style={styles.artImage}
               />
             ) : (
               <Box
+                data-name="art-placeholder"
                 style={{
-                  width: '100%',
-                  height: '100%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
+                  ...styles.artPlaceholder,
                   background: theme.backgroundInner,
                 }}
               >
-                <NatureIcon type={card.attribute || "dark"} size={40} />
+                <NatureIcon type={card.nature || "dark"} size={40} />
               </Box>
             )}
             <Box
+              data-name="art-image-overlay"
               style={{
-                position: 'absolute',
-                inset: 0,
+                ...styles.artImageOverlay,
                 background: `linear-gradient(180deg, transparent 75%, ${theme.backgroundInner} 100%)`,
-                zIndex: 2,
-                pointerEvents: 'none',
               }}
             />
           </Box>
@@ -364,35 +324,22 @@ export const CardTemplate = React.memo(
           <Box
             data-name="description-outer-frame"
             style={{
-              position: 'absolute',
-              bottom: '19px',
-              left: '2px',
-              right: '2px',
-              zIndex: 3,
+              ...styles.descriptionOuterFrame,
+              ...styles.descriptionOuterFrameAbsolute,
             }}
           >
             <Box
               data-name="description-inner-bg"
               style={{
-                width: "100%",
+                ...styles.descriptionInnerBg,
                 background: theme.backgroundInner,
-                border: `1px solid ${theme.dividerColor}44`,
-                borderRadius: "4px",
-                padding: "3px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
               }}
             >
               <Text
                 c={theme.textColor}
                 size="7px"
                 fw={400}
-                style={{
-                  textAlign: "center",
-                  textOverflow: "ellipsis",
-                  lineHeight: "9px",
-                }}
+                style={styles.descriptionText}
               >
                 {card.description.split("\n").map((line, i) => (
                   <span key={i}>
@@ -407,14 +354,9 @@ export const CardTemplate = React.memo(
           <Box
             data-name="stats-section"
             style={{
-              position: 'absolute',
-              bottom: '0',
-              display: "flex",
-              alignItems: "center",
+              ...styles.statsSection,
+              ...styles.statsSectionAbsolute,
               background: theme.sectionBgGradient,
-              width: '100%',
-              zIndex: 4,
-              height: '15px',
             }}
           >
             {isNumen ? (
@@ -423,50 +365,15 @@ export const CardTemplate = React.memo(
                   c={theme.textColor}
                   size="8px"
                   fw={700}
-                  style={{
-                    position: 'absolute',
-                    top: '50%',
-                    left: '8px',
-                    transform: 'translateY(-50%)',
-                    textAlign: "left",
-                    lineHeight: "1",
-                    marginTop: "2px",
-                  }}
+                  style={styles.statLabelLeft}
                 >
                   ATK: {card.attack}
                 </Text>
                 <Text
                   c={theme.textColor}
-                  size="7px"
-                  fw={500}
-                  style={{
-                    position: 'absolute',
-                    top: '50%',
-                    left: '50%',
-                    transform: 'translate(-50%, -50%)',
-                    textAlign: "center",
-                    textTransform: 'capitalize',
-                    lineHeight: "1",
-                    marginTop: "2px",
-                  }}
-                >
-                  {card.family
-                    ? card.family.charAt(0).toUpperCase() + card.family.slice(1)
-                    : card.cardType}
-                </Text>
-                <Text
-                  c={theme.textColor}
                   size="8px"
                   fw={700}
-                  style={{
-                    position: 'absolute',
-                    top: '50%',
-                    right: '8px',
-                    transform: 'translateY(-50%)',
-                    textAlign: "right",
-                    lineHeight: "1",
-                    marginTop: "2px",
-                  }}
+                  style={styles.statLabelRight}
                 >
                   DEF: {card.defense}
                 </Text>
@@ -476,7 +383,7 @@ export const CardTemplate = React.memo(
                 c={theme.textColor}
                 size="8px"
                 fw={700}
-                style={{ textAlign: "center", lineHeight: "1", marginTop: "1px" }}
+                style={styles.statLabelCenter}
               >
                 MANA: {card.mana}
               </Text>

@@ -163,7 +163,7 @@ export const theme = createTheme({
 
   primaryColor: "game-dark",
 
-  fontFamily: "Crimson Text, Cormorant Upright, Lora, system-ui, sans-serif",
+  fontFamily: "sans-serif",
 
   fontSizes: {
     xs: "10px",

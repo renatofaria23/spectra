@@ -18,6 +18,34 @@ export interface PendingEffect {
   effectTarget?: EffectTarget;
 }
 
+function mergeCriteriaItems(criteriaItems: any[]): Record<string, any> {
+  const merged: Record<string, any> = {};
+  const cardTypeFields = ['any_numen', 'any_ward', 'any_rite', 'any_magic'];
+  for (const item of criteriaItems) {
+    if (item.type === 'name' && item.value) merged.name = item.value;
+    else if (cardTypeFields.includes(item.type)) merged[item.type] = true;
+    else if (item.type && item.value != null) {
+      merged[item.type] = merged[item.type] && Array.isArray(merged[item.type])
+        ? [...new Set([...merged[item.type], ...item.value])]
+        : item.value;
+    }
+  }
+  return merged;
+}
+
+function mergeSimpleCriteria(criteriaItems: any[]): Record<string, any> {
+  const merged: Record<string, any> = {};
+  for (const item of criteriaItems) {
+    if (item.type === 'name' && item.value) merged.name = item.value;
+    else if (item.type && item.value != null) {
+      merged[item.type] = merged[item.type] && Array.isArray(merged[item.type])
+        ? [...new Set([...merged[item.type], ...item.value])]
+        : item.value;
+    }
+  }
+  return merged;
+}
+
 export function useCardEditor() {
   const [cardType, setCardType] = useState<CardTypeOption | ''>('numen');
   const [name, setName] = useState('');
@@ -57,12 +85,8 @@ export function useCardEditor() {
           trigger: slot.trigger as any,
           effects: effectsList,
         };
-        if (slot.attackTarget) {
-          conditionalEntry.attackTarget = slot.attackTarget;
-        }
-        if (slot.effectTarget) {
-          conditionalEntry.effectTarget = slot.effectTarget;
-        }
+        if (slot.attackTarget) conditionalEntry.attackTarget = slot.attackTarget;
+        if (slot.effectTarget) conditionalEntry.effectTarget = slot.effectTarget;
         triggers.push(conditionalEntry);
       }
     }
@@ -114,11 +138,8 @@ export function useCardEditor() {
   const toggleActiveTrigger = (trigger: ConditionalTrigger) => {
     setSelectedActiveTriggers(prev => {
       const next = new Set(prev);
-      if (next.has(trigger)) {
-        next.delete(trigger);
-      } else {
-        next.add(trigger);
-      }
+      if (next.has(trigger)) next.delete(trigger);
+      else next.add(trigger);
       return next;
     });
   };
@@ -144,35 +165,16 @@ export function useCardEditor() {
         const exileFromField = (op as any).exileFromField !== false;
         if (exileFromField) {
           return otTarget ? { effect: EffectType.EXILE, count: op.count || 1, effectTarget: otTarget } : { effect: EffectType.EXILE, count: op.count || 1 };
-        } else {
-          const criteriaItems = op._criteriaItems || [];
-          const mergedExileCriteria: Record<string, any> = {};
-          const exileCardTypeFields = ['any_numen', 'any_ward', 'any_rite', 'any_magic'];
-          for (const item of criteriaItems) {
-            if (item.type === 'name' && item.value) {
-              mergedExileCriteria.name = item.value;
-            } else if (exileCardTypeFields.includes(item.type)) {
-              mergedExileCriteria[item.type] = true;
-            } else if (item.type && item.value !== undefined && item.value !== null) {
-              if (mergedExileCriteria[item.type]) {
-                if (Array.isArray(mergedExileCriteria[item.type])) {
-                  mergedExileCriteria[item.type] = [...new Set([...mergedExileCriteria[item.type], ...item.value])];
-                }
-              } else {
-                mergedExileCriteria[item.type] = item.value;
-              }
-            }
-          }
-          return { effect: EffectType.EXILE, from: op.from || 'player_deck', criteria: mergedExileCriteria, count: op.count || 1 };
         }
+        const mergedExileCriteria = mergeCriteriaItems(op._criteriaItems || []);
+        return { effect: EffectType.EXILE, from: op.from || 'player_deck', criteria: mergedExileCriteria, count: op.count || 1 };
       }
       case EffectType.PETRIFY:
         return otTarget ? { effect: EffectType.PETRIFY, turns: op.turns || 1, effectTarget: otTarget } : { effect: EffectType.PETRIFY, turns: op.turns || 1 };
       case EffectType.DECREASE: {
         const decTargetType = op._targetType || 'self';
-        const decStatTarget = op.effectTarget;
         const decIsNumen = isNumenTarget(decTargetType);
-        const decBase: any = { effect: EffectType.DECREASE, target: decTargetType, effectTarget: decStatTarget || (decIsNumen ? 'atk' : 'hp'), amount: op.amount || 100 };
+        const decBase: any = { effect: EffectType.DECREASE, target: decTargetType, effectTarget: op.effectTarget || (decIsNumen ? 'atk' : 'hp'), amount: op.amount || 100 };
         if (decIsNumen) { decBase.duration = op.duration || 'permanent'; if (op.durationTurns) decBase.durationTurns = op.durationTurns; }
         if (otTarget) decBase.effectTarget = otTarget;
         return decBase;
@@ -183,9 +185,8 @@ export function useCardEditor() {
           : { effect: EffectType.LOCK, duration: op.duration || 'permanent', turns: op.turns };
       case EffectType.INCREASE: {
         const incTargetType = op._targetType || 'self';
-        const incStatTarget = op.effectTarget;
         const incIsNumen = isNumenTarget(incTargetType);
-        const incBase: any = { effect: EffectType.INCREASE, target: incTargetType, effectTarget: incStatTarget || (incIsNumen ? 'atk' : 'hp'), amount: op.amount || 100 };
+        const incBase: any = { effect: EffectType.INCREASE, target: incTargetType, effectTarget: op.effectTarget || (incIsNumen ? 'atk' : 'hp'), amount: op.amount || 100 };
         if (incIsNumen) { incBase.duration = op.duration || 'permanent'; if (op.durationTurns) incBase.durationTurns = op.durationTurns; }
         if (otTarget) incBase.effectTarget = otTarget;
         return incBase;
@@ -208,11 +209,8 @@ export function useCardEditor() {
         const isAllField = isFieldTarget && returnFieldTarget && returnFieldTarget.startsWith('all_');
         const isAllZone = isZoneTarget && returnCardType === 'any';
         const baseReturn: any = { effect: EffectType.RETURN, returnTarget, returnDestination, count: (isAllField || isAllZone) ? 1 : (op.count || 1) };
-        if (isFieldTarget && returnFieldTarget) {
-          baseReturn.returnFieldTarget = returnFieldTarget;
-        } else if (isZoneTarget) {
-          baseReturn.returnCardType = returnCardType;
-        }
+        if (isFieldTarget && returnFieldTarget) baseReturn.returnFieldTarget = returnFieldTarget;
+        else if (isZoneTarget) baseReturn.returnCardType = returnCardType;
         if (otTarget) baseReturn.effectTarget = otTarget;
         return baseReturn;
       }
@@ -246,24 +244,7 @@ export function useCardEditor() {
           const exileTarget = effectParams._exileTarget || target;
           effect = exileTarget ? { effect: EffectType.EXILE, count: effectParams.count || 1, effectTarget: exileTarget } : { effect: EffectType.EXILE, count: effectParams.count || 1 };
         } else {
-          const criteriaItems = effectParams._criteriaItems || [];
-          const mergedExileCriteria: Record<string, any> = {};
-          const exileCardTypeFields = ['any_numen', 'any_ward', 'any_rite', 'any_magic'];
-          for (const item of criteriaItems) {
-            if (item.type === 'name' && item.value) {
-              mergedExileCriteria.name = item.value;
-            } else if (exileCardTypeFields.includes(item.type)) {
-              mergedExileCriteria[item.type] = true;
-            } else if (item.type && item.value !== undefined && item.value !== null) {
-              if (mergedExileCriteria[item.type]) {
-                if (Array.isArray(mergedExileCriteria[item.type])) {
-                  mergedExileCriteria[item.type] = [...new Set([...mergedExileCriteria[item.type], ...item.value])];
-                }
-              } else {
-                mergedExileCriteria[item.type] = item.value;
-              }
-            }
-          }
+          const mergedExileCriteria = mergeCriteriaItems(effectParams._criteriaItems || []);
           effect = { effect: EffectType.EXILE, from: effectParams.from || 'player_deck', criteria: mergedExileCriteria, count: effectParams.count || 1 };
         }
         break;
@@ -273,9 +254,8 @@ export function useCardEditor() {
         break;
       case EffectType.DECREASE: {
         const decTargetType = effectParams._targetType || 'self';
-        const decStatTarget = effectParams.effectTarget;
         const decIsNumen = isNumenTarget(decTargetType);
-        const decEffect: any = { effect: EffectType.DECREASE, target: decTargetType, effectTarget: decStatTarget || (decIsNumen ? 'atk' : 'hp'), amount: effectParams.amount || 100 };
+        const decEffect: any = { effect: EffectType.DECREASE, target: decTargetType, effectTarget: effectParams.effectTarget || (decIsNumen ? 'atk' : 'hp'), amount: effectParams.amount || 100 };
         if (decIsNumen) { decEffect.duration = effectParams.duration || 'permanent'; if (effectParams.durationTurns) decEffect.durationTurns = effectParams.durationTurns; }
         effect = decEffect;
         break;
@@ -287,15 +267,14 @@ export function useCardEditor() {
         break;
       case EffectType.INCREASE: {
         const incTargetType = effectParams._targetType || 'self';
-        const incStatTarget = effectParams.effectTarget;
         const incIsNumen = isNumenTarget(incTargetType);
-        const incEffect: any = { effect: EffectType.INCREASE, target: incTargetType, effectTarget: incStatTarget || (incIsNumen ? 'atk' : 'hp'), amount: effectParams.amount || 100 };
+        const incEffect: any = { effect: EffectType.INCREASE, target: incTargetType, effectTarget: effectParams.effectTarget || (incIsNumen ? 'atk' : 'hp'), amount: effectParams.amount || 100 };
         if (incIsNumen) { incEffect.duration = effectParams.duration || 'permanent'; if (effectParams.durationTurns) incEffect.durationTurns = effectParams.durationTurns; }
         effect = incEffect;
         break;
       }
       case EffectType.ETHEREAL:
-         effect = target ? { effect: EffectType.ETHEREAL, count: effectParams.count || 1, type: effectParams.type || 'rite', effectTarget: target } : { effect: EffectType.ETHEREAL, count: effectParams.count || 1, type: effectParams.type || 'rite' };
+        effect = target ? { effect: EffectType.ETHEREAL, count: effectParams.count || 1, type: effectParams.type || 'rite', effectTarget: target } : { effect: EffectType.ETHEREAL, count: effectParams.count || 1, type: effectParams.type || 'rite' };
         break;
       case EffectType.FIND:
         effect = target ? { effect: EffectType.FIND, count: effectParams.count || 1, source: effectParams.source || 'deck', effectTarget: target } : { effect: EffectType.FIND, count: effectParams.count || 1, source: effectParams.source || 'deck' };
@@ -303,54 +282,21 @@ export function useCardEditor() {
       case EffectType.ADD_TRIGGER:
         effect = target ? { effect: EffectType.ADD_TRIGGER, trigger_type: effectParams.trigger_type || 'CHALLENGE', duration: effectParams.duration || 1, effectTarget: target } : { effect: EffectType.ADD_TRIGGER, trigger_type: effectParams.trigger_type || 'CHALLENGE', duration: effectParams.duration || 1 };
         break;
-      case EffectType.INVOKE: {
-        const invokeCriteriaItems = effectParams._criteriaItems || [];
-        const mergedInvokeCriteria: Record<string, any> = {};
-        for (const item of invokeCriteriaItems) {
-          if (item.type === 'name' && item.value) mergedInvokeCriteria.name = item.value;
-          else if (item.type && item.value !== undefined && item.value !== null) {
-            if (mergedInvokeCriteria[item.type]) {
-              if (Array.isArray(mergedInvokeCriteria[item.type])) mergedInvokeCriteria[item.type] = [...new Set([...mergedInvokeCriteria[item.type], ...item.value])];
-            } else { mergedInvokeCriteria[item.type] = item.value; }
-          }
-        }
+      case EffectType.INVOKE:
         effect = target
-          ? { effect: EffectType.INVOKE, from: effectParams.from || 'player_hand', criteria: mergedInvokeCriteria, count: effectParams.count || 1, effectTarget: target }
-          : { effect: EffectType.INVOKE, from: effectParams.from || 'player_hand', criteria: mergedInvokeCriteria, count: effectParams.count || 1 };
+          ? { effect: EffectType.INVOKE, from: effectParams.from || 'player_hand', criteria: mergeSimpleCriteria(effectParams._criteriaItems || []), count: effectParams.count || 1, effectTarget: target }
+          : { effect: EffectType.INVOKE, from: effectParams.from || 'player_hand', criteria: mergeSimpleCriteria(effectParams._criteriaItems || []), count: effectParams.count || 1 };
         break;
-      }
-      case EffectType.EVOKE: {
-        const evokeCriteriaItems = effectParams._criteriaItems || [];
-        const mergedEvokeCriteria: Record<string, any> = {};
-        for (const item of evokeCriteriaItems) {
-          if (item.type === 'name' && item.value) mergedEvokeCriteria.name = item.value;
-          else if (item.type && item.value !== undefined && item.value !== null) {
-            if (mergedEvokeCriteria[item.type]) {
-              if (Array.isArray(mergedEvokeCriteria[item.type])) mergedEvokeCriteria[item.type] = [...new Set([...mergedEvokeCriteria[item.type], ...item.value])];
-            } else { mergedEvokeCriteria[item.type] = item.value; }
-          }
-        }
+      case EffectType.EVOKE:
         effect = target
-          ? { effect: EffectType.EVOKE, from: effectParams.from || 'player_memora', criteria: mergedEvokeCriteria, count: effectParams.count || 1, effectTarget: target }
-          : { effect: EffectType.EVOKE, from: effectParams.from || 'player_memora', criteria: mergedEvokeCriteria, count: effectParams.count || 1 };
+          ? { effect: EffectType.EVOKE, from: effectParams.from || 'player_memora', criteria: mergeSimpleCriteria(effectParams._criteriaItems || []), count: effectParams.count || 1, effectTarget: target }
+          : { effect: EffectType.EVOKE, from: effectParams.from || 'player_memora', criteria: mergeSimpleCriteria(effectParams._criteriaItems || []), count: effectParams.count || 1 };
         break;
-      }
-      case EffectType.CONVOKE: {
-        const convokeCriteriaItems = effectParams._criteriaItems || [];
-        const mergedConvokeCriteria: Record<string, any> = {};
-        for (const item of convokeCriteriaItems) {
-          if (item.type === 'name' && item.value) mergedConvokeCriteria.name = item.value;
-          else if (item.type && item.value !== undefined && item.value !== null) {
-            if (mergedConvokeCriteria[item.type]) {
-              if (Array.isArray(mergedConvokeCriteria[item.type])) mergedConvokeCriteria[item.type] = [...new Set([...mergedConvokeCriteria[item.type], ...item.value])];
-            } else { mergedConvokeCriteria[item.type] = item.value; }
-          }
-        }
+      case EffectType.CONVOKE:
         effect = target
-          ? { effect: EffectType.CONVOKE, from: effectParams.from || 'player_deck', criteria: mergedConvokeCriteria, count: effectParams.count || 1, effectTarget: target }
-          : { effect: EffectType.CONVOKE, from: effectParams.from || 'player_deck', criteria: mergedConvokeCriteria, count: effectParams.count || 1 };
+          ? { effect: EffectType.CONVOKE, from: effectParams.from || 'player_deck', criteria: mergeSimpleCriteria(effectParams._criteriaItems || []), count: effectParams.count || 1, effectTarget: target }
+          : { effect: EffectType.CONVOKE, from: effectParams.from || 'player_deck', criteria: mergeSimpleCriteria(effectParams._criteriaItems || []), count: effectParams.count || 1 };
         break;
-      }
       case EffectType.COPY:
         effect = target
           ? { effect: EffectType.COPY, copyTarget: effectParams.copyTarget || 'numen', destination: effectParams.destination || 'player_deck', count: effectParams.count || 1, effectTarget: target }
@@ -375,11 +321,8 @@ export function useCardEditor() {
           const isAllField = isFieldTarget && returnFieldTarget && returnFieldTarget.startsWith('all_');
           const isAllZone = isZoneTarget && returnCardType === 'any';
           const baseReturn: any = { effect: EffectType.RETURN, returnTarget, returnDestination, count: (isAllField || isAllZone) ? 1 : (effectParams.count || 1) };
-          if (isFieldTarget && returnFieldTarget) {
-            baseReturn.returnFieldTarget = returnFieldTarget;
-          } else if (isZoneTarget) {
-            baseReturn.returnCardType = returnCardType;
-          }
+          if (isFieldTarget && returnFieldTarget) baseReturn.returnFieldTarget = returnFieldTarget;
+          else if (isZoneTarget) baseReturn.returnCardType = returnCardType;
           if (target) baseReturn.effectTarget = target;
           effect = baseReturn;
         }
@@ -436,12 +379,10 @@ export function useCardEditor() {
   const addEffectToSlot = () => {
     if (cardType === 'rite' || cardType === 'ward') {
       if (pendingEffects.length === 0) return;
-
       const slot: EffectSlot = {
         trigger: ConditionalTrigger.DECREE,
         effects: pendingEffects.map(p => p.effect),
       };
-
       setEffectSlots(prev => [...prev, slot]);
       resetEffectForm();
       return;
@@ -449,37 +390,27 @@ export function useCardEditor() {
 
     if (triggerType === 'passive') {
       if (!selectedPassiveTrigger) return;
-      const slot: EffectSlot = {
-        trigger: selectedPassiveTrigger,
-      };
-      setEffectSlots(prev => [...prev, slot]);
+      setEffectSlots(prev => [...prev, { trigger: selectedPassiveTrigger }]);
       resetEffectForm();
       return;
     }
 
     if (triggerType === 'active') {
       if (selectedActiveTriggers.size === 0 || pendingEffects.length === 0) return;
-
       const newSlots: EffectSlot[] = [];
       for (const trigger of selectedActiveTriggers) {
         const slot: EffectSlot = {
           trigger,
           effects: pendingEffects.map(p => p.effect),
         };
-
-        if (selectedAttackTarget) {
-          slot.attackTarget = selectedAttackTarget;
-        }
-
+        if (selectedAttackTarget) slot.attackTarget = selectedAttackTarget;
         newSlots.push(slot);
       }
-
       setEffectSlots(prev => [...prev, ...newSlots]);
       resetEffectForm();
       return;
     }
   };
-
 
   const removeEffectInSlot = (slotIndex: number, effectIndex: number) => {
     setEffectSlots(prev => {
@@ -487,11 +418,8 @@ export function useCardEditor() {
       const slot = next[slotIndex]!;
       const effectsList = slot.effects || (slot.effect ? [slot.effect] : []);
       effectsList.splice(effectIndex, 1);
-      if (effectsList.length === 0) {
-        next.splice(slotIndex, 1);
-      } else {
-        next[slotIndex] = { ...slot, effects: effectsList };
-      }
+      if (effectsList.length === 0) next.splice(slotIndex, 1);
+      else next[slotIndex] = { ...slot, effects: effectsList };
       return next;
     });
   };
@@ -535,19 +463,10 @@ export function useCardEditor() {
     setEditingSlotIndex(index);
     setEditingEffectIndex(null);
     setAddingEffectToSlot(true);
-
     setTriggerType('active');
     setSelectedPassiveTrigger(null);
-
-    const trigger = slot.trigger as ConditionalTrigger;
-    setSelectedActiveTriggers(new Set([trigger]));
-
-    if (slot.attackTarget) {
-      setSelectedAttackTarget(slot.attackTarget);
-    } else {
-      setSelectedAttackTarget(null);
-    }
-
+    setSelectedActiveTriggers(new Set([slot.trigger as ConditionalTrigger]));
+    setSelectedAttackTarget(slot.attackTarget || null);
     setSelectedEffectTarget(null);
     setSelectedEffectType(null);
     setPendingEffects([]);
@@ -579,15 +498,9 @@ export function useCardEditor() {
     } else {
       setTriggerType('active');
       setSelectedPassiveTrigger(null);
-
       const trigger = slot.trigger as ConditionalTrigger;
       setSelectedActiveTriggers(new Set([trigger]));
-
-      if (slot.attackTarget) {
-        setSelectedAttackTarget(slot.attackTarget);
-      } else {
-        setSelectedAttackTarget(null);
-      }
+      setSelectedAttackTarget(slot.attackTarget || null);
 
       const effectsList = slot.effects || (slot.effect ? [slot.effect] : []);
       const targetEffect = effectIndex !== undefined ? effectsList[effectIndex] : effectsList[0];
@@ -662,13 +575,13 @@ export function useCardEditor() {
             params.from = (targetEffect as any).from || 'player_deck';
             params.count = (targetEffect as any).count || 1;
             if ((targetEffect as any).criteria) {
-              const criteria = (targetEffect as any).criteria;
+              const ic = (targetEffect as any).criteria;
               params._criteriaItems = [];
-              if (criteria.name) params._criteriaItems.push({ type: 'name', value: criteria.name });
-              if (criteria.level) params._criteriaItems.push({ type: 'level', value: criteria.level });
-              if (criteria.families) params._criteriaItems.push({ type: 'families', value: criteria.families });
-              if (criteria.natures) params._criteriaItems.push({ type: 'natures', value: criteria.natures });
-              if (criteria.rarities) params._criteriaItems.push({ type: 'rarities', value: criteria.rarities });
+              if (ic.name) params._criteriaItems.push({ type: 'name', value: ic.name });
+              if (ic.level) params._criteriaItems.push({ type: 'level', value: ic.level });
+              if (ic.families) params._criteriaItems.push({ type: 'families', value: ic.families });
+              if (ic.natures) params._criteriaItems.push({ type: 'natures', value: ic.natures });
+              if (ic.rarities) params._criteriaItems.push({ type: 'rarities', value: ic.rarities });
             }
             break;
           case EffectType.COPY:
@@ -767,9 +680,7 @@ export function useCardEditor() {
   };
 
   const addPendingEffectToSlot = () => {
-    if (editingSlotIndex === null) return;
-    if (pendingEffects.length === 0) return;
-
+    if (editingSlotIndex === null || pendingEffects.length === 0) return;
     setEffectSlots(prev => {
       const next = [...prev];
       const slot = next[editingSlotIndex]!;
@@ -786,12 +697,9 @@ export function useCardEditor() {
 
     if (triggerType === 'passive') {
       if (!selectedPassiveTrigger) return;
-      const newSlot: EffectSlot = {
-        trigger: selectedPassiveTrigger,
-      };
       setEffectSlots(prev => {
         const next = [...prev];
-        next[editingSlotIndex] = newSlot;
+        next[editingSlotIndex] = { trigger: selectedPassiveTrigger };
         return next;
       });
       cancelEditing();
@@ -800,7 +708,6 @@ export function useCardEditor() {
 
     if (triggerType === 'active') {
       if (selectedActiveTriggers.size === 0 || pendingEffects.length === 0) return;
-
       setEffectSlots(prev => {
         const next = [...prev];
         const oldSlot = next[editingSlotIndex];
@@ -817,12 +724,8 @@ export function useCardEditor() {
               trigger,
               effects: pendingEffects.map(p => p.effect),
             };
-            if (selectedAttackTarget) {
-              slot.attackTarget = selectedAttackTarget;
-            }
-            if (slotIndex !== -1) {
-              next[slotIndex] = slot;
-            }
+            if (selectedAttackTarget) slot.attackTarget = selectedAttackTarget;
+            if (slotIndex !== -1) next[slotIndex] = slot;
           }
         }
         return next;
@@ -850,29 +753,18 @@ export function useCardEditor() {
       case EffectType.PETRIFY:
         return !!effectParams.turns;
       case EffectType.DECREASE: {
-        const hasTargetType = !!effectParams._targetType;
         const decTargetType = effectParams._targetType;
-        const hasStatTarget = !!effectParams.effectTarget;
         const decIsNumen = isNumenTarget(decTargetType);
-        const hasDuration = decIsNumen ? !!effectParams.duration : true;
-        const hasDurationTurns = effectParams.duration === 'temporary' ? !!effectParams.durationTurns : true;
-        const hasAmount = !!effectParams.amount;
-        return hasTargetType && hasStatTarget && hasDuration && hasDurationTurns && hasAmount;
+        return !!effectParams._targetType && !!effectParams.effectTarget && !!effectParams.amount &&
+          (decIsNumen ? !!effectParams.duration && (effectParams.duration === 'temporary' ? !!effectParams.durationTurns : true) : true);
       }
-      case EffectType.LOCK: {
-        const hasDuration = !!effectParams.duration;
-        const hasTurns = effectParams.duration === 'temporary' ? !!effectParams.turns : true;
-        return hasDuration && hasTurns;
-      }
+      case EffectType.LOCK:
+        return !!effectParams.duration && (effectParams.duration === 'temporary' ? !!effectParams.turns : true);
       case EffectType.INCREASE: {
-        const hasTargetType = !!effectParams._targetType;
         const incTargetType = effectParams._targetType;
-        const hasStatTarget = !!effectParams.effectTarget;
         const incIsNumen = isNumenTarget(incTargetType);
-        const hasDuration = incIsNumen ? !!effectParams.duration : true;
-        const hasDurationTurns = effectParams.duration === 'temporary' ? !!effectParams.durationTurns : true;
-        const hasAmount = !!effectParams.amount;
-        return hasTargetType && hasStatTarget && hasDuration && hasDurationTurns && hasAmount;
+        return !!effectParams._targetType && !!effectParams.effectTarget && !!effectParams.amount &&
+          (incIsNumen ? !!effectParams.duration && (effectParams.duration === 'temporary' ? !!effectParams.durationTurns : true) : true);
       }
       case EffectType.ETHEREAL:
         return !!effectParams.count && !!effectParams.type;
@@ -889,19 +781,12 @@ export function useCardEditor() {
       case EffectType.ADD:
         return !!effectParams.addFrom && !!effectParams.addTargetType && !!effectParams.destination && !!effectParams.count;
       case EffectType.RETURN: {
-        const isSelfReturn = effectParams.returnTarget === 'self';
-        if (isSelfReturn) {
-          return true;
-        }
-        const hasReturnTarget = !!effectParams.returnTarget;
+        if (effectParams.returnTarget === 'self') return true;
         const returnTarget = effectParams.returnTarget;
         const isField = returnTarget === 'field';
         const isZone = returnTarget === 'memora' || returnTarget === 'exile';
-        const hasFieldTarget = isField ? !!effectParams.returnFieldTarget : true;
-        const hasZoneTarget = isZone ? !!effectParams.returnCardType : true;
         const isAll = isField && effectParams.returnFieldTarget && effectParams.returnFieldTarget.startsWith('all_');
-        const hasCount = isAll ? true : !!effectParams.count;
-        return hasReturnTarget && hasFieldTarget && hasZoneTarget && hasCount;
+        return !!returnTarget && (isField ? !!effectParams.returnFieldTarget : true) && (isZone ? !!effectParams.returnCardType : true) && (isAll ? true : !!effectParams.count);
       }
       default:
         return false;

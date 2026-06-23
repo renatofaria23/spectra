@@ -1,163 +1,61 @@
 import React from 'react';
 import { CardSpot } from '../CardSpot/CardSpot';
 import colors from '../../../styles/Colors';
+import * as s from './Field.css';
 
-interface FieldProps {}
+const base = {
+  color: colors.White_1,
+  backgroundColor: colors.Brown_1,
+  borderColor: colors.White_1,
+  selectedBorder: colors.Teal_2,
+  width: '4vw',
+  height: '12vh',
+  absolutePositioning: false,
+} as const;
 
-export const Field = React.memo(() => {
-  const defaultSpotProps: Omit<React.ComponentProps<typeof CardSpot>, 'text'> = {
-    color: colors.White_1,
-    backgroundColor: colors.Brown_1,
-    borderColor: colors.White_1,
-    selectedBorder: colors.Teal_2,
-    width: '4vw',
-    height: '12vh',
-    absolutePositioning: false,
-  };
+const G = {
+  numen: [colors.Orange_9, colors.Orange_10],
+  extraDeck: [colors.Gray_7, colors.Gray_8],
+  special: [colors.Green_4, colors.Green_5],
+  exile: [colors.Purple_9, colors.Purple_10],
+  memora: [colors.Gray_9, colors.Gray_10],
+  magic: [colors.Blue_16, colors.Blue_17],
+  deck: [colors.Brown_8, colors.Brown_9],
+} as const;
 
-  const gradientColors = {
-    numen: [colors.Orange_9, colors.Orange_10],
-    extraDeck: [colors.Gray_7, colors.Gray_8],
-    special: [colors.Green_4, colors.Green_5],
-    exile: [colors.Purple_9, colors.Purple_10],
-    memora: [colors.Gray_9, colors.Gray_10],
-    magic: [colors.Blue_16, colors.Blue_17],
-    deck: [colors.Brown_8, colors.Brown_9],
-  } as const;
+const B = {
+  numen: colors.Orange_1,
+  extraDeck: colors.Gray_1,
+  special: colors.Green_1,
+  exile: colors.Purple_1,
+  memora: colors.Gray_2,
+  magic: colors.Blue_1,
+  deck: colors.Brown_1,
+} as const;
 
-  const getGradientStyle = (zoneType: string) => {
-    const [startColor, endColor] = gradientColors[zoneType as keyof typeof gradientColors];
-    return {
-      backgroundImage: `linear-gradient(135deg, ${startColor} 0%, ${endColor} 100%)`,
-    };
-  };
+const make = (t: string, p?: string) => {
+  const r = p || (t === 'Extra Deck' ? 'extraDeck' : t === 'Memora' ? 'memora' : t === 'Exile' ? 'exile' : t === 'Deck' ? 'deck' : t.includes('Zone') ? 'magic' : 'normal');
+  const grad: Record<string, any> = {};
+  if (r !== 'normal') {
+    const [a, b] = G[r as keyof typeof G];
+    grad.backgroundImage = `linear-gradient(135deg, ${a} 0%, ${b} 100%)`;
+  }
+  return <CardSpot key={`${base.width}-${base.height}`} text={t} {...base} backgroundColor={B[r as keyof typeof B]} additionalStyle={grad} />;
+};
 
-  const zoneOverrides = {
-    numen: { backgroundColor: colors.Orange_1 },
-    extraDeck: { backgroundColor: colors.Gray_1 },
-    special: { backgroundColor: colors.Green_1 },
-    exile: { backgroundColor: colors.Purple_1 },
-    memora: { backgroundColor: colors.Gray_2 },
-    magic: { backgroundColor: colors.Blue_1 },
-    deck: { backgroundColor: colors.Brown_1 },
-  } as const;
-
-  type CardSpotPropsExtended = React.ComponentProps<typeof CardSpot> & { additionalStyle?: Record<string, any> };
-  
-  const createSpot = (text: string, spotType?: string) => {
-    let resolvedType = spotType || 'normal';
-
-    if (!spotType) {
-      if (text === 'Extra Deck') resolvedType = 'extraDeck';
-      else if (text === 'Memora') resolvedType = 'memora';
-      else if (text === 'Exile') resolvedType = 'exile';
-      else if (text === 'Deck') resolvedType = 'deck';
-      else if (text.includes('Zone')) resolvedType = 'magic';
-    }
-
-    const zoneOverride = zoneOverrides[resolvedType as keyof typeof zoneOverrides] || {};
-    
-    let props = { ...defaultSpotProps, ...zoneOverride };
-    let additionalStyle: Record<string, any> = {};
-
-    if (resolvedType !== 'normal' && resolvedType !== undefined) {
-      const gradientStyle = getGradientStyle(resolvedType);
-      additionalStyle = { ...gradientStyle };
-    }
-
-    return <CardSpot key={`${props.width}-${props.height}`} text={text} {...(props as unknown as CardSpotPropsExtended)} additionalStyle={additionalStyle} />;
-  };
-
-const row2m = [
-  createSpot('Deck'),
-  ...Array.from({ length: 5 }, () => createSpot('Magic Zone')),
-  createSpot('Memora'),
+const R = (a: string, b: string, c: string, t?: string) => [
+  make(a), ...Array.from({ length: 5 }, () => make(b, t)), make(c),
 ];
 
-const row1m = [
-  createSpot('Extra Deck'),
-  ...Array.from({ length: 5 }, () => createSpot('Numen Zone', 'numen')),
-  createSpot('Exile'),
-];
-
-const row3m = [
-  createSpot('Special Zone', 'special'),
-];
-
-const row1 = [
-  createSpot('Exile'),
-  ...Array.from({ length: 5 }, () => createSpot('Numen Zone', 'numen')),
-  createSpot('Extra Deck'),
-];
-
-const row2 = [
-  createSpot('Memora'),
-  ...Array.from({ length: 5 }, () => createSpot('Magic Zone')),
-  createSpot('Deck'),
-];
-
-  return (
-    <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      gap: '0.5rem',
-      padding: '1rem 0.25rem',
-      boxSizing: 'border-box',
-    }}>
-      <div style={{
-        display: 'flex',
-        flexWrap: 'nowrap',
-        gap: '0.5rem',
-        justifyContent: 'center',
-        alignItems: 'center',
-      }}>
-        {row2m}
-      </div>
-
-      <div style={{
-        display: 'flex',
-        flexWrap: 'nowrap',
-        gap: '0.5rem',
-        justifyContent: 'center',
-        alignItems: 'center',
-      }}>
-        {row1m}
-      </div>
-
-      <div style={{
-        display: 'flex',
-        flexWrap: 'nowrap',
-        gap: '0.5rem',
-        justifyContent: 'center',
-        alignItems: 'center',
-      }}>
-        {row3m}
-      </div>
-
-      <div style={{
-        display: 'flex',
-        flexWrap: 'nowrap',
-        gap: '0.5rem',
-        justifyContent: 'center',
-        alignItems: 'center',
-      }}>
-        {row1}
-      </div>
-
-      <div style={{
-        display: 'flex',
-        flexWrap: 'nowrap',
-        gap: '0.5rem',
-        justifyContent: 'center',
-        alignItems: 'center',
-      }}>
-        {row2}
-      </div>
-    </div>
-  );
-});
+export const Field = React.memo(() => (
+  <div style={s.fieldRoot}>
+    <div style={s.fieldRow}>{R('Deck', 'Magic Zone', 'Memora')}</div>
+    <div style={s.fieldRow}>{R('Extra Deck', 'Numen Zone', 'Exile', 'numen')}</div>
+    <div style={s.fieldRow}>{make('Special Zone', 'special')}</div>
+    <div style={s.fieldRow}>{R('Exile', 'Numen Zone', 'Extra Deck', 'numen')}</div>
+    <div style={s.fieldRow}>{R('Memora', 'Magic Zone', 'Deck')}</div>
+  </div>
+));
 
 Field.displayName = 'Field';
-
 export default Field;

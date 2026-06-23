@@ -31,44 +31,63 @@ export interface EffectSlot {
   orEffect?: OrEffect;
 }
 
+const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+const formatTriggerLabel = (s: string) =>
+  s.split('_')
+    .map(w => w === 'OF' ? 'of' : capitalize(w.toLowerCase()))
+    .join(' ');
+const formatLabel = (s: string) =>
+  s.split('_')
+    .map(capitalize)
+    .join(' ')
+    .replace('Face Up', 'Face-Up')
+    .replace('Face Down', 'Face-Down');
+
+const zoneLabels: Record<string, string> = {
+  player_deck: "Your Deck",
+  opponent_deck: "Opponent's Deck",
+  player_memora: "Your Memora",
+  opponent_memora: "Opponent's Memora",
+  player_exile: "Your Exile",
+  opponent_exile: "Opponent's Exile",
+  player_hand: "Your Hand",
+  opponent_hand: "Opponent's Hand",
+  player_field: "Your Field",
+  opponent_field: "Opponent's Field",
+  any_field: "Any Field",
+  any_memora: "Any Memora",
+  any_exile: "Any Exile",
+  any_deck: "Any Deck",
+  any_hand: "Any Hand",
+  self: "Self (this card)"
+};
+const mapZones = (keys: string[]) => keys.map(k => ({ value: k, label: zoneLabels[k] || k }));
+const mapSimple = (arr: string[]) => arr.map(v => ({ value: v, label: capitalize(v) }));
+
 export const triggerTypeOptions = [
   { value: 'passive', label: 'Passive' },
   { value: 'active', label: 'Active' },
 ];
 
 export const activeTriggerOptions = [
-  { value: ConditionalTrigger.DECREE, label: 'Decree' },
-  { value: ConditionalTrigger.TESTAMENT, label: 'Testament' },
-  { value: ConditionalTrigger.START_OF_TURN, label: 'Start of Turn' },
-  { value: ConditionalTrigger.END_OF_TURN, label: 'End of Turn' },
-  { value: ConditionalTrigger.BEFORE_ATTACK, label: 'Before Attack' },
-  { value: ConditionalTrigger.AFTER_ATTACK, label: 'After Attack' },
-  { value: ConditionalTrigger.WHEN_ATTACKED, label: 'When Attacked' },
-  { value: ConditionalTrigger.WHEN, label: 'When' },
-];
+  ConditionalTrigger.DECREE,
+  ConditionalTrigger.TESTAMENT,
+  ConditionalTrigger.START_OF_TURN,
+  ConditionalTrigger.END_OF_TURN,
+  ConditionalTrigger.BEFORE_ATTACK,
+  ConditionalTrigger.AFTER_ATTACK,
+  ConditionalTrigger.WHEN_ATTACKED,
+  ConditionalTrigger.WHEN,
+].map(v => ({ value: v, label: formatTriggerLabel(v) }));
+
+export const passiveTriggerOptions = Object.values(PassiveTrigger).map(v => ({
+  value: v,
+  label: capitalize(v.toLowerCase())
+}));
 
 export const triggerOptions = [
-  { group: 'Passive', items: [
-    { value: PassiveTrigger.CHALLENGE, label: 'Challenge' },
-    { value: PassiveTrigger.VEILED, label: 'Veiled' },
-    { value: PassiveTrigger.CELERITY, label: 'Celerity' },
-    { value: PassiveTrigger.STUNNED, label: 'Stunned' },
-    { value: PassiveTrigger.NULLIFY, label: 'Nullify' },
-    { value: PassiveTrigger.LOCKED, label: 'Locked' },
-    { value: PassiveTrigger.RECLUSE, label: 'Recluse' },
-    { value: PassiveTrigger.LEGION, label: 'Legion' },
-    { value: PassiveTrigger.RELENTLESS, label: 'Relentless' },
-  ]},
-  { group: 'Conditional', items: [
-    { value: ConditionalTrigger.DECREE, label: 'Decree' },
-    { value: ConditionalTrigger.TESTAMENT, label: 'Testament' },
-    { value: ConditionalTrigger.START_OF_TURN, label: 'Start of Turn' },
-    { value: ConditionalTrigger.END_OF_TURN, label: 'End of Turn' },
-    { value: ConditionalTrigger.BEFORE_ATTACK, label: 'Before Attack' },
-    { value: ConditionalTrigger.AFTER_ATTACK, label: 'After Attack' },
-    { value: ConditionalTrigger.WHEN_ATTACKED, label: 'When Attacked' },
-    { value: ConditionalTrigger.WHEN, label: 'When' },
-  ]},
+  { group: 'Passive', items: passiveTriggerOptions.filter(o => o.value !== PassiveTrigger.SHROUDED) },
+  { group: 'Conditional', items: activeTriggerOptions },
 ];
 
 export const attackTargetOptions = [
@@ -78,7 +97,7 @@ export const attackTargetOptions = [
   { value: 'allied_numen', label: 'Allied Numen (When Attacked)' },
 ];
 
-export const getAttackTargetOptions = (trigger: ConditionalTrigger | undefined): { value: string; label: string }[] => {
+export const getAttackTargetOptions = (trigger: ConditionalTrigger | undefined) => {
   if (trigger === ConditionalTrigger.WHEN_ATTACKED) {
     return attackTargetOptions.filter(o => o.value !== 'player');
   }
@@ -86,560 +105,6 @@ export const getAttackTargetOptions = (trigger: ConditionalTrigger | undefined):
     return attackTargetOptions.filter(o => o.value !== 'allied_numen');
   }
   return attackTargetOptions;
-};
-
-export const effectTargetOptions = [
-  { group: 'This Card', items: [
-    { value: 'self', label: 'Self (this card)' },
-  ]},
-  { group: 'Attack Target', items: [
-    { value: 'attack_target', label: 'Attack Target' },
-  ]},
-  { group: 'Any Card', items: [
-    { value: 'any_card', label: 'Any Card' },
-    { value: 'all_cards', label: 'All Cards' },
-  ]},
-  { group: 'Numina', items: [
-    { value: 'any_numen', label: 'Any Numen' },
-    { value: 'allied_numen', label: 'An Allied Numen' },
-    { value: 'enemy_numen', label: 'An Enemy Numen' },
-    { value: 'all_allied_numina', label: 'All Allied Numina' },
-    { value: 'all_enemy_numina', label: 'All Enemy Numina' },
-    { value: 'global_allied_numina', label: 'Global Allied Numina' },
-    { value: 'global_enemy_numina', label: 'Global Enemy Numina' },
-    { value: 'allied_non_mythic_numen', label: 'An Allied Non-Mythic Numen' },
-    { value: 'enemy_non_mythic_numen', label: 'An Enemy Non-Mythic Numen' },
-    { value: 'all_allied_non_mythic_numina', label: 'All Allied Non-Mythic Numina' },
-    { value: 'all_enemy_non_mythic_numina', label: 'All Enemy Non-Mythic Numina' },
-    { value: 'global_allied_non_mythic_numina', label: 'Global Allied Non-Mythic Numina' },
-    { value: 'global_enemy_non_mythic_numina', label: 'Global Enemy Non-Mythic Numina' },
-  ]},
-  { group: 'Magics', items: [
-    { value: 'any_magic', label: 'Any Magic' },
-    { value: 'any_rite', label: 'Any Rite' },
-    { value: 'any_ward', label: 'Any Ward' },
-    { value: 'allied_magic', label: 'An Allied Magic' },
-    { value: 'enemy_magic', label: 'An Enemy Magic' },
-    { value: 'all_allied_magics', label: 'All Allied Magics' },
-    { value: 'all_enemy_magics', label: 'All Enemy Magics' },
-    { value: 'allied_rite', label: 'An Allied Rite' },
-    { value: 'enemy_rite', label: 'An Enemy Rite' },
-    { value: 'all_allied_rites', label: 'All Allied Rites' },
-    { value: 'all_enemy_rites', label: 'All Enemy Rites' },
-    { value: 'allied_ward', label: 'An Allied Ward' },
-    { value: 'enemy_ward', label: 'An Enemy Ward' },
-    { value: 'all_allied_wards', label: 'All Allied Wards' },
-    { value: 'all_enemy_wards', label: 'All Enemy Wards' },
-  ]},
-  { group: 'Opponent', items: [
-    { value: 'opponent_hp', label: "Opponent's HP" },
-    { value: 'opponent_hand', label: "Opponent's Hand" },
-    { value: 'opponent_deck', label: "Opponent's Deck" },
-    { value: 'opponent_memora', label: "Opponent's Memora" },
-    { value: 'opponent_exile', label: "Opponent's Exile" },
-    { value: 'opponent_mana', label: "Opponent's Mana" },
-  ]},
-  { group: 'Player', items: [
-    { value: 'player_hp', label: "Player's HP" },
-    { value: 'player_hand', label: "Player's Hand" },
-    { value: 'player_deck', label: "Player's Deck" },
-    { value: 'player_memora', label: "Player's Memora" },
-    { value: 'player_exile', label: "Player's Exile" },
-    { value: 'player_mana', label: "Player's Mana" },
-  ]},
-];
-
-const NON_ATTACK_TARGET_EFFECT_TARGETS: EffectTarget[] = [
-  'attack_target',
-];
-
-const INCREASE_DECREASE_NUMEN_TARGETS: EffectTarget[] = [
-  'self', 'attack_target', 'any_numen', 'allied_numen', 'enemy_numen',
-  'all_allied_numina', 'all_enemy_numina', 'global_allied_numina', 'global_enemy_numina',
-];
-
-const INCREASE_DECREASE_PLAYER_TARGETS: EffectTarget[] = [
-  'opponent_hp', 'opponent_mana', 'player_hp', 'player_mana',
-];
-
-export const increaseDecreaseTargetOptions = [
-  { value: 'self', label: 'Self (this card)' },
-  { value: 'numen', label: 'Numen' },
-  { value: 'player', label: 'Player' },
-  { value: 'opponent', label: 'Opponent' },
-];
-
-export const numenStatOptions = [
-  { value: 'atk', label: 'ATK' },
-  { value: 'def', label: 'DEF' },
-  { value: 'both', label: 'ATK and DEF' },
-];
-
-export const playerStatOptions = [
-  { value: 'hp', label: 'HP' },
-  { value: 'mana', label: 'Mana' },
-];
-
-export const getStatTargetOptions = (target: string | undefined): { value: string; label: string }[] => {
-  if (target === 'self' || target === 'numen') {
-    return numenStatOptions;
-  }
-  return playerStatOptions;
-};
-
-export const isNumenTarget = (target: string | null | undefined): boolean => {
-  return target === 'self' || target === 'numen';
-};
-
-export const isPlayerTarget = (target: string | null | undefined): boolean => {
-  return target === 'player' || target === 'opponent';
-};
-
-const EXILE_EXCLUDED_TARGETS: EffectTarget[] = [
-  'player_hp', 'player_mana', 'opponent_hp', 'opponent_mana',
-  'global_allied_numina', 'global_enemy_numina',
-];
-
-const RETURN_ADD_FIELD_TARGETS: EffectTarget[] = [
-  'self', 'attack_target', 'any_card', 'all_cards',
-  'any_numen',
-  'allied_numen', 'enemy_numen', 'all_allied_numina', 'all_enemy_numina',
-  'any_magic', 'any_rite', 'any_ward',
-  'allied_magic', 'enemy_magic', 'all_allied_magics', 'all_enemy_magics',
-  'allied_rite', 'enemy_rite', 'all_allied_rites', 'all_enemy_rites',
-  'allied_ward', 'enemy_ward', 'all_allied_wards', 'all_enemy_wards',
-];
-
-const FORGET_EXILE_FIELD_TARGETS: EffectTarget[] = [
-  'self', 'attack_target', 'any_card', 'all_cards',
-  'any_numen',
-  'allied_numen', 'enemy_numen', 'all_allied_numina', 'all_enemy_numina',
-  'any_magic', 'any_rite', 'any_ward',
-  'allied_magic', 'enemy_magic', 'all_allied_magics', 'all_enemy_magics',
-  'allied_rite', 'enemy_rite', 'all_allied_rites', 'all_enemy_rites',
-  'allied_ward', 'enemy_ward', 'all_allied_wards', 'all_enemy_wards',
-];
-
-export const getEffectTargetOptions = (
-  trigger: ConditionalTrigger | undefined,
-  effectType: EffectType | undefined,
-  cardType: string | undefined,
-): typeof effectTargetOptions => {
-  const isNonAttack = trigger && NON_ATTACK_TRIGGERS.includes(trigger);
-  const isIncreaseDecrease = effectType === EffectType.INCREASE || effectType === EffectType.DECREASE;
-  const isExile = effectType === EffectType.EXILE;
-  const isForget = effectType === EffectType.FORGET;
-  const isReturn = effectType === EffectType.RETURN;
-  const isAdd = effectType === EffectType.ADD;
-
-  let filtered = effectTargetOptions.map(group => ({ ...group }));
-
-  if (isNonAttack) {
-    filtered = filtered.map(group => {
-      if (group.group === 'Attack Target') {
-        return { ...group, items: [] };
-      }
-      return group;
-    }).filter(group => group.items.length > 0 || group.group !== 'Attack Target');
-  }
-
-  if (isIncreaseDecrease) {
-    let numenTargets = cardType === 'rite' || cardType === 'ward'
-      ? INCREASE_DECREASE_NUMEN_TARGETS.filter(t => t !== 'self')
-      : INCREASE_DECREASE_NUMEN_TARGETS;
-
-    if (isNonAttack) {
-      numenTargets = numenTargets.filter(t => t !== 'attack_target');
-    }
-
-    const allLabels = effectTargetOptions.flatMap(g => g.items);
-    filtered = [
-      { group: 'Numina', items: numenTargets.map(t => ({ value: t, label: allLabels.find(i => i.value === t)?.label || t })) },
-      { group: 'Opponent', items: [{ value: 'opponent_hp', label: "Opponent's HP" }, { value: 'opponent_mana', label: "Opponent's Mana" }] },
-      { group: 'Player', items: [{ value: 'player_hp', label: "Player's HP" }, { value: 'player_mana', label: "Player's Mana" }] },
-    ];
-
-    if (isNonAttack && (cardType === 'rite' || cardType === 'ward')) {
-      const numinaGroup = filtered.find(g => g.group === 'Numina');
-      if (numinaGroup) {
-        numinaGroup.items = numinaGroup.items.filter(i => i.value !== 'self');
-      }
-    }
-  }
-
-  if (isReturn || isAdd) {
-    const allLabels = effectTargetOptions.flatMap(g => g.items);
-    filtered = [
-      { group: 'This Card', items: [{ value: 'self', label: allLabels.find(i => i.value === 'self')?.label || 'Self' }] },
-      { group: 'Attack Target', items: [{ value: 'attack_target', label: allLabels.find(i => i.value === 'attack_target')?.label || 'Attack Target' }] },
-      { group: 'Any Card', items: [
-        { value: 'any_card', label: allLabels.find(i => i.value === 'any_card')?.label || 'Any Card' },
-        { value: 'all_cards', label: allLabels.find(i => i.value === 'all_cards')?.label || 'All Cards' },
-      ]},
-      { group: 'Numina', items: [
-        { value: 'any_numen', label: allLabels.find(i => i.value === 'any_numen')?.label || 'Any Numen' },
-        { value: 'allied_numen', label: allLabels.find(i => i.value === 'allied_numen')?.label || 'An Allied Numen' },
-        { value: 'enemy_numen', label: allLabels.find(i => i.value === 'enemy_numen')?.label || 'An Enemy Numen' },
-        { value: 'all_allied_numina', label: allLabels.find(i => i.value === 'all_allied_numina')?.label || 'All Allied Numina' },
-        { value: 'all_enemy_numina', label: allLabels.find(i => i.value === 'all_enemy_numina')?.label || 'All Enemy Numina' },
-      ]},
-      { group: 'Magics', items: [
-        { value: 'any_magic', label: allLabels.find(i => i.value === 'any_magic')?.label || 'Any Magic' },
-        { value: 'any_rite', label: allLabels.find(i => i.value === 'any_rite')?.label || 'Any Rite' },
-        { value: 'any_ward', label: allLabels.find(i => i.value === 'any_ward')?.label || 'Any Ward' },
-        { value: 'allied_magic', label: allLabels.find(i => i.value === 'allied_magic')?.label || 'An Allied Magic' },
-        { value: 'enemy_magic', label: allLabels.find(i => i.value === 'enemy_magic')?.label || 'An Enemy Magic' },
-        { value: 'all_allied_magics', label: allLabels.find(i => i.value === 'all_allied_magics')?.label || 'All Allied Magics' },
-        { value: 'all_enemy_magics', label: allLabels.find(i => i.value === 'all_enemy_magics')?.label || 'All Enemy Magics' },
-        { value: 'allied_rite', label: allLabels.find(i => i.value === 'allied_rite')?.label || 'An Allied Rite' },
-        { value: 'enemy_rite', label: allLabels.find(i => i.value === 'enemy_rite')?.label || 'An Enemy Rite' },
-        { value: 'all_allied_rites', label: allLabels.find(i => i.value === 'all_allied_rites')?.label || 'All Allied Rites' },
-        { value: 'all_enemy_rites', label: allLabels.find(i => i.value === 'all_enemy_rites')?.label || 'All Enemy Rites' },
-        { value: 'allied_ward', label: allLabels.find(i => i.value === 'allied_ward')?.label || 'An Allied Ward' },
-        { value: 'enemy_ward', label: allLabels.find(i => i.value === 'enemy_ward')?.label || 'An Enemy Ward' },
-        { value: 'all_allied_wards', label: allLabels.find(i => i.value === 'all_allied_wards')?.label || 'All Allied Wards' },
-        { value: 'all_enemy_wards', label: allLabels.find(i => i.value === 'all_enemy_wards')?.label || 'All Enemy Wards' },
-      ]},
-    ];
-
-    if (isNonAttack) {
-      filtered = filtered.map(group => {
-        if (group.group === 'This Card' && cardType === 'rite' && isReturn) {
-          return { ...group, items: [] };
-        }
-        if (group.group === 'Attack Target') {
-          return { ...group, items: [] };
-        }
-        return group;
-      }).filter(group => group.items.length > 0);
-    }
-  }
-
-  if (isExile || isForget) {
-    const allLabels = effectTargetOptions.flatMap(g => g.items);
-    filtered = [
-      { group: 'This Card', items: [{ value: 'self', label: allLabels.find(i => i.value === 'self')?.label || 'Self' }] },
-      { group: 'Attack Target', items: [{ value: 'attack_target', label: allLabels.find(i => i.value === 'attack_target')?.label || 'Attack Target' }] },
-      { group: 'Any Card', items: [
-        { value: 'any_card', label: allLabels.find(i => i.value === 'any_card')?.label || 'Any Card' },
-        { value: 'all_cards', label: allLabels.find(i => i.value === 'all_cards')?.label || 'All Cards' },
-      ]},
-      { group: 'Numina', items: [
-        { value: 'any_numen', label: allLabels.find(i => i.value === 'any_numen')?.label || 'Any Numen' },
-        { value: 'allied_numen', label: allLabels.find(i => i.value === 'allied_numen')?.label || 'An Allied Numen' },
-        { value: 'enemy_numen', label: allLabels.find(i => i.value === 'enemy_numen')?.label || 'An Enemy Numen' },
-        { value: 'all_allied_numina', label: allLabels.find(i => i.value === 'all_allied_numina')?.label || 'All Allied Numina' },
-        { value: 'all_enemy_numina', label: allLabels.find(i => i.value === 'all_enemy_numina')?.label || 'All Enemy Numina' },
-      ]},
-      { group: 'Magics', items: [
-        { value: 'any_magic', label: allLabels.find(i => i.value === 'any_magic')?.label || 'Any Magic' },
-        { value: 'any_rite', label: allLabels.find(i => i.value === 'any_rite')?.label || 'Any Rite' },
-        { value: 'any_ward', label: allLabels.find(i => i.value === 'any_ward')?.label || 'Any Ward' },
-        { value: 'allied_magic', label: allLabels.find(i => i.value === 'allied_magic')?.label || 'An Allied Magic' },
-        { value: 'enemy_magic', label: allLabels.find(i => i.value === 'enemy_magic')?.label || 'An Enemy Magic' },
-        { value: 'all_allied_magics', label: allLabels.find(i => i.value === 'all_allied_magics')?.label || 'All Allied Magics' },
-        { value: 'all_enemy_magics', label: allLabels.find(i => i.value === 'all_enemy_magics')?.label || 'All Enemy Magics' },
-        { value: 'allied_rite', label: allLabels.find(i => i.value === 'allied_rite')?.label || 'An Allied Rite' },
-        { value: 'enemy_rite', label: allLabels.find(i => i.value === 'enemy_rite')?.label || 'An Enemy Rite' },
-        { value: 'all_allied_rites', label: allLabels.find(i => i.value === 'all_allied_rites')?.label || 'All Allied Rites' },
-        { value: 'all_enemy_rites', label: allLabels.find(i => i.value === 'all_enemy_rites')?.label || 'All Enemy Rites' },
-        { value: 'allied_ward', label: allLabels.find(i => i.value === 'allied_ward')?.label || 'An Allied Ward' },
-        { value: 'enemy_ward', label: allLabels.find(i => i.value === 'enemy_ward')?.label || 'An Enemy Ward' },
-        { value: 'all_allied_wards', label: allLabels.find(i => i.value === 'all_allied_wards')?.label || 'All Allied Wards' },
-        { value: 'all_enemy_wards', label: allLabels.find(i => i.value === 'all_enemy_wards')?.label || 'All Enemy Wards' },
-      ]},
-    ];
-
-    if (isNonAttack) {
-      filtered = filtered.map(group => {
-        if (group.group === 'Attack Target') {
-          return { ...group, items: [] };
-        }
-        return group;
-      }).filter(group => group.items.length > 0);
-    }
-  }
-
-  return filtered;
-};
-
-export const isNumenEffectTarget = (target: EffectTarget | null | undefined): boolean => {
-  if (!target) return false;
-  return INCREASE_DECREASE_NUMEN_TARGETS.includes(target);
-};
-
-export const isHpManaEffectTarget = (target: EffectTarget | null | undefined): boolean => {
-  if (!target) return false;
-  return INCREASE_DECREASE_PLAYER_TARGETS.includes(target);
-};
-
-export const effectOptions = [
-  { value: EffectType.DRAW, label: 'Draw' },
-  { value: EffectType.SCRY, label: 'Scry' },
-  { value: EffectType.FORGET, label: 'Forget' },
-  { value: EffectType.EXILE, label: 'Exile' },
-  { value: EffectType.PETRIFY, label: 'Petrify' },
-  { value: EffectType.DECREASE, label: 'Decrease' },
-  { value: EffectType.LOCK, label: 'Lock' },
-  { value: EffectType.INCREASE, label: 'Increase' },
-  { value: EffectType.ETHEREAL, label: 'Ethereal' },
-  { value: EffectType.FIND, label: 'Find' },
-  { value: EffectType.ADD_TRIGGER, label: 'Add Trigger' },
-  { value: EffectType.INVOKE, label: 'Invoke' },
-  { value: EffectType.EVOKE, label: 'Evoke' },
-  { value: EffectType.CONVOKE, label: 'Convoke' },
-  { value: EffectType.COPY, label: 'Copy' },
-  { value: EffectType.ADD, label: 'Add' },
-  { value: EffectType.RETURN, label: 'Return' },
-];
-
-export const invokeFromOptions = [
-  { value: 'player_hand', label: "Your Hand" },
-  { value: 'opponent_hand', label: "Opponent's Hand" },
-];
-
-export const evokeFromOptions = [
-  { value: 'player_memora', label: "Your Memora" },
-  { value: 'opponent_memora', label: "Opponent's Memora" },
-];
-
-export const convokeFromOptions = [
-  { value: 'player_deck', label: "Your Deck" },
-  { value: 'opponent_deck', label: "Opponent's Deck" },
-];
-
-export const copyTargetTypeOptions = [
-  { value: 'numen', label: 'Numen' },
-  { value: 'non_mythic_numen', label: 'Non-Mythic Numen' },
-  { value: 'mythic_numen', label: 'Mythic Numen' },
-  { value: 'rite', label: 'Rite' },
-  { value: 'ward', label: 'Ward' },
-  { value: 'card', label: 'Card' },
-  { value: 'atk', label: 'ATK' },
-  { value: 'def', label: 'DEF' },
-  { value: 'hp', label: 'HP' },
-];
-
-export const addDestinationOptions = [
-  { value: 'player_deck', label: "Your Deck" },
-  { value: 'opponent_deck', label: "Opponent's Deck" },
-  { value: 'player_memora', label: "Your Memora" },
-  { value: 'opponent_memora', label: "Opponent's Memora" },
-  { value: 'player_exile', label: "Your Exile" },
-  { value: 'opponent_exile', label: "Opponent's Exile" },
-  { value: 'player_hand', label: "Your Hand" },
-  { value: 'opponent_hand', label: "Opponent's Hand" },
-];
-
-export const addFromOptions = [
-  { value: 'player_field', label: "Your Field" },
-  { value: 'opponent_field', label: "Opponent's Field" },
-  { value: 'any_field', label: "Any Field" },
-  { value: 'player_memora', label: "Your Memora" },
-  { value: 'opponent_memora', label: "Opponent's Memora" },
-  { value: 'any_memora', label: "Any Memora" },
-  { value: 'player_exile', label: "Your Exile" },
-  { value: 'opponent_exile', label: "Opponent's Exile" },
-  { value: 'any_exile', label: "Any Exile" },
-  { value: 'player_deck', label: "Your Deck" },
-  { value: 'opponent_deck', label: "Opponent's Deck" },
-  { value: 'any_deck', label: "Any Deck" },
-  { value: 'player_hand', label: "Your Hand" },
-  { value: 'opponent_hand', label: "Opponent's Hand" },
-  { value: 'any_hand', label: "Any Hand" },
-];
-
-export const returnTargetOptions = [
-  { value: 'self', label: "Self (this card)" },
-  { value: 'player_field', label: "Your Field" },
-  { value: 'opponent_field', label: "Opponent's Field" },
-  { value: 'player_memora', label: "Your Memora" },
-  { value: 'opponent_memora', label: "Opponent's Memora" },
-  { value: 'player_exile', label: "Your Exile" },
-  { value: 'opponent_exile', label: "Opponent's Exile" },
-];
-
-export const returnFieldTargetOptions = [
-  { value: 'all_enemy_numina', label: 'All Enemy Numina' },
-  { value: 'all_allied_numina', label: 'All Allied Numina' },
-  { value: 'all_enemy_rites', label: 'All Enemy Rites' },
-  { value: 'all_allied_rites', label: 'All Allied Rites' },
-  { value: 'all_enemy_wards', label: 'All Enemy Wards' },
-  { value: 'all_allied_wards', label: 'All Allied Wards' },
-  { value: 'enemy_numen', label: 'An Enemy Numen' },
-  { value: 'allied_numen', label: 'An Allied Numen' },
-  { value: 'enemy_rite', label: 'An Enemy Rite' },
-  { value: 'allied_rite', label: 'An Allied Rite' },
-  { value: 'enemy_ward', label: 'An Enemy Ward' },
-  { value: 'allied_ward', label: 'An Allied Ward' },
-];
-
-export const returnCardTypeOptions = [
-  { value: 'numen', label: 'Numen' },
-  { value: 'rite', label: 'Rite' },
-  { value: 'ward', label: 'Ward' },
-  { value: 'any', label: 'Any' },
-];
-
-export const returnDestinationOptions = [
-  { value: 'hand', label: 'Hand' },
-  { value: 'deck', label: 'Deck' },
-];
-
-export const isReturnTargetField = (target: string | undefined): boolean => {
-  if (!target) return false;
-  return target === 'player_field' || target === 'opponent_field';
-};
-
-export const isReturnTargetZone = (target: string | undefined): boolean => {
-  if (!target) return false;
-  return target === 'player_memora' || target === 'opponent_memora' || target === 'player_exile' || target === 'opponent_exile';
-};
-
-export const isReturnAllTarget = (target: string | undefined): boolean => {
-  if (!target) return false;
-  return target.startsWith('all_');
-};
-
-export const isReturnAllFieldTarget = (target: string | undefined): boolean => {
-  if (!target) return false;
-  return target.startsWith('all_');
-};
-
-export const passiveTriggerOptions = [
-  { value: PassiveTrigger.CHALLENGE, label: 'Challenge' },
-  { value: PassiveTrigger.VEILED, label: 'Veiled' },
-  { value: PassiveTrigger.CELERITY, label: 'Celerity' },
-  { value: PassiveTrigger.STUNNED, label: 'Stunned' },
-  { value: PassiveTrigger.NULLIFY, label: 'Nullify' },
-  { value: PassiveTrigger.LOCKED, label: 'Locked' },
-  { value: PassiveTrigger.RECLUSE, label: 'Recluse' },
-  { value: PassiveTrigger.LEGION, label: 'Legion' },
-  { value: PassiveTrigger.RELENTLESS, label: 'Relentless' },
-  { value: PassiveTrigger.SHROUDED, label: 'Shrouded' },
-];
-
-export const forgetTargetTypes = [
-  { value: 'numen', label: 'Numen' },
-  { value: 'another_numen', label: 'Another Numen' },
-  { value: 'rite', label: 'Rite' },
-  { value: 'ward', label: 'Ward' },
-  { value: 'all', label: 'All' },
-  { value: 'all_enemy_numina', label: 'All Enemy Numina' },
-  { value: 'all_enemy_face_up_numina', label: 'All Enemy Face-Up Numina' },
-  { value: 'all_enemy_face_down_numina', label: 'All Enemy Face-Down Numina' },
-  { value: 'all_enemy_magics', label: 'All Enemy Magics' },
-  { value: 'all_enemy_face_up_magics', label: 'All Enemy Face-Up Magics' },
-  { value: 'all_enemy_face_down_magics', label: 'All Enemy Face-Down Magics' },
-  { value: 'attacking_numina', label: 'Attacking Numina' },
-  { value: 'defending_numina', label: 'Defending Numina' },
-];
-
-export const numenStatTargetOptions = [
-  { value: 'atk', label: 'ATK' },
-  { value: 'def', label: 'DEF' },
-  { value: 'both', label: 'ATK and DEF' },
-];
-
-export const playerStatTargetOptions = [
-  { value: 'hp', label: 'HP' },
-  { value: 'mana', label: 'Mana' },
-];
-
-export const scryDeckOptions = [
-  { value: 'player', label: 'Player Deck' },
-  { value: 'opponent', label: 'Opponent Deck' },
-];
-
-export const etherealTypeOptions = [
-  { value: 'rite', label: 'Rite' },
-  { value: 'ward', label: 'Ward' },
-  { value: 'both', label: 'Both' },
-];
-
-export const findSourceOptions = [
-  { value: 'deck', label: 'Deck' },
-  { value: 'memora', label: 'Memora' },
-  { value: 'exile', label: 'Exile' },
-];
-
-export const familyOptions = [
-  { value: 'deity', label: 'Deity' },
-  { value: 'beast', label: 'Beast' },
-  { value: 'bug', label: 'Bug' },
-  { value: 'larva', label: 'Larva' },
-  { value: 'dragon', label: 'Dragon' },
-  { value: 'elemental', label: 'Elemental' },
-  { value: 'god', label: 'God' },
-  { value: 'human', label: 'Human' },
-  { value: 'lemur', label: 'Lemur' },
-  { value: 'plant', label: 'Plant' },
-  { value: 'undead', label: 'Undead' },
-];
-
-export const rarityOptions = [
-  { value: 'common', label: 'Common' },
-  { value: 'rare', label: 'Rare' },
-  { value: 'legendary', label: 'Legendary' },
-  { value: 'mythic', label: 'Mythic' },
-];
-
-export const natureOptions = [
-  { value: 'air', label: 'Air' },
-  { value: 'dark', label: 'Dark' },
-  { value: 'earth', label: 'Earth' },
-  { value: 'fire', label: 'Fire' },
-  { value: 'light', label: 'Light' },
-  { value: 'water', label: 'Water' },
-];
-
-export const cardTypeOptions = [
-  { value: 'rite', label: 'Rite' },
-  { value: 'ward', label: 'Ward' },
-  { value: 'numen', label: 'Numen' },
-];
-
-export const isAttackTrigger = (trigger: ConditionalTrigger) => {
-  return [ConditionalTrigger.BEFORE_ATTACK, ConditionalTrigger.AFTER_ATTACK, ConditionalTrigger.WHEN_ATTACKED].includes(trigger);
-};
-
-export const isPassiveValue = (value: string): value is PassiveTrigger => {
-  return Object.values(PassiveTrigger).includes(value as PassiveTrigger);
-};
-
-export const DIRECT_VALUE_TARGETS: EffectTarget[] = [
-  'player_hp', 'player_mana', 'opponent_hp', 'opponent_mana',
-];
-
-export const isDirectValueTarget = (target: EffectTarget | null | undefined): boolean => {
-  if (!target) return false;
-  return DIRECT_VALUE_TARGETS.includes(target);
-};
-
-export const NON_ATTACK_TRIGGERS: ConditionalTrigger[] = [
-  ConditionalTrigger.DECREE,
-  ConditionalTrigger.START_OF_TURN,
-  ConditionalTrigger.END_OF_TURN,
-];
-
-export const isNonAttackTrigger = (trigger: ConditionalTrigger | null | undefined): boolean => {
-  if (!trigger) return false;
-  return NON_ATTACK_TRIGGERS.includes(trigger);
-};
-
-export const effectsWithOwnTarget = new Set<EffectType>([
-  EffectType.PETRIFY,
-  EffectType.DECREASE,
-  EffectType.LOCK,
-  EffectType.INCREASE,
-  EffectType.ETHEREAL,
-  EffectType.FIND,
-  EffectType.ADD_TRIGGER,
-]);
-
-export const effectSupportsOwnTarget = (effectType: EffectType | undefined): boolean => {
-  if (!effectType) return false;
-  return effectsWithOwnTarget.has(effectType);
 };
 
 export const effectTargetLabels: Record<string, string> = {
@@ -689,17 +154,258 @@ export const effectTargetLabels: Record<string, string> = {
   player_mana: "Player's Mana",
 };
 
-export const getEffectTargetLabel = (target: string | null | undefined): string => {
-  if (!target) return '';
-  return effectTargetLabels[target] || target;
+const groupsDefinition = [
+  { group: 'This Card', items: ['self'] },
+  { group: 'Attack Target', items: ['attack_target'] },
+  { group: 'Any Card', items: ['any_card', 'all_cards'] },
+  { group: 'Numina', items: [
+    'any_numen', 'allied_numen', 'enemy_numen', 'all_allied_numina', 'all_enemy_numina',
+    'global_allied_numina', 'global_enemy_numina',
+    'allied_non_mythic_numen', 'enemy_non_mythic_numen',
+    'all_allied_non_mythic_numina', 'all_enemy_non_mythic_numina',
+    'global_allied_non_mythic_numina', 'global_enemy_non_mythic_numina'
+  ]},
+  { group: 'Magics', items: [
+    'any_magic', 'any_rite', 'any_ward', 'allied_magic', 'enemy_magic',
+    'all_allied_magics', 'all_enemy_magics', 'allied_rite', 'enemy_rite',
+    'all_allied_rites', 'all_enemy_rites', 'allied_ward', 'enemy_ward',
+    'all_allied_wards', 'all_enemy_wards'
+  ]},
+  { group: 'Opponent', items: ['opponent_hp', 'opponent_hand', 'opponent_deck', 'opponent_memora', 'opponent_exile', 'opponent_mana'] },
+  { group: 'Player', items: ['player_hp', 'player_hand', 'player_deck', 'player_memora', 'player_exile', 'player_mana'] },
+];
+
+export const effectTargetOptions = groupsDefinition.map(g => ({
+  group: g.group,
+  items: g.items.map(val => ({
+    value: val,
+    label: val === 'self' ? 'Self (this card)' : (effectTargetLabels[val] || val)
+  }))
+}));
+
+const INCREASE_DECREASE_NUMEN_TARGETS: EffectTarget[] = [
+  'self', 'attack_target', 'any_numen', 'allied_numen', 'enemy_numen',
+  'all_allied_numina', 'all_enemy_numina', 'global_allied_numina', 'global_enemy_numina',
+];
+
+const INCREASE_DECREASE_PLAYER_TARGETS: EffectTarget[] = [
+  'opponent_hp', 'opponent_mana', 'player_hp', 'player_mana',
+];
+
+export const increaseDecreaseTargetOptions = [
+  { value: 'self', label: 'Self (this card)' },
+  { value: 'numen', label: 'Numen' },
+  { value: 'player', label: 'Player' },
+  { value: 'opponent', label: 'Opponent' },
+];
+
+export const numenStatOptions = [
+  { value: 'atk', label: 'ATK' },
+  { value: 'def', label: 'DEF' },
+  { value: 'both', label: 'ATK and DEF' },
+];
+
+export const playerStatOptions = [
+  { value: 'hp', label: 'HP' },
+  { value: 'mana', label: 'Mana' },
+];
+
+export const getStatTargetOptions = (target: string | undefined) => (target === 'self' || target === 'numen') ? numenStatOptions : playerStatOptions;
+export const isNumenTarget = (target: string | null | undefined) => target === 'self' || target === 'numen';
+export const isPlayerTarget = (target: string | null | undefined) => target === 'player' || target === 'opponent';
+
+const ALLOWED_EXILE_RETURN = new Set([
+  'self', 'attack_target', 'any_card', 'all_cards',
+  'any_numen', 'allied_numen', 'enemy_numen', 'all_allied_numina', 'all_enemy_numina',
+  'any_magic', 'any_rite', 'any_ward', 'allied_magic', 'enemy_magic', 'all_allied_magics', 'all_enemy_magics',
+  'allied_rite', 'enemy_rite', 'all_allied_rites', 'all_enemy_rites', 'allied_ward', 'enemy_ward', 'all_allied_wards', 'all_enemy_wards'
+]);
+
+export const getEffectTargetOptions = (
+  trigger: ConditionalTrigger | undefined,
+  effectType: EffectType | undefined,
+  cardType: string | undefined,
+): typeof effectTargetOptions => {
+  const isNonAttack = trigger && NON_ATTACK_TRIGGERS.includes(trigger);
+  const isIncreaseDecrease = effectType === EffectType.INCREASE || effectType === EffectType.DECREASE;
+  const isExile = effectType === EffectType.EXILE;
+  const isForget = effectType === EffectType.FORGET;
+  const isReturn = effectType === EffectType.RETURN;
+  const isAdd = effectType === EffectType.ADD;
+
+  if (isIncreaseDecrease) {
+    let numenTargets = cardType === 'rite' || cardType === 'ward'
+      ? INCREASE_DECREASE_NUMEN_TARGETS.filter(t => t !== 'self')
+      : INCREASE_DECREASE_NUMEN_TARGETS;
+
+    if (isNonAttack) {
+      numenTargets = numenTargets.filter(t => t !== 'attack_target');
+    }
+
+    return [
+      { group: 'Numina', items: numenTargets.map(t => ({ value: t, label: effectTargetLabels[t] || t })) },
+      { group: 'Opponent', items: [{ value: 'opponent_hp', label: "Opponent's HP" }, { value: 'opponent_mana', label: "Opponent's Mana" }] },
+      { group: 'Player', items: [{ value: 'player_hp', label: "Player's HP" }, { value: 'player_mana', label: "Player's Mana" }] },
+    ];
+  }
+
+  if (isReturn || isAdd || isExile || isForget) {
+    let filtered = effectTargetOptions
+      .map(g => ({
+        ...g,
+        items: g.items.filter(i => ALLOWED_EXILE_RETURN.has(i.value))
+      }))
+      .filter(g => g.items.length > 0);
+
+    if (isNonAttack) {
+      filtered = filtered.map(g => {
+        if (g.group === 'Attack Target') return { ...g, items: [] };
+        if (g.group === 'This Card' && cardType === 'rite' && isReturn) return { ...g, items: [] };
+        return g;
+      }).filter(g => g.items.length > 0);
+    }
+    return filtered;
+  }
+
+  let filtered = effectTargetOptions.map(group => ({ ...group }));
+  if (isNonAttack) {
+    filtered = filtered.map(group => {
+      if (group.group === 'Attack Target') {
+        return { ...group, items: [] };
+      }
+      return group;
+    }).filter(group => group.items.length > 0 || group.group !== 'Attack Target');
+  }
+  return filtered;
 };
 
-export const addTargetTypeOptions = [
-  { value: 'numen', label: 'Numen' },
-  { value: 'rite', label: 'Rite' },
-  { value: 'ward', label: 'Ward' },
-  { value: 'any', label: 'Any' },
+export const isNumenEffectTarget = (target: EffectTarget | null | undefined) => !!target && INCREASE_DECREASE_NUMEN_TARGETS.includes(target);
+export const isHpManaEffectTarget = (target: EffectTarget | null | undefined) => !!target && INCREASE_DECREASE_PLAYER_TARGETS.includes(target);
+
+export const effectOptions = [
+  EffectType.DRAW,
+  EffectType.SCRY,
+  EffectType.FORGET,
+  EffectType.EXILE,
+  EffectType.PETRIFY,
+  EffectType.DECREASE,
+  EffectType.LOCK,
+  EffectType.INCREASE,
+  EffectType.ETHEREAL,
+  EffectType.FIND,
+  EffectType.ADD_TRIGGER,
+  EffectType.INVOKE,
+  EffectType.EVOKE,
+  EffectType.CONVOKE,
+  EffectType.COPY,
+  EffectType.ADD,
+  EffectType.RETURN,
+].map(v => ({ value: v, label: formatTriggerLabel(v) }));
+
+export const invokeFromOptions = mapZones(['player_hand', 'opponent_hand']);
+export const evokeFromOptions = mapZones(['player_memora', 'opponent_memora']);
+export const convokeFromOptions = mapZones(['player_deck', 'opponent_deck']);
+
+export const copyTargetTypeOptions = [
+  'numen', 'non_mythic_numen', 'mythic_numen', 'rite', 'ward', 'card', 'atk', 'def', 'hp'
+].map(v => {
+  if (['atk', 'def', 'hp'].includes(v)) return { value: v, label: v.toUpperCase() };
+  return { value: v, label: formatLabel(v).replace('Non Mythic', 'Non-Mythic') };
+});
+
+export const addDestinationOptions = mapZones([
+  'player_deck', 'opponent_deck', 'player_memora', 'opponent_memora',
+  'player_exile', 'opponent_exile', 'player_hand', 'opponent_hand'
+]);
+
+export const addFromOptions = mapZones([
+  'player_field', 'opponent_field', 'any_field',
+  'player_memora', 'opponent_memora', 'any_memora',
+  'player_exile', 'opponent_exile', 'any_exile',
+  'player_deck', 'opponent_deck', 'any_deck',
+  'player_hand', 'opponent_hand', 'any_hand'
+]);
+
+export const returnTargetOptions = mapZones([
+  'self', 'player_field', 'opponent_field',
+  'player_memora', 'opponent_memora', 'player_exile', 'opponent_exile'
+]);
+
+const formatReturnFieldLabel = (v: string) => {
+  const cap = v.split('_').map(capitalize).join(' ');
+  return v.startsWith('all_') ? cap : 'An ' + cap;
+};
+
+export const returnFieldTargetOptions = [
+  'all_enemy_numina', 'all_allied_numina', 'all_enemy_rites', 'all_allied_rites',
+  'all_enemy_wards', 'all_allied_wards', 'enemy_numen', 'allied_numen',
+  'enemy_rite', 'allied_rite', 'enemy_ward', 'allied_ward'
+].map(v => ({ value: v, label: formatReturnFieldLabel(v) }));
+
+export const returnCardTypeOptions = mapSimple(['numen', 'rite', 'ward', 'any']);
+export const returnDestinationOptions = [
+  { value: 'hand', label: 'Hand' },
+  { value: 'deck', label: 'Deck' },
 ];
+
+export const isReturnTargetField = (target: string | undefined) => !!target && ['player_field', 'opponent_field'].includes(target);
+export const isReturnTargetZone = (target: string | undefined) => !!target && ['player_memora', 'opponent_memora', 'player_exile', 'opponent_exile'].includes(target);
+export const isReturnAllTarget = (target: string | undefined) => !!target && target.startsWith('all_');
+export const isReturnAllFieldTarget = (target: string | undefined) => !!target && target.startsWith('all_');
+
+export const forgetTargetTypes = [
+  'numen', 'another_numen', 'rite', 'ward', 'all', 'all_enemy_numina',
+  'all_enemy_face_up_numina', 'all_enemy_face_down_numina', 'all_enemy_magics',
+  'all_enemy_face_up_magics', 'all_enemy_face_down_magics', 'attacking_numina', 'defending_numina'
+].map(v => ({ value: v, label: formatLabel(v) }));
+
+export const numenStatTargetOptions = numenStatOptions;
+export const playerStatTargetOptions = playerStatOptions;
+export const scryDeckOptions = ['player', 'opponent'].map(v => ({ value: v, label: `${capitalize(v)} Deck` }));
+export const etherealTypeOptions = mapSimple(['rite', 'ward', 'both']);
+export const findSourceOptions = mapSimple(['deck', 'memora', 'exile']);
+export const familyOptions = mapSimple(['deity', 'beast', 'bug', 'larva', 'dragon', 'elemental', 'god', 'human', 'lemur', 'plant', 'undead']);
+export const rarityOptions = mapSimple(['common', 'rare', 'legendary', 'mythic']);
+export const natureOptions = mapSimple(['air', 'dark', 'earth', 'fire', 'light', 'water']);
+export const cardTypeOptions = mapSimple(['rite', 'ward', 'numen']);
+
+export const isAttackTrigger = (trigger: ConditionalTrigger) =>
+  [ConditionalTrigger.BEFORE_ATTACK, ConditionalTrigger.AFTER_ATTACK, ConditionalTrigger.WHEN_ATTACKED].includes(trigger);
+
+export const isPassiveValue = (value: string): value is PassiveTrigger =>
+  Object.values(PassiveTrigger).includes(value as PassiveTrigger);
+
+export const DIRECT_VALUE_TARGETS: EffectTarget[] = [
+  'player_hp', 'player_mana', 'opponent_hp', 'opponent_mana',
+];
+
+export const isDirectValueTarget = (target: EffectTarget | null | undefined): boolean =>
+  !!target && DIRECT_VALUE_TARGETS.includes(target);
+
+export const NON_ATTACK_TRIGGERS: ConditionalTrigger[] = [
+  ConditionalTrigger.DECREE,
+  ConditionalTrigger.START_OF_TURN,
+  ConditionalTrigger.END_OF_TURN,
+];
+
+export const isNonAttackTrigger = (trigger: ConditionalTrigger | null | undefined): boolean =>
+  !!trigger && NON_ATTACK_TRIGGERS.includes(trigger);
+
+export const effectsWithOwnTarget = new Set<EffectType>([
+  EffectType.PETRIFY,
+  EffectType.DECREASE,
+  EffectType.LOCK,
+  EffectType.INCREASE,
+  EffectType.ETHEREAL,
+  EffectType.FIND,
+  EffectType.ADD_TRIGGER,
+]);
+
+export const effectSupportsOwnTarget = (effectType: EffectType | undefined): boolean =>
+  !!effectType && effectsWithOwnTarget.has(effectType);
+
+export const getEffectTargetLabel = (target: string | null | undefined) => target ? (effectTargetLabels[target] || target) : '';
+export const addTargetTypeOptions = returnCardTypeOptions;
 
 export const inputStyles = {
   input: {

@@ -18,6 +18,7 @@ export const faceDownCard: CSSProperties = {
   height: '100%',
   color: colors.Gray_4,
   fontSize: '26px',
+  background: `linear-gradient(135deg, ${colors.Blue_4}, ${colors.Blue_5})`,
 };
 
 export const cardImage: CSSProperties = {
@@ -28,6 +29,16 @@ export const cardImage: CSSProperties = {
   fontSize: '14px',
   width: '100%',
   height: '100%',
+};
+
+export const numenCardImage: CSSProperties = {
+  ...cardImage,
+  background: `linear-gradient(135deg, ${colors.Blue_7}, ${colors.Blue_5})`,
+};
+
+export const defaultCardImage: CSSProperties = {
+  ...cardImage,
+  background: `linear-gradient(135deg, ${colors.Blue_4}, ${colors.Blue_5})`,
 };
 
 export const cardBody: CSSProperties = {
@@ -64,6 +75,8 @@ export const levelTag: CSSProperties = {
   borderRadius: '4px',
   fontSize: '12px',
   fontWeight: 'bold',
+  backgroundColor: colors.Beige_5,
+  color: colors.Beige_5,
 };
 
 export const positionTag: CSSProperties = {
@@ -74,4 +87,28 @@ export const positionTag: CSSProperties = {
   borderRadius: '4px',
   fontSize: '11px',
   fontWeight: 'bold',
+  color: colors.White_1,
+};
+
+export const positionTagAttack: CSSProperties = {
+  ...positionTag,
+  backgroundColor: colors.Orange_8,
+};
+
+export const positionTagDefense: CSSProperties = {
+  ...positionTag,
+  backgroundColor: colors.Teal_2,
+};
+
+export const cardTitle: CSSProperties = {
+  color: colors.White_1,
+};
+
+export const nonNumenStats: CSSProperties = {
+  fontSize: '10px',
+  color: colors.Gray_5,
+};
+
+export const cardImageText: CSSProperties = {
+  textAlign: 'center',
 };

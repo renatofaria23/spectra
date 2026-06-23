@@ -27,6 +27,10 @@ export interface QuestProgressTracker {
   customProgress: Record<string, unknown>;
 }
 
+const defaultQuest = (mythicId: string): QuestProgressTracker => ({
+  mythicId, wardsActivated: 0, numinaForgeted: 0, decreaseDealt: 0, cardsDrawn: 0, customProgress: {},
+});
+
 type CombatState = {
   battlePhaseActive: boolean;
   selectedAttacker: string | null;
@@ -35,7 +39,6 @@ type CombatState = {
   battleResults: BattleResultSummary | null;
   combatLog: CombatInteraction[];
   questProgress: Record<string, QuestProgressTracker>;
-
   startBattlePhase: () => void;
   selectAttacker: (numenId: string) => void;
   selectTarget: (numenId: string) => void;
@@ -47,7 +50,6 @@ type CombatState = {
   updateQuestProgress: (mythicId: string, eventType: string, amount?: number) => void;
   clearQuestProgress: (mythicId: string) => void;
   resetCombat: () => void;
-
   isBattlePhaseActive: () => boolean;
   getSelectedAttacker: () => string | null;
   getSelectedTarget: () => string | null;
@@ -67,101 +69,37 @@ export const useCombatStore = create<CombatState>((set, get) => ({
   combatLog: [],
   questProgress: {},
 
-  startBattlePhase: () =>
-    set({
-      battlePhaseActive: true,
-      attackSequence: [],
-      battleResults: null,
-    }),
-
-  selectAttacker: (numenId: string) => set({ selectedAttacker: numenId }),
-
-  selectTarget: (numenId: string) => set({ selectedTarget: numenId }),
-
-  addAttackToSequence: (attack: Attack) =>
-    set((state) => ({
-      attackSequence: [...state.attackSequence, attack],
-    })),
-
-  removeAttackFromSequence: (index: number) =>
-    set((state) => ({
-      attackSequence: state.attackSequence.filter((_, i) => i !== index),
-    })),
-
+  startBattlePhase: () => set({ battlePhaseActive: true, attackSequence: [], battleResults: null }),
+  selectAttacker: (numenId) => set({ selectedAttacker: numenId }),
+  selectTarget: (numenId) => set({ selectedTarget: numenId }),
+  addAttackToSequence: (attack) => set((s) => ({ attackSequence: [...s.attackSequence, attack] })),
+  removeAttackFromSequence: (index) => set((s) => ({ attackSequence: s.attackSequence.filter((_, i) => i !== index) })),
   clearAttackSequence: () => set({ attackSequence: [] }),
 
-  resolveBattle: (attackSequence: Attack[]) =>
-    set((state) => {
-      const results = resolveBattlePhase(attackSequence);
-      return {
-        battleResults: results,
-        battlePhaseActive: false,
-        attackSequence: [],
-        combatLog: [...state.combatLog, ...results.interactions],
-      };
-    }),
+  resolveBattle: (attackSequence) => set((s) => {
+    const results = resolveBattlePhase(attackSequence);
+    return { battleResults: results, battlePhaseActive: false, attackSequence: [], combatLog: [...s.combatLog, ...results.interactions] };
+  }),
 
-  endBattlePhase: () =>
-    set({
-      battlePhaseActive: false,
-      selectedAttacker: null,
-      selectedTarget: null,
-      attackSequence: [],
-    }),
+  endBattlePhase: () => set({ battlePhaseActive: false, selectedAttacker: null, selectedTarget: null, attackSequence: [] }),
 
-  updateQuestProgress: (mythicId: string, eventType: string, amount = 1) =>
-    set((state) => {
-      const current = state.questProgress[mythicId] || {
-        mythicId,
-        wardsActivated: 0,
-        numinaForgeted: 0,
-        decreaseDealt: 0,
-        cardsDrawn: 0,
-        customProgress: {},
-      };
+  updateQuestProgress: (mythicId, eventType, amount = 1) => set((s) => {
+    const current = s.questProgress[mythicId] || defaultQuest(mythicId);
+    return { questProgress: { ...s.questProgress, [mythicId]: updateQuestProgress(current as any, eventType, amount) } };
+  }),
 
-      const updated = updateQuestProgress(current as any, eventType, amount);
+  clearQuestProgress: (mythicId) => set((s) => ({
+    questProgress: Object.fromEntries(Object.entries(s.questProgress).filter(([k]) => k !== mythicId)),
+  })),
 
-      return {
-        questProgress: {
-          ...state.questProgress,
-          [mythicId]: updated,
-        },
-      };
-    }),
-
-  clearQuestProgress: (mythicId: string) =>
-    set((state) => ({
-      questProgress: Object.fromEntries(
-        Object.entries(state.questProgress).filter(([key]) => key !== mythicId)
-      ),
-    })),
-
-  resetCombat: () =>
-    set({
-      battlePhaseActive: false,
-      selectedAttacker: null,
-      selectedTarget: null,
-      attackSequence: [],
-      battleResults: null,
-    }),
+  resetCombat: () => set({ battlePhaseActive: false, selectedAttacker: null, selectedTarget: null, attackSequence: [], battleResults: null }),
 
   isBattlePhaseActive: () => get().battlePhaseActive,
-
   getSelectedAttacker: () => get().selectedAttacker,
-
   getSelectedTarget: () => get().selectedTarget,
-
   getAttackSequence: () => get().attackSequence,
-
   getBattleResults: () => get().battleResults,
-
   getCombatLog: () => get().combatLog,
-
-  getQuestProgress: (mythicId: string) => get().questProgress[mythicId],
-
-  isMythicQuestReady: (mythicId: string, progress: QuestProgressTracker) => {
-    if (!progress) return false;
-    return isMythicQuestComplete(progress, progress);
-  },
+  getQuestProgress: (mythicId) => get().questProgress[mythicId],
+  isMythicQuestReady: (_mythicId, progress) => !!progress && isMythicQuestComplete(progress, progress),
 }));

@@ -15,135 +15,48 @@ type DeckStoreState = {
   deckRequirements: ReturnType<typeof calculateDeckRequirements> | null;
   natureScaling: NatureScaling | null;
   validationErrors: string[];
-
   createDeck: (name?: string) => void;
   addCardToDeck: (card: DeckCard) => void;
   removeCardFromDeck: (cardId: string, cardIndex: number) => void;
   replaceDeck: (cards: DeckCard[]) => void;
   clearDeck: () => void;
   setDeckName: (name: string) => void;
-
   getDeck: () => DeckCard[];
   isDeckValid: () => boolean;
   getDeckStats: () => DeckStats | null;
   getNatureScaling: () => NatureScaling | null;
   getValidationErrors: () => string[];
-  getDeckComposition: () => {
-    name: string;
-    cards: DeckCard[];
-    stats: DeckStats | null;
-    requirements: ReturnType<typeof calculateDeckRequirements> | null;
-    natureScaling: NatureScaling | null;
-    isValid: boolean;
-    errors: string[];
-  };
+  getDeckComposition: () => { name: string; cards: DeckCard[]; stats: DeckStats | null; requirements: ReturnType<typeof calculateDeckRequirements> | null; natureScaling: NatureScaling | null; isValid: boolean; errors: string[] };
 };
 
+const emptyState = { currentDeck: [] as DeckCard[], deckStats: null, deckRequirements: null, natureScaling: null, validationErrors: [] as string[] };
+
+const deriveFromDeck = (deck: DeckCard[]) => ({
+  currentDeck: deck,
+  deckStats: getDeckStats(deck),
+  deckRequirements: calculateDeckRequirements(deck),
+  natureScaling: calculateNatureScaling(deck.filter(c => c.type === 'numen') as any),
+  validationErrors: validateDeckComposition(deck).errors,
+});
+
 export const useDeckStore = create<DeckStoreState>((set, get) => ({
-  currentDeck: [],
+  ...emptyState,
   deckName: 'New Deck',
-  deckStats: null,
-  deckRequirements: null,
-  natureScaling: null,
-  validationErrors: [],
 
-  createDeck: (name = 'New Deck') =>
-    set({
-      currentDeck: [],
-      deckName: name,
-      deckStats: null,
-      deckRequirements: null,
-      natureScaling: null,
-      validationErrors: [],
-    }),
-
-  addCardToDeck: (card: DeckCard) =>
-    set((state) => {
-      const newDeck = [...state.currentDeck, card];
-      const validation = validateDeckComposition(newDeck);
-      const stats = getDeckStats(newDeck);
-      const requirements = calculateDeckRequirements(newDeck);
-      const numina = newDeck.filter((c) => c.type === 'numen');
-      const scaling = calculateNatureScaling(numina as any);
-
-      return {
-        currentDeck: newDeck,
-        deckStats: stats,
-        deckRequirements: requirements,
-        natureScaling: scaling,
-        validationErrors: validation.errors,
-      };
-    }),
-
-  removeCardFromDeck: (cardId: string, cardIndex: number) =>
-    set((state) => {
-      const newDeck = state.currentDeck.filter((_, idx) => idx !== cardIndex);
-      const validation = validateDeckComposition(newDeck);
-      const stats = getDeckStats(newDeck);
-      const requirements = calculateDeckRequirements(newDeck);
-      const numina = newDeck.filter((c) => c.type === 'numen');
-      const scaling = calculateNatureScaling(numina as any);
-
-      return {
-        currentDeck: newDeck,
-        deckStats: stats,
-        deckRequirements: requirements,
-        natureScaling: scaling,
-        validationErrors: validation.errors,
-      };
-    }),
-
-  replaceDeck: (cards: DeckCard[]) =>
-    set((state) => {
-      const validation = validateDeckComposition(cards);
-      const stats = getDeckStats(cards);
-      const requirements = calculateDeckRequirements(cards);
-      const numina = cards.filter((c) => c.type === 'numen');
-      const scaling = calculateNatureScaling(numina as any);
-
-      return {
-        currentDeck: cards,
-        deckStats: stats,
-        deckRequirements: requirements,
-        natureScaling: scaling,
-        validationErrors: validation.errors,
-      };
-    }),
-
-  clearDeck: () =>
-    set({
-      currentDeck: [],
-      deckStats: null,
-      deckRequirements: null,
-      natureScaling: null,
-      validationErrors: [],
-    }),
-
-  setDeckName: (name: string) => set({ deckName: name }),
+  createDeck: (name = 'New Deck') => set({ ...emptyState, deckName: name }),
+  addCardToDeck: (card) => set(s => deriveFromDeck([...s.currentDeck, card])),
+  removeCardFromDeck: (_id, idx) => set(s => deriveFromDeck(s.currentDeck.filter((_, i) => i !== idx))),
+  replaceDeck: (cards) => set(() => deriveFromDeck(cards)),
+  clearDeck: () => set(emptyState),
+  setDeckName: (name) => set({ deckName: name }),
 
   getDeck: () => get().currentDeck,
-
-  isDeckValid: () => {
-    const state = get();
-    return state.validationErrors.length === 0;
-  },
-
+  isDeckValid: () => get().validationErrors.length === 0,
   getDeckStats: () => get().deckStats,
-
   getNatureScaling: () => get().natureScaling,
-
   getValidationErrors: () => get().validationErrors,
-
   getDeckComposition: () => {
-    const state = get();
-    return {
-      name: state.deckName,
-      cards: state.currentDeck,
-      stats: state.deckStats,
-      requirements: state.deckRequirements,
-      natureScaling: state.natureScaling,
-      isValid: state.validationErrors.length === 0,
-      errors: state.validationErrors,
-    };
+    const { deckName: name, currentDeck: cards, deckStats: stats, deckRequirements: requirements, natureScaling, validationErrors } = get();
+    return { name, cards, stats, requirements, natureScaling, isValid: validationErrors.length === 0, errors: validationErrors };
   },
 }));

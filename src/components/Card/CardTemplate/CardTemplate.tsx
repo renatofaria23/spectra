@@ -186,9 +186,9 @@ const getTheme = (cardType: CardType, nature?: string): CardTheme => {
 export const CardTemplate = React.memo(
   ({ card, size = "lg", style, artImage: artImageProp }: CardTemplateProps) => {
     const dims = sizeDimensions[size];
-
     const isNumen = card.type === "numen";
     const theme = getTheme(card.type, card.nature);
+    const descLines = card.description.split("\n");
 
     return (
       <Box
@@ -341,10 +341,10 @@ export const CardTemplate = React.memo(
                 fw={400}
                 style={styles.descriptionText}
               >
-                {card.description.split("\n").map((line, i) => (
+                {descLines.map((line, i) => (
                   <span key={i}>
                     <span dangerouslySetInnerHTML={{ __html: line }} />
-                    {i < card.description.split("\n").length - 1 && <br />}
+                    {i < descLines.length - 1 && <br />}
                   </span>
                 ))}
               </Text>

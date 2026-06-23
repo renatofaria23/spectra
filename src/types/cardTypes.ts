@@ -1,24 +1,14 @@
 import { NATURES, NUMEN_FAMILIES, POSITIONS, RARITY } from './constants';
 
-export const CARD_TYPE = {
-  numen: 'numen' as const,
-  rite: 'rite' as const,
-  ward: 'ward' as const,
-} as const;
+export const CARD_TYPE = { numen: 'numen' as const, rite: 'rite' as const, ward: 'ward' as const } as const;
 
 export type CardType = typeof CARD_TYPE[keyof typeof CARD_TYPE];
-
 export type Nature = typeof NATURES[keyof typeof NATURES];
 export type NumenFamily = typeof NUMEN_FAMILIES[keyof typeof NUMEN_FAMILIES];
 export type Position = typeof POSITIONS[keyof typeof POSITIONS];
 export type Rarity = typeof RARITY[keyof typeof RARITY];
 
-export interface BaseCard {
-  id: string;
-  name: string;
-  description: string;
-  rarity: Rarity;
-};
+export interface BaseCard { id: string; name: string; description: string; rarity: Rarity }
 
 export interface NumenCard extends BaseCard {
   type: 'numen';
@@ -30,34 +20,18 @@ export interface NumenCard extends BaseCard {
   effects?: string[];
   deckRequirements: Record<NumenFamily, number>;
   isMythic?: boolean;
-  mythicQuest?: {
-    deckRequirements: Record<Nature, number>;
-    activationConditions: {
-      wardsActivated: number;
-    };
-    effects: string[];
-  };
-};
+  mythicQuest?: MythicQuestCondition;
+}
 
-export interface RiteCard extends BaseCard {
-  type: 'rite';
-  effects: string[];
-};
-
-export interface WardCard extends BaseCard {
-  type: 'ward';
-  effects: string[];
-};
-
+export interface RiteCard extends BaseCard { type: 'rite'; effects: string[] }
+export interface WardCard extends BaseCard { type: 'ward'; effects: string[] }
 export type Card = NumenCard | RiteCard | WardCard;
 
 export interface MythicQuestCondition {
   deckRequirements: Record<Nature, number>;
-  activationConditions: {
-    wardsActivated: number;
-  };
+  activationConditions: { wardsActivated: number };
   effects: string[];
-};
+}
 
 export interface PlayerState {
   playerId: string;
@@ -72,7 +46,7 @@ export interface PlayerState {
   fatigueDecrease: number;
   natureCount: Record<Nature, number>;
   typeCount: Record<NumenFamily, number>;
-};
+}
 
 export interface BoardState {
   player1: PlayerState;
@@ -82,7 +56,7 @@ export interface BoardState {
   turnNumber: number;
   isFirstTurn: boolean;
   combatLog: CombatInteraction[];
-};
+}
 
 export interface CombatInteraction {
   attackerNumenId: string;

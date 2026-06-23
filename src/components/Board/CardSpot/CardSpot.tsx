@@ -24,19 +24,23 @@ interface CardSpotProps {
   additionalStyle?: Record<string, any>;
 }
 
-interface SIZE_VARIANTS {
-  xs: { width: string; height: string };
-  sm: { width: string; height: string };
-  md: { width: string; height: string };
-  lg: { width: string; height: string };
-}
-
-const SIZE_VARIANTS: SIZE_VARIANTS = {
+const SIZE_VARIANTS = {
   xs: { width: '6vw', height: '12vh' },
   sm: { width: '10vw', height: '20vh' },
   md: { width: '15vw', height: '30vh' },
   lg: { width: '24vw', height: '48vh' },
 };
+
+const createRings = (zoneColor: string) => (
+  <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" style={styles.spotOverlay}>
+    {Array.from({ length: 8 }, (_, i) => {
+      const p = i / 7;
+      return (
+        <circle key={i} cx="50" cy="50" r={5 + p * 42} fill="none" stroke={zoneColor} strokeWidth={4} strokeOpacity={0.6 * (1 - p)} />
+      );
+    })}
+  </svg>
+);
 
 export const CardSpot = React.memo(
   ({
@@ -58,49 +62,8 @@ export const CardSpot = React.memo(
     absolutePositioning = true,
     additionalStyle,
   }: CardSpotProps) => {
-    const effectiveSelectedBorder = selectedBorder ?? color;
-    const isSelected = selected;
-
-    const positionStyle = absolutePositioning
-      ? {
-          left: `${x}%`,
-          top: `${y}%`,
-        }
-      : {
-          width,
-          height,
-        };
-
+    const effectiveBorder = selectedBorder ?? color;
     const dimensions = width && height ? { width, height } : SIZE_VARIANTS[size] ?? SIZE_VARIANTS.md;
-
-    const createRings = (zoneColor: string) => {
-      const ringCount = 8;
-      const rings: React.JSX.Element[] = [];
-
-      for (let i = 0; i < ringCount; i++) {
-        const progress = i / (ringCount - 1);
-        const opacity = 0.6 * (1 - progress);
-
-        rings.push(
-          <circle
-            key={`ring-${i}`}
-            cx="50"
-            cy="50"
-            r={5 + progress * 42}
-            fill="none"
-            stroke={zoneColor}
-            strokeWidth={4}
-            strokeOpacity={opacity}
-          />
-        );
-      }
-
-      return (
-        <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" style={styles.spotOverlay}>
-          {rings}
-        </svg>
-      );
-    };
 
     return (
       <Box data-name="cardspot-root" onClick={handleClick} style={styles.spotRoot}>
@@ -110,11 +73,10 @@ export const CardSpot = React.memo(
             ...styles.spotWrapper,
             ...styles.spotWrapperNoise,
             position: absolutePositioning ? 'absolute' : 'relative',
-            ...(absolutePositioning ? { transform: 'translate(-50%, -50%)' } : {}),
+            ...(absolutePositioning ? { transform: 'translate(-50%, -50%)', left: `${x}%`, top: `${y}%` } : { width, height }),
             backgroundColor,
             cursor: handleClick ? 'pointer' : 'default',
-            border: `1px solid ${isSelected ? effectiveSelectedBorder : borderColor}`,
-            ...positionStyle,
+            border: `1px solid ${selected ? effectiveBorder : borderColor}`,
             ...dimensions,
             ...(additionalStyle || {}),
           }}
@@ -124,35 +86,30 @@ export const CardSpot = React.memo(
             layoutId={text || ''}
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            whileHover={{ scale: isSelected ? 1 : 1.02 }}
-            whileTap={{ scale: isSelected ? 1 : 0.98 }}
+            whileHover={{ scale: selected ? 1 : 1.02 }}
+            whileTap={{ scale: selected ? 1 : 0.98 }}
             style={styles.spotContent as any}
           >
             {text && (
               <Box data-name="cardspot-text" style={styles.spotTextOverlay}>
-                <Text c={color} size="xs" fw={700} style={styles.spotText}>
-                  {text}
-                </Text>
+                <Text c={color} size="xs" fw={700} style={styles.spotText}>{text}</Text>
               </Box>
             )}
-
-            {card && !children ? (
-              React.isValidElement(card) && card.type === 'Card' && 'props' in card
-                ? React.cloneElement(card as any, { style: { position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' } })
+            {card && !children
+              ? React.isValidElement(card) && card.type === 'Card' && 'props' in card
+                ? React.cloneElement(card as any, { style: styles.spotFallback })
                 : <Box style={styles.spotFallback} />
-            ) : null}
-
-            {children ? (
+              : null}
+            {children && (
               <Box data-name="cardspot-child-wrapper" style={styles.spotChildWrapper}>
                 {children}
               </Box>
-            ) : null}
-
-            {!card && !children && !text ? (
+            )}
+            {!card && !children && !text && (
               <Text c={colors.White_1} size="lg" fw={900} style={styles.spotNumberText}>
                 {String(y + 1).padStart(2, '0')}
               </Text>
-            ) : null}
+            )}
           </motion.div>
         </div>
       </Box>

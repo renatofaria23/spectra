@@ -8,6 +8,7 @@ import rawCardsData from '../../data/cards.json';
 import { Link, useNavigate } from 'react-router-dom';
 import { readCards, deleteCard } from '../../services/cardsAPI';
 import { NATURES, NUMEN_FAMILIES } from '../../types/constants';
+import * as S from './CardList.css';
 
 const baseCards: CardData[] = (rawCardsData as any[]).map((raw) => ({
   ...raw,
@@ -95,25 +96,12 @@ export const CardList = () => {
     return result;
   }, [filterType, filterNature, filterFamily, searchQuery, cards]);
 
-  return (
-    <Box
-      data-name="card-list-container"
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: '2rem',
-        width: '100%',
-        minHeight: '100vh',
-        backgroundColor: colors.White_1,
-        padding: '2rem',
-        boxSizing: 'border-box',
-      }}
-    >
-      <Text c={colors.Gray_2} size="xl" fw={700}>
-        Card List
-      </Text>
+  const inputStyle = { color: colors.Gray_2, borderColor: colors.Gray_5 };
+  const labelStyle = { color: colors.Gray_2 };
 
+  return (
+    <Box data-name="card-list-container" style={S.cardListContainer}>
+      <Text c={colors.Gray_2} size="xl" fw={700}>Card List</Text>
       <Text c={colors.Gray_3} size="md" fw={500}>
         Total: {filteredCards.length} / {cardStats.total} cards ({cardStats.numen} numen, {cardStats.rite} rites, {cardStats.ward} wards)
       </Text>
@@ -126,21 +114,13 @@ export const CardList = () => {
         Create New Card
       </Button>
 
-      <Group data-name="filter-group" gap="md" style={{ flexWrap: 'wrap', justifyContent: 'center', width: '100%' }}>
+      <Group data-name="filter-group" gap="md" style={S.filterGroup}>
         <TextInput
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           leftSection={<IconSearch size={16} color={colors.Gray_3} />}
           label="Filter by Name"
-          styles={{
-            input: {
-              color: colors.Gray_2,
-              borderColor: colors.Gray_5,
-            },
-            label: {
-              color: colors.Gray_2,
-            },
-          }}
+          styles={{ input: inputStyle, label: labelStyle }}
         />
 
         <Select
@@ -159,15 +139,7 @@ export const CardList = () => {
             }
           }}
           label="Filter by Type"
-          styles={{
-            input: {
-              color: colors.Gray_2,
-              borderColor: colors.Gray_5,
-            },
-            label: {
-              color: colors.Gray_2,
-            },
-          }}
+          styles={{ input: inputStyle, label: labelStyle }}
         />
 
         {filterType === 'numen' && (
@@ -183,15 +155,7 @@ export const CardList = () => {
               value={filterNature}
               onChange={(val) => setFilterNature(val || 'all')}
               label="Filter by Nature"
-              styles={{
-                input: {
-                  color: colors.Gray_2,
-                  borderColor: colors.Gray_5,
-                },
-                label: {
-                  color: colors.Gray_2,
-                },
-              }}
+              styles={{ input: inputStyle, label: labelStyle }}
             />
 
             <Select
@@ -205,40 +169,15 @@ export const CardList = () => {
               value={filterFamily}
               onChange={(val) => setFilterFamily(val || 'all')}
               label="Filter by Family"
-              styles={{
-                input: {
-                  color: colors.Gray_2,
-                  borderColor: colors.Gray_5,
-                },
-                label: {
-                  color: colors.Gray_2,
-                },
-              }}
+              styles={{ input: inputStyle, label: labelStyle }}
             />
           </>
         )}
       </Group>
 
-      <Box
-        data-name="card-grid"
-        style={{
-          display: 'flex',
-          gap: '2rem',
-          flexWrap: 'wrap',
-          justifyContent: 'center',
-        }}
-      >
+      <Box data-name="card-grid" style={S.cardGrid}>
         {filteredCards.map((card) => (
-          <Box
-            data-name="card-item-wrapper"
-            key={card.id}
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: '0.5rem',
-            }}
-          >
+          <Box data-name="card-item-wrapper" key={card.id} style={S.cardItemWrapper}>
             <CardTemplate card={card} size="lg" artImage={card.art ? `/src/assets/art/${card.art}` : null} />
             <Group data-name="card-action-group" gap="sm">
               <Button
@@ -266,9 +205,7 @@ export const CardList = () => {
       </Box>
 
       <Link to="/" style={{ textDecoration: 'none', marginTop: '2rem' }}>
-        <Text c={colors.Blue_3} size="lg" fw={600}>
-          Back to Board
-        </Text>
+        <Text c={colors.Blue_3} size="lg" fw={600}>Back to Board</Text>
       </Link>
     </Box>
   );

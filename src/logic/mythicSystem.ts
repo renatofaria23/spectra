@@ -1,4 +1,4 @@
-import { validateCardRequirements } from './deckConstraints';
+import { validateCardRequirements, type Card } from './deckConstraints';
 
 export interface MythicQuestTracker {
   mythicId: string;
@@ -9,61 +9,31 @@ export interface MythicQuestTracker {
   customProgress: Record<string, unknown>;
 }
 
-export const initializeMythicTracker = (mythicId: string): MythicQuestTracker => {
-  return {
-    mythicId,
-    wardsActivated: 0,
-    numinaForgeted: 0,
-    decreaseDealt: 0,
-    cardsDrawn: 0,
-    customProgress: {},
-  };
-};
+export const initializeMythicTracker = (mythicId: string): MythicQuestTracker => ({
+  mythicId,
+  wardsActivated: 0,
+  numinaForgeted: 0,
+  decreaseDealt: 0,
+  cardsDrawn: 0,
+  customProgress: {},
+});
 
 export const isMythicQuestComplete = (mythic: unknown, tracker: MythicQuestTracker): boolean => {
-  if (!(mythic as any).isMythic || !(mythic as any).mythicQuest) {
-    return false;
-  }
-
-  const mythicCard = mythic as any;
-  const activationConditions = mythicCard.mythicQuest?.activationConditions;
-
-  if (!activationConditions) {
-    return false;
-  }
-
-  for (const [condition, required] of Object.entries(activationConditions)) {
-    const numericRequired = typeof required === 'number' ? Number(required) : 0;
-    const current = tracker[condition as keyof MythicQuestTracker];
-    if (current === undefined || Number(current) < numericRequired) {
-      return false;
-    }
-  }
-
-  return true;
+  const conds = (mythic as any)?.isMythic && (mythic as any)?.mythicQuest?.activationConditions;
+  return !!conds && Object.entries(conds).every(([k, v]) => {
+    const curr = tracker[k as keyof MythicQuestTracker];
+    return curr !== undefined && Number(curr) >= (typeof v === 'number' ? v : 0);
+  });
 };
 
-export const updateQuestProgress = (tracker: MythicQuestTracker, eventType: string, amount: number = 1): MythicQuestTracker => {
-  const updated = { ...tracker };
-
-  switch (eventType) {
-    case 'wardActivated':
-      updated.wardsActivated += amount;
-      break;
-    case 'numenForgeted':
-      updated.numinaForgeted += amount;
-      break;
-    case 'decreaseDealt':
-      updated.decreaseDealt += amount;
-      break;
-    case 'cardDrawn':
-      updated.cardsDrawn += amount;
-      break;
-    default:
-      break;
-  }
-
-  return updated;
+export const updateQuestProgress = (tracker: MythicQuestTracker, eventType: string, amount = 1): MythicQuestTracker => {
+  const key = ({
+    wardActivated: 'wardsActivated',
+    numenForgeted: 'numinaForgeted',
+    decreaseDealt: 'decreaseDealt',
+    cardDrawn: 'cardsDrawn',
+  } as Record<string, keyof MythicQuestTracker>)[eventType];
+  return key ? { ...tracker, [key]: (tracker[key] as number) + amount } : { ...tracker };
 };
 
 export const getMythicInvokeEligibility = (deck: unknown[], activeMythics: any[] = []): {
@@ -71,111 +41,65 @@ export const getMythicInvokeEligibility = (deck: unknown[], activeMythics: any[]
   ineligible: any[];
   reasons: Record<string, string>;
 } => {
-  const activeIds = new Set<string>(activeMythics.map((l) => l.id));
-
+  const activeIds = new Set(activeMythics.map((l) => l.id));
   const available: any[] = [];
   const ineligible: any[] = [];
   const reasons: Record<string, string> = {};
 
-  (deck as Array<any>).forEach((mythicCard) => {
-    if (activeIds.has(mythicCard.id)) {
-      ineligible.push(mythicCard);
-      reasons[mythicCard.id] = 'Already active on field';
-      return;
+  for (const card of deck as Card[]) {
+    if (activeIds.has(card.id)) {
+      ineligible.push(card);
+      reasons[card.id] = 'Already active on field';
+      continue;
     }
-
-    const validationResult = validateCardRequirements(
-      deck as import('./deckConstraints').Card[],
-      [mythicCard.id]
-    );
-
-    if (!validationResult.canInvoke[mythicCard.id]) {
-      ineligible.push(mythicCard);
-      const missing = validationResult.missingRequirements[mythicCard.id];
-      reasons[mythicCard.id] = Array.isArray(missing)
-        ? missing.join(', ')
-        : 'Unknown requirements';
-      return;
+    const val = validateCardRequirements(deck as Card[], [card.id]);
+    if (val.canInvoke[card.id]) {
+      available.push(card);
+    } else {
+      ineligible.push(card);
+      const miss = val.missingRequirements[card.id];
+      reasons[card.id] = Array.isArray(miss) ? miss.join(', ') : 'Unknown requirements';
     }
-
-    available.push(mythicCard);
-  });
-
+  }
   return { available, ineligible, reasons };
 };
 
-export const getKryokScalingBuff = (wardsRemoved: number): { darkBonus: number; larvaBonus: number } => {
-  return {
-    darkBonus: wardsRemoved * 66,
-    larvaBonus: wardsRemoved * 66,
-  };
-};
+export const getKryokScalingBuff = (wardsRemoved: number) => ({
+  darkBonus: wardsRemoved * 66,
+  larvaBonus: wardsRemoved * 66,
+});
 
 export const checkMythicConstraint = (mythic: any, action: string): { allowed: boolean; reason: string } => {
   const constraints = mythic.mythicQuest?.specialConstraints || [];
-
-  if (action === 'changePosition') {
-    if (constraints.includes('cannotChangePosition')) {
-      return { allowed: false, reason: 'This mythic cannot change position' };
-    }
-  }
-
-  if (action === 'forget') {
-    if (constraints.includes('cannotBeForgeted')) {
-      return { allowed: false, reason: 'This mythic cannot be forgeted' };
-    }
-  }
-
-  if (action === 'exile') {
-    if (constraints.includes('cannotBeExiled')) {
-      return { allowed: false, reason: 'This mythic cannot be exiled' };
-    }
-  }
-
-  return { allowed: true, reason: '' };
-};
-
-export const getMythicSacrificeCost = (mythic: any): number => {
-  const sacrifices: Record<number, number> = {
-    1: 0,
-    2: 0,
-    3: 1,
-    4: 1,
-    5: 2,
-    6: 2,
-    7: 3,
-    8: 3,
-    9: 4,
-    10: 5,
+  const rules: Record<string, [string, string]> = {
+    changePosition: ['cannotChangePosition', 'This mythic cannot change position'],
+    forget: ['cannotBeForgeted', 'This mythic cannot be forgeted'],
+    exile: ['cannotBeExiled', 'This mythic cannot be exiled'],
   };
-
-  return sacrifices[mythic.level || 0] || 0;
+  const rule = rules[action];
+  return rule && constraints.includes(rule[0])
+    ? { allowed: false, reason: rule[1] }
+    : { allowed: true, reason: '' };
 };
+
+export const getMythicSacrificeCost = (mythic: any): number =>
+  [0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 5][mythic.level || 0] || 0;
 
 export const activateMythic = (tracker: MythicQuestTracker): {
   activated: boolean;
   tracker: MythicQuestTracker;
 } => {
-  const isActive = 'isActive' in tracker && !!tracker.isActive;
-
-  const updated = isActive 
-    ? { ...tracker, isActive: false }
-    : { ...tracker, isActive: true };
-
+  const active = !(tracker as any).isActive;
   return {
-    activated: !isActive,
-    tracker: updated,
+    activated: active,
+    tracker: { ...tracker, isActive: active } as any,
   };
 };
 
 export const deactivateMythic = (tracker: MythicQuestTracker): {
   deactivated: boolean;
   tracker: MythicQuestTracker;
-} => {
-  const updated = { ...tracker, isActive: false };
-
-  return {
-    deactivated: true,
-    tracker: updated,
-  };
-};
+} => ({
+  deactivated: true,
+  tracker: { ...tracker, isActive: false } as any,
+});

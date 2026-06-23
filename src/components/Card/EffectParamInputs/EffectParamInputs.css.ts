@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react';
+import colors from '../../../styles/Colors';
 
 export const effectParamSection: CSSProperties = {
   display: 'flex',
@@ -42,4 +43,8 @@ export const criteriaTags: CSSProperties = {
   display: 'flex',
   flexWrap: 'wrap',
   gap: '6px',
+};
+
+export const checkboxStyle = {
+  label: { color: colors.Black_1 },
 };

@@ -1,31 +1,19 @@
 export enum PassiveTrigger {
-  CHALLENGE = "CHALLENGE",
-  VEILED = "VEILED",
-  CELERITY = "CELERITY",
-  STUNNED = "STUNNED",
-  NULLIFY = "NULLIFY",
-  LOCKED = "LOCKED",
-  RECLUSE = "RECLUSE",
-  LEGION = "LEGION",
-  RELENTLESS = "RELENTLESS",
+  CHALLENGE = "CHALLENGE", VEILED = "VEILED", CELERITY = "CELERITY",
+  STUNNED = "STUNNED", NULLIFY = "NULLIFY", LOCKED = "LOCKED",
+  RECLUSE = "RECLUSE", LEGION = "LEGION", RELENTLESS = "RELENTLESS",
   SHROUDED = "SHROUDED"
 }
 
 export enum SemiConfigurableTrigger {
-  COUNTER = "COUNTER",
-  MENTAL_DEBT = "MENTAL_DEBT",
-  ABSORB = "ABSORB"
+  COUNTER = "COUNTER", MENTAL_DEBT = "MENTAL_DEBT", ABSORB = "ABSORB"
 }
 
 export enum ConditionalTrigger {
-  END_OF_TURN = "END_OF_TURN",
-  START_OF_TURN = "START_OF_TURN",
-  AFTER_ATTACK = "AFTER_ATTACK",
-  BEFORE_ATTACK = "BEFORE_ATTACK",
-  WHEN_ATTACKED = "WHEN_ATTACKED",
-  DECREE = "DECREE",
-  TESTAMENT = "TESTAMENT",
-  WHEN = "WHEN"
+  END_OF_TURN = "END_OF_TURN", START_OF_TURN = "START_OF_TURN",
+  AFTER_ATTACK = "AFTER_ATTACK", BEFORE_ATTACK = "BEFORE_ATTACK",
+  WHEN_ATTACKED = "WHEN_ATTACKED", DECREE = "DECREE",
+  TESTAMENT = "TESTAMENT", WHEN = "WHEN"
 }
 
 export interface CounterTrigger {
@@ -49,50 +37,20 @@ export interface AbsorbTrigger {
 export type AttackTarget = 'player' | 'numen' | 'allied_numen' | 'anything';
 
 export type EffectTarget =
-  | 'self'
-  | 'attack_target'
-  | 'any_card'
-  | 'all_cards'
-  | 'any_numen'
-  | 'any_magic'
-  | 'any_rite'
-  | 'any_ward'
-  | 'allied_numen'
-  | 'enemy_numen'
-  | 'all_allied_numina'
-  | 'all_enemy_numina'
-  | 'global_allied_numina'
-  | 'global_enemy_numina'
-  | 'allied_non_mythic_numen'
-  | 'enemy_non_mythic_numen'
-  | 'all_allied_non_mythic_numina'
-  | 'all_enemy_non_mythic_numina'
-  | 'global_allied_non_mythic_numina'
-  | 'global_enemy_non_mythic_numina'
-  | 'allied_magic'
-  | 'enemy_magic'
-  | 'all_allied_magics'
-  | 'all_enemy_magics'
-  | 'allied_rite'
-  | 'enemy_rite'
-  | 'all_allied_rites'
-  | 'all_enemy_rites'
-  | 'allied_ward'
-  | 'enemy_ward'
-  | 'all_allied_wards'
-  | 'all_enemy_wards'
-  | 'opponent_hp'
-  | 'opponent_hand'
-  | 'opponent_deck'
-  | 'opponent_memora'
-  | 'opponent_exile'
-  | 'opponent_mana'
-  | 'player_hp'
-  | 'player_hand'
-  | 'player_deck'
-  | 'player_memora'
-  | 'player_exile'
-  | 'player_mana';
+  | 'self' | 'attack_target' | 'any_card' | 'all_cards'
+  | 'any_numen' | 'any_magic' | 'any_rite' | 'any_ward'
+  | 'allied_numen' | 'enemy_numen' | 'all_allied_numina' | 'all_enemy_numina'
+  | 'global_allied_numina' | 'global_enemy_numina'
+  | 'allied_non_mythic_numen' | 'enemy_non_mythic_numen'
+  | 'all_allied_non_mythic_numina' | 'all_enemy_non_mythic_numina'
+  | 'global_allied_non_mythic_numina' | 'global_enemy_non_mythic_numina'
+  | 'allied_magic' | 'enemy_magic' | 'all_allied_magics' | 'all_enemy_magics'
+  | 'allied_rite' | 'enemy_rite' | 'all_allied_rites' | 'all_enemy_rites'
+  | 'allied_ward' | 'enemy_ward' | 'all_allied_wards' | 'all_enemy_wards'
+  | 'opponent_hp' | 'opponent_hand' | 'opponent_deck'
+  | 'opponent_memora' | 'opponent_exile' | 'opponent_mana'
+  | 'player_hp' | 'player_hand' | 'player_deck'
+  | 'player_memora' | 'player_exile' | 'player_mana';
 
 export interface ConditionalTriggerEffect {
   trigger: ConditionalTrigger;
@@ -104,102 +62,39 @@ export interface ConditionalTriggerEffect {
 }
 
 export type TriggerEntry =
-  | PassiveTrigger
-  | CounterTrigger
-  | MentalDebtTrigger
-  | AbsorbTrigger
-  | ConditionalTriggerEffect;
+  | PassiveTrigger | CounterTrigger | MentalDebtTrigger
+  | AbsorbTrigger | ConditionalTriggerEffect;
 
-export function isPassiveTrigger(entry: TriggerEntry): entry is PassiveTrigger {
-  return typeof entry === "string";
-}
+export const isPassiveTrigger = (entry: TriggerEntry): entry is PassiveTrigger => typeof entry === "string";
 
-export function hasPassiveTrigger(card: { triggers?: string[] }, trigger: PassiveTrigger): boolean {
-  if (!card.triggers) return false;
-  return card.triggers.includes(trigger);
-}
+export const hasPassiveTrigger = (card: { triggers?: string[] }, trigger: PassiveTrigger): boolean =>
+  !!card.triggers && card.triggers.includes(trigger);
 
-export function isCounterTrigger(entry: TriggerEntry): entry is CounterTrigger {
-  return typeof entry === "object" && "trigger" in entry && entry.trigger === SemiConfigurableTrigger.COUNTER;
-}
+const isSemiTrigger = (entry: TriggerEntry, t: SemiConfigurableTrigger) =>
+  typeof entry === "object" && "trigger" in entry && entry.trigger === t;
 
-export function isMentalDebtTrigger(entry: TriggerEntry): entry is MentalDebtTrigger {
-  return typeof entry === "object" && "trigger" in entry && entry.trigger === SemiConfigurableTrigger.MENTAL_DEBT;
-}
+export const isCounterTrigger = (entry: TriggerEntry): entry is CounterTrigger =>
+  isSemiTrigger(entry, SemiConfigurableTrigger.COUNTER);
 
-export function isAbsorbTrigger(entry: TriggerEntry): entry is AbsorbTrigger {
-  return typeof entry === "object" && "trigger" in entry && entry.trigger === SemiConfigurableTrigger.ABSORB;
-}
+export const isMentalDebtTrigger = (entry: TriggerEntry): entry is MentalDebtTrigger =>
+  isSemiTrigger(entry, SemiConfigurableTrigger.MENTAL_DEBT);
 
-export function isConditionalTrigger(entry: TriggerEntry): entry is ConditionalTriggerEffect {
-  return typeof entry === "object" && "trigger" in entry && ("effects" in entry || "effect" in entry);
-}
+export const isAbsorbTrigger = (entry: TriggerEntry): entry is AbsorbTrigger =>
+  isSemiTrigger(entry, SemiConfigurableTrigger.ABSORB);
 
-export function handlePassiveTrigger(trigger: PassiveTrigger) {
-  switch (trigger) {
-    case PassiveTrigger.CHALLENGE:
-      return;
-    case PassiveTrigger.VEILED:
-      return;
-    case PassiveTrigger.CELERITY:
-      return;
-    case PassiveTrigger.STUNNED:
-      return;
-    case PassiveTrigger.NULLIFY:
-      return;
-    case PassiveTrigger.LOCKED:
-      return;
-    case PassiveTrigger.RECLUSE:
-      return;
-    case PassiveTrigger.LEGION:
-      return;
-    case PassiveTrigger.RELENTLESS:
-      return;
-    case PassiveTrigger.SHROUDED:
-      return;
-  }
-}
+export const isConditionalTrigger = (entry: TriggerEntry): entry is ConditionalTriggerEffect =>
+  typeof entry === "object" && "trigger" in entry && ("effects" in entry || "effect" in entry);
 
-export function handleCounterTrigger(trigger: CounterTrigger) {
-}
-
-export function handleMentalDebtTrigger(trigger: MentalDebtTrigger) {
-}
-
-export function handleAbsorbTrigger(trigger: AbsorbTrigger) {
-}
-
-export function handleConditionalTrigger(trigger: ConditionalTriggerEffect) {
-  switch (trigger.trigger) {
-    case ConditionalTrigger.END_OF_TURN:
-      return;
-    case ConditionalTrigger.START_OF_TURN:
-      return;
-    case ConditionalTrigger.AFTER_ATTACK:
-      return;
-    case ConditionalTrigger.BEFORE_ATTACK:
-      return;
-    case ConditionalTrigger.WHEN_ATTACKED:
-      return;
-    case ConditionalTrigger.DECREE:
-      return;
-    case ConditionalTrigger.TESTAMENT:
-      return;
-    case ConditionalTrigger.WHEN:
-      return;
-  }
-}
+export function handlePassiveTrigger(_trigger: PassiveTrigger) {}
+export function handleCounterTrigger(_trigger: CounterTrigger) {}
+export function handleMentalDebtTrigger(_trigger: MentalDebtTrigger) {}
+export function handleAbsorbTrigger(_trigger: AbsorbTrigger) {}
+export function handleConditionalTrigger(_trigger: ConditionalTriggerEffect) {}
 
 export function processTrigger(entry: TriggerEntry) {
-  if (isPassiveTrigger(entry)) {
-    handlePassiveTrigger(entry);
-  } else if (isCounterTrigger(entry)) {
-    handleCounterTrigger(entry);
-  } else if (isMentalDebtTrigger(entry)) {
-    handleMentalDebtTrigger(entry);
-  } else if (isAbsorbTrigger(entry)) {
-    handleAbsorbTrigger(entry);
-  } else if (isConditionalTrigger(entry)) {
-    handleConditionalTrigger(entry);
-  }
+  if (isPassiveTrigger(entry)) handlePassiveTrigger(entry);
+  else if (isCounterTrigger(entry)) handleCounterTrigger(entry);
+  else if (isMentalDebtTrigger(entry)) handleMentalDebtTrigger(entry);
+  else if (isAbsorbTrigger(entry)) handleAbsorbTrigger(entry);
+  else if (isConditionalTrigger(entry)) handleConditionalTrigger(entry);
 }

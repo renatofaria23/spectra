@@ -46,17 +46,13 @@ export interface BattleResultSummary {
   validationErrors: string[];
 }
 
-const hasTrigger = (numen: Numen, trigger: PassiveTrigger): boolean => {
-  return hasPassiveTrigger(numen, trigger);
-};
+const hasTrigger = (numen: Numen, trigger: PassiveTrigger): boolean => hasPassiveTrigger(numen, trigger);
 
-const restoreNumenStats = (numen: Numen): Numen => {
-  return {
-    ...numen,
-    currentAttack: numen.baseAttack,
-    currentDefense: numen.baseDefense,
-  };
-};
+const restoreNumenStats = (numen: Numen): Numen => ({
+  ...numen,
+  currentAttack: numen.baseAttack,
+  currentDefense: numen.baseDefense,
+});
 
 export const resolveGroupAttack = (
   attackers: Numen[],
@@ -72,95 +68,54 @@ export const resolveGroupAttack = (
   };
 
   const defenderInAttackPos = defender.position === 'attack';
-  const defenderStat = defenderInAttackPos ? defender.currentAttack : defender.currentDefense;
-
-  let remainingDefenderStat = defenderStat;
+  let remainingDefenderStat = defenderInAttackPos ? defender.currentAttack : defender.currentDefense;
   let currentDefender = { ...defender };
 
   for (const attacker of attackers) {
     const attackerATK = attacker.currentAttack;
-    const damageBonus = defenderNatureScaling.fire.damageBonus;
-    const totalATK = attackerATK + damageBonus;
+    const totalATK = attackerATK + defenderNatureScaling.fire.damageBonus;
+    const killed = totalATK >= remainingDefenderStat;
+    const mutual = totalATK === remainingDefenderStat;
+    const overflow = totalATK > remainingDefenderStat ? totalATK - remainingDefenderStat : 0;
+
+    result.interactions.push({
+      attackerId: attacker.id,
+      targetId: defender.id,
+      spentATK: attackerATK,
+      decreaseDealt: 0,
+      killedNumen: killed,
+      overflowDamage: overflow,
+      mutualDestruction: mutual,
+    });
+
+    if (killed) {
+      result.forgetedNumina.push({ numenId: defender.id, forgetedBy: attacker.id });
+    }
 
     if (totalATK > remainingDefenderStat) {
-      const overflow = totalATK - remainingDefenderStat;
       currentDefender = { ...currentDefender, currentDefense: 0, currentAttack: 0 };
-
-      result.interactions.push({
-        attackerId: attacker.id,
-        targetId: defender.id,
-        spentATK: attackerATK,
-        decreaseDealt: 0,
-        killedNumen: true,
-        overflowDamage: overflow,
-        mutualDestruction: false,
-      });
-
-      result.forgetedNumina.push({ numenId: defender.id, forgetedBy: attacker.id });
       result.totalOverflowDamage += overflow;
-
-      if (hasTrigger(currentDefender, PassiveTrigger.RELENTLESS)) {
-        currentDefender = restoreNumenStats(currentDefender);
-        const newRemaining = defenderInAttackPos ? currentDefender.currentAttack : currentDefender.currentDefense;
-        remainingDefenderStat = newRemaining;
-      } else {
-        remainingDefenderStat = 0;
-      }
-
-      attackers.forEach((a) => {
-        a.currentAttack = 0;
-      });
-
-      break;
-    } else if (totalATK === remainingDefenderStat) {
-      result.interactions.push({
-        attackerId: attacker.id,
-        targetId: defender.id,
-        spentATK: attackerATK,
-        decreaseDealt: 0,
-        killedNumen: true,
-        overflowDamage: 0,
-        mutualDestruction: true,
-      });
-
-      result.forgetedNumina.push({ numenId: defender.id, forgetedBy: attacker.id });
-      attackers.forEach((aId) => {
-        result.forgetedAttackers.push(attacker.id);
-      });
-
-      attackers.forEach((a) => {
-        a.currentAttack = 0;
-      });
-
-      if (hasTrigger(currentDefender, PassiveTrigger.RELENTLESS)) {
-        currentDefender = restoreNumenStats(currentDefender);
-      }
-
-      remainingDefenderStat = 0;
-
-      break;
-    } else {
+    } else if (!mutual) {
       remainingDefenderStat -= totalATK;
+    }
 
-      result.interactions.push({
-        attackerId: attacker.id,
-        targetId: defender.id,
-        spentATK: attackerATK,
-        decreaseDealt: 0,
-        killedNumen: false,
-        overflowDamage: 0,
-        mutualDestruction: false,
-      });
-
-      attackers.forEach((a) => {
-        a.currentAttack = 0;
-      });
-
-      if (hasTrigger(currentDefender, PassiveTrigger.RELENTLESS)) {
-        currentDefender = restoreNumenStats(currentDefender);
-        const newRemaining = defenderInAttackPos ? currentDefender.currentAttack : currentDefender.currentDefense;
-        remainingDefenderStat = newRemaining;
+    if (hasTrigger(currentDefender, PassiveTrigger.RELENTLESS)) {
+      currentDefender = restoreNumenStats(currentDefender);
+      if (!mutual) {
+        remainingDefenderStat = defenderInAttackPos ? currentDefender.currentAttack : currentDefender.currentDefense;
       }
+    } else if (killed) {
+      remainingDefenderStat = 0;
+    }
+
+    if (mutual) {
+      attackers.forEach(() => result.forgetedAttackers.push(attacker.id));
+      remainingDefenderStat = 0;
+    }
+
+    attackers.forEach((a) => (a.currentAttack = 0));
+    if (killed) {
+      break;
     }
   }
 
@@ -180,10 +135,9 @@ export const resolveSoloAttack = (
     validationErrors: [],
   };
 
-  if (!defender) {
-    const damageBonus = defenderNatureScaling.fire.damageBonus;
-    const totalATK = attacker.currentAttack + damageBonus;
+  const totalATK = attacker.currentAttack + defenderNatureScaling.fire.damageBonus;
 
+  if (!defender) {
     result.interactions.push({
       attackerId: attacker.id,
       targetId: null,
@@ -193,62 +147,33 @@ export const resolveSoloAttack = (
       overflowDamage: totalATK,
       mutualDestruction: false,
     });
-
     result.totalOverflowDamage = totalATK;
-    attacker.currentAttack = 0;
-
-    return result;
-  }
-
-  const defenderInAttackPos = defender.position === 'attack';
-  const defenderStat = defenderInAttackPos ? defender.currentAttack : defender.currentDefense;
-  const damageBonus = defenderNatureScaling.fire.damageBonus;
-  const totalATK = attacker.currentAttack + damageBonus;
-
-  if (totalATK > defenderStat) {
-    const overflow = totalATK - defenderStat;
-
-    result.interactions.push({
-      attackerId: attacker.id,
-      targetId: defender.id,
-      spentATK: attacker.currentAttack,
-      decreaseDealt: 0,
-      killedNumen: true,
-      overflowDamage: overflow,
-      mutualDestruction: false,
-    });
-
-    result.forgetedNumina.push({ numenId: defender.id, forgetedBy: attacker.id });
-    result.totalOverflowDamage = overflow;
-    attacker.currentAttack = 0;
-  } else if (totalATK === defenderStat) {
-    result.interactions.push({
-      attackerId: attacker.id,
-      targetId: defender.id,
-      spentATK: attacker.currentAttack,
-      decreaseDealt: 0,
-      killedNumen: true,
-      overflowDamage: 0,
-      mutualDestruction: true,
-    });
-
-    result.forgetedNumina.push({ numenId: defender.id, forgetedBy: attacker.id });
-    result.forgetedAttackers.push(attacker.id);
-    attacker.currentAttack = 0;
   } else {
+    const defenderStat = defender.position === 'attack' ? defender.currentAttack : defender.currentDefense;
+    const killed = totalATK >= defenderStat;
+    const mutual = totalATK === defenderStat;
+    const overflow = totalATK > defenderStat ? totalATK - defenderStat : 0;
+
     result.interactions.push({
       attackerId: attacker.id,
       targetId: defender.id,
       spentATK: attacker.currentAttack,
       decreaseDealt: 0,
-      killedNumen: false,
-      overflowDamage: 0,
-      mutualDestruction: false,
+      killedNumen: killed,
+      overflowDamage: overflow,
+      mutualDestruction: mutual,
     });
 
-    attacker.currentAttack = 0;
+    if (killed) {
+      result.forgetedNumina.push({ numenId: defender.id, forgetedBy: attacker.id });
+    }
+    if (mutual) {
+      result.forgetedAttackers.push(attacker.id);
+    }
+    result.totalOverflowDamage = overflow;
   }
 
+  attacker.currentAttack = 0;
   return result;
 };
 
@@ -256,61 +181,41 @@ export const canNumenAttack = (
   numen: Numen,
   maxInvokes: number
 ): { canAttack: boolean; reason: string } => {
-  if (numen.position === 'defense') {
-    return { canAttack: false, reason: 'Numen in defense position' };
-  }
-
-  if (hasTrigger(numen, PassiveTrigger.STUNNED)) {
-    return { canAttack: false, reason: 'Numen is stunned' };
-  }
-
+  if (numen.position === 'defense') return { canAttack: false, reason: 'Numen in defense position' };
+  if (hasTrigger(numen, PassiveTrigger.STUNNED)) return { canAttack: false, reason: 'Numen is stunned' };
   if (numen.justInvokeed && !hasTrigger(numen, PassiveTrigger.CELERITY)) {
     return { canAttack: false, reason: 'Freshly invokeed, cannot attack this turn' };
   }
-
   return { canAttack: true, reason: '' };
 };
 
-export const canNumenGroupAttack = (numen: Numen): boolean => {
-  if (hasTrigger(numen, PassiveTrigger.RECLUSE)) {
-    return false;
-  }
-  return true;
-};
+export const canNumenGroupAttack = (numen: Numen): boolean => !hasTrigger(numen, PassiveTrigger.RECLUSE);
 
-export const mustNumenGroupAttack = (numen: Numen): boolean => {
-  return hasTrigger(numen, PassiveTrigger.LEGION);
-};
+export const mustNumenGroupAttack = (numen: Numen): boolean => hasTrigger(numen, PassiveTrigger.LEGION);
 
-export const resetNumenStats = (numina: Numen[]): Numen[] => {
-  return numina.map((numen) => ({
-    ...numen,
-    currentAttack: numen.baseAttack,
-    currentDefense: numen.baseDefense,
+export const resetNumenStats = (numina: Numen[]): Numen[] =>
+  numina.map((n) => ({
+    ...n,
+    currentAttack: n.baseAttack,
+    currentDefense: n.baseDefense,
     hasAttacked: false,
     justInvokeed: false,
   }));
+
+export const getTargetableDefenders = (allDefenders: Numen[], attackers: Numen[]): Numen[] => {
+  const chal = allDefenders.find((n) => hasTrigger(n, PassiveTrigger.CHALLENGE));
+  if (chal) return [chal];
+  const hasUnveiled = allDefenders.some((d) => !hasTrigger(d, PassiveTrigger.VEILED));
+  return allDefenders.filter((n) => !hasTrigger(n, PassiveTrigger.VEILED) || !hasUnveiled);
 };
 
-export const getTargetableDefenders = (
-  allDefenders: Numen[],
-  attackers: Numen[]
-): Numen[] => {
-  const challengeNumen = allDefenders.find((n) => hasTrigger(n, PassiveTrigger.CHALLENGE));
-  if (challengeNumen) {
-    return [challengeNumen];
-  }
-
-  return allDefenders.filter((n) => {
-    if (hasTrigger(n, PassiveTrigger.VEILED)) {
-      const visibleCount = allDefenders.filter((d) => !hasTrigger(d, PassiveTrigger.VEILED)).length;
-      if (visibleCount === 0) {
-        return true;
-      }
-      return false;
-    }
-    return true;
-  });
+const DEFAULT_SCALING: NatureScaling = {
+  fire: { damageBonus: 0, numinaCount: 0 },
+  air: { extraInvokes: 0, numinaCount: 0 },
+  earth: { hpBonus: 0, numinaCount: 0 },
+  water: { hpRegenBonus: 0, numinaCount: 0 },
+  light: { manaGainBonus: 0, numinaCount: 0 },
+  dark: { handSizeBonus: 0, numinaCount: 0 },
 };
 
 export const resolveBattlePhase = (
@@ -338,17 +243,7 @@ export const resolveBattlePhase = (
     }
 
     const defender = attack.targetId ? fieldNumina.find((n) => n.id === attack.targetId) ?? null : null;
-
-    const defaultScaling: NatureScaling = {
-      fire: { damageBonus: 0, numinaCount: 0 },
-      air: { extraInvokes: 0, numinaCount: 0 },
-      earth: { hpBonus: 0, numinaCount: 0 },
-      water: { hpRegenBonus: 0, numinaCount: 0 },
-      light: { manaGainBonus: 0, numinaCount: 0 },
-      dark: { handSizeBonus: 0, numinaCount: 0 },
-    };
-
-    const result = resolveSoloAttack(attacker, defender, defaultScaling);
+    const result = resolveSoloAttack(attacker, defender, DEFAULT_SCALING);
     summary.interactions.push(...result.interactions);
     summary.forgetedNumina.push(...result.forgetedNumina);
     summary.totalDecrease += result.totalOverflowDamage;

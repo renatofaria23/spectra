@@ -146,10 +146,7 @@ export const RaritySymbol = React.memo(({ rarity, size = 16, borderColor }: Rari
   };
 
   return (
-    <Box
-      data-name="rarity-symbol-root"
-      style={styles.raritySymbolRoot}
-    >
+    <Box data-name="rarity-symbol-root" style={styles.raritySymbolRoot}>
       {renderSymbol()}
     </Box>
   );

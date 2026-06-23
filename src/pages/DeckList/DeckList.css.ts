@@ -51,3 +51,81 @@ export const validationErrorsBox: CSSProperties = {
 };
 
 export const deckActionGroup: CSSProperties = {};
+
+export const titleText: CSSProperties = {
+  color: colors.Gray_2,
+};
+
+export const totalText: CSSProperties = {
+  color: colors.Gray_3,
+};
+
+export const badgeNumina: CSSProperties = {
+  color: colors.White_1,
+  backgroundColor: colors.Red_11,
+};
+
+export const badgeRites: CSSProperties = {
+  color: colors.White_1,
+  backgroundColor: colors.Green_8,
+};
+
+export const badgeWards: CSSProperties = {
+  color: colors.White_1,
+  backgroundColor: colors.Red_12,
+};
+
+export const badgeCount: CSSProperties = {
+  color: colors.White_1,
+  backgroundColor: colors.Blue_5,
+};
+
+export const inputColor: CSSProperties = {
+  color: colors.Gray_2,
+  borderColor: colors.Gray_5,
+};
+
+export const inputLabelColor: CSSProperties = {
+  color: colors.Gray_2,
+};
+
+export const deckTitleColor: CSSProperties = {
+  color: colors.White_1,
+};
+
+export const textColor: CSSProperties = {
+  color: colors.Red_4,
+};
+
+export const buttonEdit: CSSProperties = {
+  backgroundColor: colors.Blue_5,
+};
+
+export const buttonEditHover: CSSProperties = {
+  backgroundColor: colors.Blue_4,
+};
+
+export const buttonDelete: CSSProperties = {
+  backgroundColor: colors.Red_8,
+};
+
+export const buttonDeleteHover: CSSProperties = {
+  backgroundColor: colors.Red_7,
+};
+
+export const buttonCreate: CSSProperties = {
+  backgroundColor: colors.Green_6,
+};
+
+export const buttonCreateHover: CSSProperties = {
+  backgroundColor: colors.Green_5,
+};
+
+export const linkStyle: CSSProperties = {
+  textDecoration: 'none',
+  marginTop: '2rem',
+};
+
+export const linkTextColor: CSSProperties = {
+  color: colors.Blue_3,
+};

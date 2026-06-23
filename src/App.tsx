@@ -10,7 +10,6 @@ import { DeckEditor } from './pages/DeckEditor/DeckEditor';
 import { migrateCardDescriptions } from './services/cardsAPI';
 import '@mantine/core/styles.css';
 import './App.css';
-import colors from './styles/Colors';
 
 function App() {
   useEffect(() => {

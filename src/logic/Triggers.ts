@@ -38,13 +38,13 @@ export type AttackTarget = 'player' | 'numen' | 'allied_numen' | 'anything';
 
 export type EffectTarget =
   | 'self' | 'attack_target' | 'any_card' | 'all_cards'
-  | 'any_numen' | 'any_magic' | 'any_rite' | 'any_ward'
+  | 'any_numen' | 'any_incantation' | 'any_rite' | 'any_ward'
   | 'allied_numen' | 'enemy_numen' | 'all_allied_numina' | 'all_enemy_numina'
   | 'global_allied_numina' | 'global_enemy_numina'
   | 'allied_non_mythic_numen' | 'enemy_non_mythic_numen'
   | 'all_allied_non_mythic_numina' | 'all_enemy_non_mythic_numina'
   | 'global_allied_non_mythic_numina' | 'global_enemy_non_mythic_numina'
-  | 'allied_magic' | 'enemy_magic' | 'all_allied_magics' | 'all_enemy_magics'
+  | 'allied_incantation' | 'enemy_incantation' | 'all_allied_incantations' | 'all_enemy_incantations'
   | 'allied_rite' | 'enemy_rite' | 'all_allied_rites' | 'all_enemy_rites'
   | 'allied_ward' | 'enemy_ward' | 'all_allied_wards' | 'all_enemy_wards'
   | 'opponent_hp' | 'opponent_hand' | 'opponent_deck'

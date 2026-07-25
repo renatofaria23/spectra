@@ -19,7 +19,7 @@ const G = {
   special: [colors.Green_4, colors.Green_5],
   exile: [colors.Purple_9, colors.Purple_10],
   memora: [colors.Gray_9, colors.Gray_10],
-  magic: [colors.Blue_16, colors.Blue_17],
+  incantation: [colors.Blue_16, colors.Blue_17],
   deck: [colors.Brown_8, colors.Brown_9],
 } as const;
 
@@ -29,12 +29,12 @@ const B = {
   special: colors.Green_1,
   exile: colors.Purple_1,
   memora: colors.Gray_2,
-  magic: colors.Blue_1,
+  incantation: colors.Blue_1,
   deck: colors.Brown_1,
 } as const;
 
 const make = (t: string, p?: string) => {
-  const r = p || (t === 'Extra Deck' ? 'extraDeck' : t === 'Memora' ? 'memora' : t === 'Exile' ? 'exile' : t === 'Deck' ? 'deck' : t.includes('Zone') ? 'magic' : 'normal');
+  const r = p || (t === 'Extra Deck' ? 'extraDeck' : t === 'Memora' ? 'memora' : t === 'Exile' ? 'exile' : t === 'Deck' ? 'deck' : t.includes('Zone') ? 'incantation' : 'normal');
   const grad: Record<string, any> = {};
   if (r !== 'normal') {
     const [a, b] = G[r as keyof typeof G];
@@ -49,11 +49,11 @@ const R = (a: string, b: string, c: string, t?: string) => [
 
 export const Field = React.memo(() => (
   <div style={s.fieldRoot}>
-    <div style={s.fieldRow}>{R('Deck', 'Magic Zone', 'Memora')}</div>
+    <div style={s.fieldRow}>{R('Deck', 'Incantation Zone', 'Memora')}</div>
     <div style={s.fieldRow}>{R('Extra Deck', 'Numen Zone', 'Exile', 'numen')}</div>
     <div style={s.fieldRow}>{make('Special Zone', 'special')}</div>
     <div style={s.fieldRow}>{R('Exile', 'Numen Zone', 'Extra Deck', 'numen')}</div>
-    <div style={s.fieldRow}>{R('Memora', 'Magic Zone', 'Deck')}</div>
+    <div style={s.fieldRow}>{R('Memora', 'Incantation Zone', 'Deck')}</div>
   </div>
 ));
 

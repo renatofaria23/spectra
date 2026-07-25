@@ -54,8 +54,9 @@ interface CombatStoreState {
   activateRite: (playerId: string, riteId: string) => void;
   activateWard: (playerId: string, wardId: string) => void;
   placeNumenFromHand: (playerId: string, cardId: string, slotIndex: number, position: NumenPosition) => void;
-  placeMagicFromHand: (playerId: string, cardId: string, slotIndex: number, faceDown: boolean) => void;
-  flipMagicFaceUp: (playerId: string, slotIndex: number) => void;
+  placeIncantationFromHand: (playerId: string, cardId: string, slotIndex: number, faceDown: boolean) => void;
+  flipIncantationFaceUp: (playerId: string, slotIndex: number) => void;
+  swapCardsInHand: (playerId: string, index1: number, index2: number) => void;
   changePhase: () => void;
   takeDamage: (playerId: string, damage: number) => void;
   healPlayer: (playerId: string, amount: number) => void;
@@ -176,7 +177,7 @@ export const useGameStore = create<CombatStoreState>((set, get) => ({
   initializeGame: (player1Deck: Card[], player2Deck: Card[]) => {
     const p1 = initializePlayerState('player1', true, player1Deck);
     const p2 = initializePlayerState('player2', false, player2Deck);
-    p1.currentMana = calculateManaGain(GAME_CONSTANTS.BASE_MANA_GAIN, p1.natureScaling);
+    p1.currentMana = calculateManaGain(GAME_CONSTANTS.BASE_MANA_REGEN, p1.natureScaling);
     for (let i = 0; i < GAME_CONSTANTS.FIRST_PLAYER_HAND; i++) {
       if (p1.deck.length > 0) p1.hand.push(p1.deck.pop()!);
     }
@@ -267,7 +268,7 @@ export const useGameStore = create<CombatStoreState>((set, get) => ({
       if (cardIndex === -1) return state;
       const card = player.hand[cardIndex];
       if (!card || card.type !== 'rite') return state;
-      if (player.fieldRites.length >= GAME_CONSTANTS.MAX_MAGIC_SPOTS) return state;
+      if (player.fieldRites.length >= GAME_CONSTANTS.MAX_INCANTATION_SPOTS) return state;
       return {
         gameState: {
           ...state.gameState,
@@ -290,7 +291,7 @@ export const useGameStore = create<CombatStoreState>((set, get) => ({
       if (cardIndex === -1) return state;
       const card = player.hand[cardIndex];
       if (!card || card.type !== 'ward') return state;
-      if (player.fieldWards.length >= GAME_CONSTANTS.MAX_MAGIC_SPOTS) return state;
+      if (player.fieldWards.length >= GAME_CONSTANTS.MAX_INCANTATION_SPOTS) return state;
       return {
         gameState: {
           ...state.gameState,
@@ -332,7 +333,7 @@ export const useGameStore = create<CombatStoreState>((set, get) => ({
     });
   },
 
-  placeMagicFromHand: (playerId: string, cardId: string, slotIndex: number, faceDown: boolean) => {
+  placeIncantationFromHand: (playerId: string, cardId: string, slotIndex: number, faceDown: boolean) => {
     set((state: any) => {
       const player = state.gameState[playerId];
       if (!player) return state;
@@ -340,16 +341,16 @@ export const useGameStore = create<CombatStoreState>((set, get) => ({
       if (cardIndex === -1) return state;
       const card = player.hand[cardIndex];
       if (!card || (card.type !== 'rite' && card.type !== 'ward')) return state;
-      if (slotIndex < 0 || slotIndex >= GAME_CONSTANTS.MAX_MAGIC_SPOTS) return state;
-      const magicInstance = { ...card, uid: cardId + '_' + Date.now() + '_' + Math.random(), isFaceDown: faceDown };
+      if (slotIndex < 0 || slotIndex >= GAME_CONSTANTS.MAX_INCANTATION_SPOTS) return state;
+      const incantationInstance = { ...card, uid: cardId + '_' + Date.now() + '_' + Math.random(), isFaceDown: faceDown };
       const newFieldRites = [...player.fieldRites];
       const newFieldWards = [...player.fieldWards];
       if (card.type === 'rite') {
         if (newFieldRites[slotIndex]) return state;
-        newFieldRites[slotIndex] = magicInstance;
+        newFieldRites[slotIndex] = incantationInstance;
       } else {
         if (newFieldWards[slotIndex]) return state;
-        newFieldWards[slotIndex] = magicInstance;
+        newFieldWards[slotIndex] = incantationInstance;
       }
       return {
         gameState: {
@@ -365,7 +366,7 @@ export const useGameStore = create<CombatStoreState>((set, get) => ({
     });
   },
 
-  flipMagicFaceUp: (playerId: string, slotIndex: number) => {
+  flipIncantationFaceUp: (playerId: string, slotIndex: number) => {
     set((state: any) => {
       const player = state.gameState[playerId];
       if (!player) return state;
@@ -383,6 +384,22 @@ export const useGameStore = create<CombatStoreState>((set, get) => ({
       if (!flipped) return state;
       return {
         gameState: { ...state.gameState, [playerId]: { ...player, fieldRites: newFieldRites, fieldWards: newFieldWards } },
+      };
+    });
+  },
+
+  swapCardsInHand: (playerId: string, index1: number, index2: number) => {
+    set((state: any) => {
+      const player = state.gameState[playerId];
+      if (!player) return state;
+      if (index1 < 0 || index1 >= player.hand.length || index2 < 0 || index2 >= player.hand.length) return state;
+      if (index1 === index2) return state;
+      const newHand = [...player.hand];
+      const temp = newHand[index1];
+      newHand[index1] = newHand[index2];
+      newHand[index2] = temp;
+      return {
+        gameState: { ...state.gameState, [playerId]: { ...player, hand: newHand } },
       };
     });
   },

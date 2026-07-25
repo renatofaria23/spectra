@@ -41,7 +41,7 @@ export interface ConvokeEffect extends SummonEffect { effect: EffectType.CONVOKE
 export interface CopyEffect { effect: EffectType.COPY; copyTarget: string; destination: string; count: number; effectTarget?: string; }
 export interface AddEffect { effect: EffectType.ADD; addFrom: "player_field" | "opponent_field" | "any_field" | "player_memora" | "opponent_memora" | "any_memora" | "player_exile" | "opponent_exile" | "any_exile" | "player_deck" | "opponent_deck" | "any_deck" | "player_hand" | "opponent_hand" | "any_hand"; addTargetType: "numen" | "rite" | "ward" | "any"; destination: "player_deck" | "opponent_deck" | "player_memora" | "opponent_memora" | "player_exile" | "opponent_exile" | "player_hand" | "opponent_hand"; count: number; effectTarget?: string; }
 export interface ReturnEffect { effect: EffectType.RETURN; destination?: string; returnDestination?: string; returnTarget?: string; returnFieldTarget?: string; returnCardType?: string; count?: number; effectTarget?: string; }
-export interface ForEachConfig { cardType: "numen" | "ward" | "rite" | "magic" | "any"; zone: "memora" | "field" | "exile" | "deck" | "hand"; owner: "player" | "opponent" | "both"; }
+export interface ForEachConfig { cardType: "numen" | "ward" | "rite" | "incantation" | "any"; zone: "memora" | "field" | "exile" | "deck" | "hand"; owner: "player" | "opponent" | "both"; }
 
 export type EffectEntry = (
   | DrawEffect

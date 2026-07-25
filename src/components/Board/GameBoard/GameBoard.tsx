@@ -46,7 +46,7 @@ interface DS {
 
 interface PT {
   si: number;
-  zone: "numen" | "magic";
+  zone: "numen" | "incantation";
   pid: string;
 }
 
@@ -109,10 +109,11 @@ const ESlot: React.FC<{ hig: boolean; zone: string; si: number; pid: string }> =
 );
 
 const HCard: React.FC<{
-  card: Card; onInsp: () => void; onDS: (c: Card, s: { x: number; y: number }) => void;
+  card: Card; onInsp: () => void; onDS: (c: Card, s: { x: number; y: number }, i: number) => void;
   onDM: (o: { x: number; y: number }) => void; onDE: () => void;
   isDrag: boolean; dOff: { x: number; y: number }; canDrag: boolean;
-}> = ({ card, onInsp, onDS, onDM, onDE, isDrag, dOff, canDrag }) => {
+  dataHandIndex: number; dataHandPlayer: string; onSwapHover: (idx: number) => void;
+}> = ({ card, onInsp, onDS, onDM, onDE, isDrag, dOff, canDrag, dataHandIndex, dataHandPlayer, onSwapHover }) => {
   const bg = getBg(card);
   const bd = getBd(card);
   const [hov, setHov] = useState(false);
@@ -123,19 +124,23 @@ const HCard: React.FC<{
     if (!canDrag) return;
     const s = { x: e.clientX, y: e.clientY };
     sRef.current = s;
-    onDS(card, s);
+    onDS(card, s, dataHandIndex);
     const mm = (m: MouseEvent) => onDM({ x: m.clientX - s.x, y: m.clientY - s.y });
     const mu = (u: MouseEvent) => { document.removeEventListener("mousemove", mm); document.removeEventListener("mouseup", mu); onDE(); };
     document.addEventListener("mousemove", mm);
     document.addEventListener("mouseup", mu);
   };
 
+  const handleSwapHover = () => onSwapHover(dataHandIndex);
+
   const moved = canDrag && isDrag && (Math.sqrt(dOff.x ** 2 + dOff.y ** 2) > 5);
 
   return (
     <Box
       data-name="hand-card"
-      onMouseEnter={() => setHov(true)}
+      data-hand-index={dataHandIndex}
+      data-hand-player={dataHandPlayer}
+      onMouseEnter={(e) => { setHov(true); handleSwapHover(); }}
       onMouseLeave={() => setHov(false)}
       onMouseDown={handleMouseDown}
       style={{
@@ -186,17 +191,17 @@ const PField: React.FC<{
     const p = s.getAttribute("data-slot-player");
     if (z !== zone || i !== idx || p !== pid) return false;
     if (zone === "numen" && drag.card!.type !== "numen") return false;
-    if (zone === "magic" && drag.card!.type !== "rite" && drag.card!.type !== "ward") return false;
+    if (zone === "incantation" && drag.card!.type !== "rite" && drag.card!.type !== "ward") return false;
     return true;
   }, [drag.isDragging, drag.cursorPos, drag.card, pid]);
 
-  const renderMagic = () => (
-    <ZRow data-name="magic-zone-row">
+  const renderIncantation = () => (
+    <ZRow data-name="incantation-zone-row">
       {Array.from({ length: 5 }).map((_, i) => {
         const c = player.fieldRites[i] || player.fieldWards[i];
         const fd = c ? !!(c as any).isFaceDown : false;
-        if (!c) return <Box key={`s${i}`} data-name={`magic-slot-${i}`}><ESlot hig={getHig("magic", i)} zone="magic" si={i} pid={pid} /></Box>;
-        return <Box key={`s${i}`} data-name={`magic-slot-${i}`}><FCard card={c} uid={(c as any).uid || `spell_${i}`} sel={false} onSel={() => {}} onInsp={() => fd ? onInsp(c, true, pid, i) : onInsp(c)} faceDown={fd} isDef={false} /></Box>;
+        if (!c) return <Box key={`s${i}`} data-name={`incantation-slot-${i}`}><ESlot hig={getHig("incantation", i)} zone="incantation" si={i} pid={pid} /></Box>;
+        return <Box key={`s${i}`} data-name={`incantation-slot-${i}`}><FCard card={c} uid={(c as any).uid || `spell_${i}`} sel={false} onSel={() => {}} onInsp={() => fd ? onInsp(c, true, pid, i) : onInsp(c)} faceDown={fd} isDef={false} /></Box>;
       })}
     </ZRow>
   );
@@ -226,11 +231,11 @@ const PField: React.FC<{
       }}
     >
       {mirrored ? <>
-        {renderMagic()}
+        {renderIncantation()}
         {renderNumen()}
       </> : <>
         {renderNumen()}
-        {renderMagic()}
+        {renderIncantation()}
       </>}
     </Box>
   );
@@ -287,7 +292,7 @@ const PInfo: React.FC<{ player: any; pid: string; active: boolean }> = ({ player
 
 const POverlay: React.FC<{
   card: Card; onClose: () => void; onPlace: (p: FieldPosition) => void;
-  onCast: () => void; onSet: () => void; mode: "numen" | "magic";
+  onCast: () => void; onSet: () => void; mode: "numen" | "incantation";
 }> = ({ card, onClose, onPlace, onCast, onSet, mode }) => {
   const bg = getBg(card);
   return (
@@ -327,8 +332,8 @@ export const GameBoard = () => {
   const endTurn = useGameStore((s) => s.endTurn);
   const quitGame = useGameStore((s) => s.quitGame);
   const placeNumen = useGameStore((s) => s.placeNumenFromHand);
-  const placeMagic = useGameStore((s) => s.placeMagicFromHand);
-  const flipMagic = useGameStore((s) => s.flipMagicFaceUp);
+  const placeIncantation = useGameStore((s) => s.placeIncantationFromHand);
+  const flipIncantation = useGameStore((s) => s.flipIncantationFaceUp);
 
   const cp = gs.currentPlayer;
   const p1 = gs.player1;
@@ -338,11 +343,12 @@ export const GameBoard = () => {
   const [insp, setInsp] = useState<{ card: Card; isSM: boolean; opid: string; si: number } | null>(null);
   const [drag, setDrag] = useState<DS>({ card: null, hid: null, offset: { x: 0, y: 0 }, startPos: { x: 0, y: 0 }, cursorPos: { x: 0, y: 0 }, isDragging: false });
   const [dragSPid, setDragSPid] = useState<string | null>(null);
-
   const dOffRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const dCurRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const dCardRef = useRef<Card | null>(null);
   const dStartRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const dDragHandIndexRef = useRef<number | null>(null);
+  const dLastSwapTargetRef = useRef<number | null>(null);
 
   const [place, setPlace] = useState<{ card: Card; target: PT } | null>(null);
 
@@ -351,19 +357,23 @@ export const GameBoard = () => {
 
   const hCastSet = useCallback(() => {
     if (!insp) return;
-    flipMagic(insp.opid, insp.si);
+    flipIncantation(insp.opid, insp.si);
     setInsp(null);
-  }, [insp, flipMagic]);
+  }, [insp, flipIncantation]);
 
-  const hDS = useCallback((c: Card, s: { x: number; y: number }) => {
+  const hDS = useCallback((c: Card, s: { x: number; y: number }, handIdx: number) => {
     const hp = cp === "player1" ? p1 : p2;
     dCardRef.current = c;
     dOffRef.current = { x: 0, y: 0 };
     dCurRef.current = { x: s.x, y: s.y };
     dStartRef.current = s;
+    dDragHandIndexRef.current = handIdx;
+    dLastSwapTargetRef.current = null;
     setDrag({ card: c, hid: hp?.playerId || null, offset: { x: 0, y: 0 }, startPos: s, cursorPos: { x: s.x, y: s.y }, isDragging: true });
     setDragSPid(hp?.playerId || null);
   }, [cp, p1, p2]);
+
+  const swapCardsInHand = useGameStore((s) => s.swapCardsInHand);
 
   const hDM = useCallback((o: { x: number; y: number }) => {
     dOffRef.current = o;
@@ -377,8 +387,14 @@ export const GameBoard = () => {
     const c = dCardRef.current;
     const cur = dCurRef.current;
     const moved = c !== null ? Math.sqrt(o.x ** 2 + o.y ** 2) > 5 : false;
-    if (!moved && c) hInsp(c);
-    if (moved && c) {
+    const hoverIdx = dLastSwapTargetRef.current;
+    const dragIdx = dDragHandIndexRef.current;
+    if (!moved && c) { hInsp(c); }
+    else if (moved && c && dragIdx !== null && hoverIdx !== null && hoverIdx !== dragIdx) {
+      const hp = cp === "player1" ? p1 : p2;
+      if (hp) swapCardsInHand(hp.playerId, dragIdx, hoverIdx);
+    }
+    else if (moved && c) {
       const el = document.elementFromPoint(cur.x, cur.y);
       if (el) {
         const s = el.closest("[data-slot-zone]");
@@ -387,7 +403,7 @@ export const GameBoard = () => {
           const si = parseInt(s.getAttribute("data-slot-index") || "-1", 10);
           const tp = s.getAttribute("data-slot-player");
           if (z === "numen" && si >= 0 && tp && c.type === "numen") setPlace({ card: c, target: { si, zone: "numen", pid: tp } });
-          else if (z === "magic" && si >= 0 && tp && (c.type === "rite" || c.type === "ward")) setPlace({ card: c, target: { si, zone: "magic", pid: tp } });
+          else if (z === "incantation" && si >= 0 && tp && (c.type === "rite" || c.type === "ward")) setPlace({ card: c, target: { si, zone: "incantation", pid: tp } });
         }
       }
     }
@@ -396,14 +412,16 @@ export const GameBoard = () => {
     dCurRef.current = { x: 0, y: 0 };
     setDrag({ card: null, hid: null, offset: { x: 0, y: 0 }, startPos: { x: 0, y: 0 }, cursorPos: { x: 0, y: 0 }, isDragging: false });
     setDragSPid(null);
-  }, [hInsp]);
+    dDragHandIndexRef.current = null;
+    dLastSwapTargetRef.current = null;
+  }, [hInsp, cp, p1, p2, swapCardsInHand]);
 
   const hDrop = useCallback((t: PT) => {
     if (!drag.card || !drag.isDragging) return;
     const c = drag.card;
     if (Math.sqrt(drag.offset.x ** 2 + drag.offset.y ** 2) <= 5) return;
     if (c.type === "numen" && t.zone === "numen") setPlace({ card: c, target: t });
-    else if ((c.type === "rite" || c.type === "ward") && t.zone === "magic") setPlace({ card: c, target: t });
+    else if ((c.type === "rite" || c.type === "ward") && t.zone === "incantation") setPlace({ card: c, target: t });
     setDrag({ card: null, hid: null, offset: { x: 0, y: 0 }, startPos: { x: 0, y: 0 }, cursorPos: { x: 0, y: 0 }, isDragging: false });
     setDragSPid(null);
   }, [drag]);
@@ -418,23 +436,29 @@ export const GameBoard = () => {
   const hCastM = useCallback(() => {
     if (!place) return;
     const { card, target } = place;
-    placeMagic(target.pid, card.id, target.si, false);
+    placeIncantation(target.pid, card.id, target.si, false);
     setPlace(null);
-  }, [place, placeMagic]);
+  }, [place, placeIncantation]);
 
   const hSetM = useCallback(() => {
     if (!place) return;
     const { card, target } = place;
-    placeMagic(target.pid, card.id, target.si, true);
+    placeIncantation(target.pid, card.id, target.si, true);
     setPlace(null);
-  }, [place, placeMagic]);
+  }, [place, placeIncantation]);
 
-  const hFlip = useCallback((p: string, i: number) => flipMagic(p, i), [flipMagic]);
+  const hFlip = useCallback((p: string, i: number) => flipIncantation(p, i), [flipIncantation]);
+
+  const hSwapHover = useCallback((targetIdx: number) => {
+    if (drag.isDragging && dDragHandIndexRef.current !== null && dDragHandIndexRef.current !== targetIdx) {
+      dLastSwapTargetRef.current = targetIdx;
+    }
+  }, [drag.isDragging]);
 
   if (!p1 || !p2) return <Box data-name="no-game-state" style={S.noGameStateMessage}><Text c={colors.Gray_3}>No active game</Text></Box>;
 
-  const renderHand = (hand: Card[], isCP: boolean) => hand.map((c: Card, i: number) => (
-    <HCard key={i} card={c} onInsp={() => hInsp(c)} onDS={hDS} onDM={hDM} onDE={hDE} isDrag={drag.card === c} dOff={drag.card === c ? drag.offset : { x: 0, y: 0 }} canDrag={isCP} />
+  const renderHand = (hand: Card[], isCP: boolean, pid: string) => hand.map((c: Card, i: number) => (
+    <HCard key={i} card={c} onInsp={() => hInsp(c)} onDS={(card, s) => hDS(card, s, i)} onDM={hDM} onDE={hDE} isDrag={drag.card === c} dOff={drag.card === c ? drag.offset : { x: 0, y: 0 }} canDrag={isCP} dataHandIndex={i} dataHandPlayer={pid} onSwapHover={hSwapHover} />
   ));
 
   return (
@@ -442,7 +466,7 @@ export const GameBoard = () => {
       <Box data-name="main-board-area" style={{ ...S.mainBoardArea, filter: insp || place ? "blur(8px)" : "none", transition: "filter 0.3s ease", pointerEvents: insp || place ? "none" : "auto" }}>
         <Box data-name="left-sidebar" style={S.leftSidebar}></Box>
         <Box data-name="center-board" style={S.centerBoard}>
-          <Box data-name="p2-hand" style={S.handRow}>{renderHand(p2.hand || [], cp === "player2")}</Box>
+          <Box data-name="p2-hand" style={S.handRow}>{renderHand(p2.hand || [], cp === "player2", "player2")}</Box>
           <PInfo player={p2} pid="player2" active={cp === "player2"} />
           <PField player={p2} pid="player2" isCP={cp === "player2"} onTA={cp === "player2" ? selectAttacker : () => {}} onTD={cp === "player1" ? selectDefender : () => {}} atk={cp === "player2" ? gs.selectedAttackers : []} def={cp === "player2" ? gs.selectedDefender : null} onInsp={hInsp as any} drag={drag} onDrop={hDrop} onFlip={hFlip} mirrored />
           <Group data-name="center-controls" justify="center" gap="xs" style={S.centerControls}>
@@ -453,7 +477,7 @@ export const GameBoard = () => {
           </Group>
           <PField player={p1} pid="player1" isCP={cp === "player1"} onTA={cp === "player1" ? selectAttacker : () => {}} onTD={cp === "player2" ? selectDefender : () => {}} atk={cp === "player1" ? gs.selectedAttackers : []} def={cp === "player1" ? gs.selectedDefender : null} onInsp={hInsp as any} drag={drag} onDrop={hDrop} onFlip={hFlip} mirrored={false} />
           <PInfo player={p1} pid="player1" active={cp === "player1"} />
-          <Box data-name="p1-hand" style={S.handRow}>{renderHand(p1.hand || [], cp === "player1")}</Box>
+          <Box data-name="p1-hand" style={S.handRow}>{renderHand(p1.hand || [], cp === "player1", "player1")}</Box>
         </Box>
         <Box data-name="right-sidebar" style={S.rightSidebar}>
           <Button size="xs" onClick={quitGame} styles={{ root: { backgroundColor: colors.Red_10 } }}><IconArrowBack size={12} /></Button>
@@ -467,7 +491,7 @@ export const GameBoard = () => {
           </Box>
         </Box>
       )}
-      {place && <POverlay card={place.card} onClose={() => setPlace(null)} onPlace={hPlaceN} onCast={hCastM} onSet={hSetM} mode={place.card.type === "numen" ? "numen" : "magic"} />}
+      {place && <POverlay card={place.card} onClose={() => setPlace(null)} onPlace={hPlaceN} onCast={hCastM} onSet={hSetM} mode={place.card.type === "numen" ? "numen" : "incantation"} />}
       {gs.gameActive === false && gs.winner && (
         <Box data-name="game-over-overlay" style={S.gameOverOverlay}>
           <Box data-name="game-over-dialog" style={S.gameOverDialog}>

@@ -295,6 +295,7 @@ export const CardTemplate = React.memo(
             data-name="art-image-section"
             style={styles.artImageSection}
           >
+            <Box style={styles.artTopBlur} />
             {artImageProp ? (
               <img
                 src={artImageProp}
@@ -308,9 +309,7 @@ export const CardTemplate = React.memo(
                   ...styles.artPlaceholder,
                   background: theme.backgroundInner,
                 }}
-              >
-                <NatureIcon type={card.nature || "dark"} size={40} />
-              </Box>
+              />
             )}
             <Box
               data-name="art-image-overlay"

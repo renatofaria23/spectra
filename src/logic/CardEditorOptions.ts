@@ -80,10 +80,12 @@ export const activeTriggerOptions = [
   ConditionalTrigger.WHEN,
 ].map(v => ({ value: v, label: formatTriggerLabel(v) }));
 
-export const passiveTriggerOptions = Object.values(PassiveTrigger).map(v => ({
-  value: v,
-  label: capitalize(v.toLowerCase())
-}));
+export const passiveTriggerOptions = Object.values(PassiveTrigger)
+  .sort((a, b) => a.localeCompare(b))
+  .map(v => ({
+    value: v,
+    label: capitalize(v.toLowerCase())
+  }));
 
 export const triggerOptions = [
   { group: 'Passive', items: passiveTriggerOptions.filter(o => o.value !== PassiveTrigger.SHROUDED) },
@@ -125,13 +127,13 @@ export const effectTargetLabels: Record<string, string> = {
   all_enemy_non_mythic_numina: 'All Enemy Non-Mythic Numina',
   global_allied_non_mythic_numina: 'Global Allied Non-Mythic Numina',
   global_enemy_non_mythic_numina: 'Global Enemy Non-Mythic Numina',
-  any_magic: 'Any Magic',
+  any_incantation: 'Any Incantation',
   any_rite: 'Any Rite',
   any_ward: 'Any Ward',
-  allied_magic: 'An Allied Magic',
-  enemy_magic: 'An Enemy Magic',
-  all_allied_magics: 'All Allied Magics',
-  all_enemy_magics: 'All Enemy Magics',
+  allied_incantation: 'An Allied Incantation',
+  enemy_incantation: 'An Enemy Incantation',
+  all_allied_incantations: 'All Allied Incantations',
+  all_enemy_incantations: 'All Enemy Incantations',
   allied_rite: 'An Allied Rite',
   enemy_rite: 'An Enemy Rite',
   all_allied_rites: 'All Allied Rites',
@@ -165,9 +167,9 @@ const groupsDefinition = [
     'all_allied_non_mythic_numina', 'all_enemy_non_mythic_numina',
     'global_allied_non_mythic_numina', 'global_enemy_non_mythic_numina'
   ]},
-  { group: 'Magics', items: [
-    'any_magic', 'any_rite', 'any_ward', 'allied_magic', 'enemy_magic',
-    'all_allied_magics', 'all_enemy_magics', 'allied_rite', 'enemy_rite',
+  { group: 'Incantations', items: [
+    'any_incantation', 'any_rite', 'any_ward', 'allied_incantation', 'enemy_incantation',
+    'all_allied_incantations', 'all_enemy_incantations', 'allied_rite', 'enemy_rite',
     'all_allied_rites', 'all_enemy_rites', 'allied_ward', 'enemy_ward',
     'all_allied_wards', 'all_enemy_wards'
   ]},
@@ -217,7 +219,7 @@ export const isPlayerTarget = (target: string | null | undefined) => target === 
 const ALLOWED_EXILE_RETURN = new Set([
   'self', 'attack_target', 'any_card', 'all_cards',
   'any_numen', 'allied_numen', 'enemy_numen', 'all_allied_numina', 'all_enemy_numina',
-  'any_magic', 'any_rite', 'any_ward', 'allied_magic', 'enemy_magic', 'all_allied_magics', 'all_enemy_magics',
+  'any_incantation', 'any_rite', 'any_ward', 'allied_incantation', 'enemy_incantation', 'all_allied_incantations', 'all_enemy_incantations',
   'allied_rite', 'enemy_rite', 'all_allied_rites', 'all_enemy_rites', 'allied_ward', 'enemy_ward', 'all_allied_wards', 'all_enemy_wards'
 ]);
 
@@ -227,6 +229,8 @@ export const getEffectTargetOptions = (
   cardType: string | undefined,
 ): typeof effectTargetOptions => {
   const isNonAttack = trigger && NON_ATTACK_TRIGGERS.includes(trigger);
+  const isRiteOrWard = cardType === 'rite' || cardType === 'ward';
+  const excludeAttackTarget = isNonAttack || isRiteOrWard;
   const isIncreaseDecrease = effectType === EffectType.INCREASE || effectType === EffectType.DECREASE;
   const isExile = effectType === EffectType.EXILE;
   const isForget = effectType === EffectType.FORGET;
@@ -234,11 +238,11 @@ export const getEffectTargetOptions = (
   const isAdd = effectType === EffectType.ADD;
 
   if (isIncreaseDecrease) {
-    let numenTargets = cardType === 'rite' || cardType === 'ward'
+    let numenTargets = isRiteOrWard
       ? INCREASE_DECREASE_NUMEN_TARGETS.filter(t => t !== 'self')
       : INCREASE_DECREASE_NUMEN_TARGETS;
 
-    if (isNonAttack) {
+    if (excludeAttackTarget) {
       numenTargets = numenTargets.filter(t => t !== 'attack_target');
     }
 
@@ -257,7 +261,7 @@ export const getEffectTargetOptions = (
       }))
       .filter(g => g.items.length > 0);
 
-    if (isNonAttack) {
+    if (excludeAttackTarget) {
       filtered = filtered.map(g => {
         if (g.group === 'Attack Target') return { ...g, items: [] };
         if (g.group === 'This Card' && cardType === 'rite' && isReturn) return { ...g, items: [] };
@@ -268,7 +272,7 @@ export const getEffectTargetOptions = (
   }
 
   let filtered = effectTargetOptions.map(group => ({ ...group }));
-  if (isNonAttack) {
+  if (excludeAttackTarget) {
     filtered = filtered.map(group => {
       if (group.group === 'Attack Target') {
         return { ...group, items: [] };
@@ -279,28 +283,38 @@ export const getEffectTargetOptions = (
   return filtered;
 };
 
+export const numenTargetDetailOptions = INCREASE_DECREASE_NUMEN_TARGETS.filter(t => t !== 'self' && t !== 'attack_target').map(t => ({ value: t, label: effectTargetLabels[t] || t }));
 export const isNumenEffectTarget = (target: EffectTarget | null | undefined) => !!target && INCREASE_DECREASE_NUMEN_TARGETS.includes(target);
 export const isHpManaEffectTarget = (target: EffectTarget | null | undefined) => !!target && INCREASE_DECREASE_PLAYER_TARGETS.includes(target);
 
 export const effectOptions = [
-  EffectType.DRAW,
-  EffectType.SCRY,
-  EffectType.FORGET,
-  EffectType.EXILE,
-  EffectType.PETRIFY,
-  EffectType.DECREASE,
-  EffectType.LOCK,
-  EffectType.INCREASE,
-  EffectType.ETHEREAL,
-  EffectType.FIND,
-  EffectType.ADD_TRIGGER,
-  EffectType.INVOKE,
-  EffectType.EVOKE,
-  EffectType.CONVOKE,
-  EffectType.COPY,
-  EffectType.ADD,
-  EffectType.RETURN,
-].map(v => ({ value: v, label: formatTriggerLabel(v) }));
+  { group: 'Deck', items: [
+    EffectType.DRAW,
+    EffectType.FIND,
+    EffectType.SCRY,
+  ].map(v => ({ value: v, label: formatTriggerLabel(v) })) },
+  { group: 'Cards', items: [
+    EffectType.EXILE,
+    EffectType.FORGET,
+  ].map(v => ({ value: v, label: formatTriggerLabel(v) })) },
+  { group: 'Summon', items: [
+    EffectType.CONVOKE,
+    EffectType.EVOKE,
+    EffectType.INVOKE,
+  ].map(v => ({ value: v, label: formatTriggerLabel(v) })) },
+  { group: 'Stats', items: [
+    EffectType.COPY,
+    EffectType.DECREASE,
+    EffectType.INCREASE,
+  ].map(v => ({ value: v, label: formatTriggerLabel(v) })) },
+  { group: 'Replication', items: [
+    EffectType.ADD,
+    EffectType.RETURN,
+  ].map(v => ({ value: v, label: formatTriggerLabel(v) })) },
+  { group: 'Misc', items: [
+    EffectType.ADD_TRIGGER,
+  ].map(v => ({ value: v, label: formatTriggerLabel(v) })) },
+];
 
 export const invokeFromOptions = mapZones(['player_hand', 'opponent_hand']);
 export const evokeFromOptions = mapZones(['player_memora', 'opponent_memora']);
@@ -355,8 +369,8 @@ export const isReturnAllFieldTarget = (target: string | undefined) => !!target &
 
 export const forgetTargetTypes = [
   'numen', 'another_numen', 'rite', 'ward', 'all', 'all_enemy_numina',
-  'all_enemy_face_up_numina', 'all_enemy_face_down_numina', 'all_enemy_magics',
-  'all_enemy_face_up_magics', 'all_enemy_face_down_magics', 'attacking_numina', 'defending_numina'
+  'all_enemy_face_up_numina', 'all_enemy_face_down_numina', 'all_enemy_incantations',
+  'all_enemy_face_up_incantations', 'all_enemy_face_down_incantations', 'attacking_numina', 'defending_numina'
 ].map(v => ({ value: v, label: formatLabel(v) }));
 
 export const numenStatTargetOptions = numenStatOptions;
@@ -364,8 +378,8 @@ export const playerStatTargetOptions = playerStatOptions;
 export const scryDeckOptions = ['player', 'opponent'].map(v => ({ value: v, label: `${capitalize(v)} Deck` }));
 export const etherealTypeOptions = mapSimple(['rite', 'ward', 'both']);
 export const findSourceOptions = mapSimple(['deck', 'memora', 'exile']);
-export const familyOptions = mapSimple(['deity', 'beast', 'bug', 'larva', 'dragon', 'elemental', 'god', 'human', 'lemur', 'plant', 'undead']);
-export const rarityOptions = mapSimple(['common', 'rare', 'legendary', 'mythic']);
+export const familyOptions = mapSimple(['beast', 'bug', 'deity', 'dragon', 'elemental', 'god', 'human', 'larva', 'manes', 'plant', 'undead']);
+export const rarityOptions = mapSimple(['common', 'legendary', 'mythic', 'rare']);
 export const natureOptions = mapSimple(['air', 'dark', 'earth', 'fire', 'light', 'water']);
 export const cardTypeOptions = mapSimple(['rite', 'ward', 'numen']);
 

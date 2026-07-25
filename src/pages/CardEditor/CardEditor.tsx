@@ -10,7 +10,7 @@ import type { EffectEntry } from "../../logic/Effects";
 import { useNavigate, useParams } from "react-router-dom";
 import { readCards, saveCards, saveArt, readArt, addCard } from "../../services/cardsAPI";
 import { useCardEditor } from "../../hooks/useCardEditor";
-import EffectParamInputs from "../../components/Card/EffectParamInputs/EffectParamInputs";
+import EffectParamInputs, { OtherwiseEffectInputs, OrEffectInputs, ForEachInputs } from "../../components/Card/EffectParamInputs/EffectParamInputs";
 import { triggerTypeOptions, activeTriggerOptions, passiveTriggerOptions, attackTargetOptions, getAttackTargetOptions, getEffectTargetOptions, effectOptions, familyOptions, rarityOptions, natureOptions, cardTypeOptions, inputStyles, isAttackTrigger, isPassiveValue, isDirectValueTarget, isNonAttackTrigger, getEffectTargetLabel, type CardTypeOption, type EffectSlot } from "../../logic/CardEditorOptions";
 import { EffectType } from "../../logic/Effects";
 import * as styles from "./CardEditor.styles";
@@ -131,7 +131,7 @@ export const CardEditor = () => {
         }
         if (card.type === "numen") {
           setLevel(card.level ?? "");
-          setnature(card.nature || "dark");
+          setnature(card.nature || "");
           setFamily(card.family || "");
           setAttack(card.attack ?? "");
           setDefense(card.defense ?? "");
@@ -182,10 +182,10 @@ export const CardEditor = () => {
       <TextInput value={name} onChange={(e) => setName(e.target.value)} label="Card Name" styles={inputStyles} />
       {cardType === "numen" ? (
         <>
-          <Select data={familyOptions} value={family} onChange={(val) => setFamily(val || "")} label="Family" styles={inputStyles} />
+          <Select data={familyOptions} value={family} onChange={(val) => setFamily(val || "")} label="Family" styles={inputStyles} maxDropdownHeight={Infinity} />
           <Select data={rarityOptions} value={rarity} onChange={(val) => setRarity(val || "")} label="Rarity" styles={inputStyles} />
           <NumberInput label="Level" value={level} onChange={(val) => setLevel(typeof val === "number" ? val : "")} min={1} max={10} styles={inputStyles} />
-          <Select data={natureOptions} value={nature} onChange={(val) => setnature(val || "dark")} label="Nature" styles={inputStyles} />
+          <Select data={natureOptions} value={nature} onChange={(val) => setnature(val || "")} label="Nature" styles={inputStyles} maxDropdownHeight={Infinity} />
           <NumberInput label="Attack" value={attack} onChange={(val) => setAttack(typeof val === "number" ? val : "")} min={0} styles={inputStyles} />
           <NumberInput label="Defense" value={defense} onChange={(val) => setDefense(typeof val === "number" ? val : "")} min={0} styles={inputStyles} />
         </>
@@ -230,7 +230,7 @@ export const CardEditor = () => {
         <Select data={triggerTypeOptions} value={triggerType} onChange={(val) => handleTriggerTypeChange(val as "passive" | "active" | null)} label="Trigger Type" styles={inputStyles} />
       )}
       {triggerType === "passive" && !isRiteOrWard && (
-        <Select data={passiveTriggerOptions} value={selectedPassiveTrigger} onChange={(val) => setSelectedPassiveTrigger(val as any)} label="Passive Trigger" styles={inputStyles} />
+        <Select data={passiveTriggerOptions} value={selectedPassiveTrigger} onChange={(val) => setSelectedPassiveTrigger(val as any)} label="Passive Trigger" styles={inputStyles} maxDropdownHeight={Infinity} />
       )}
       {(triggerType === "active" || isRiteOrWard) && (
         <Box data-name="active-triggers-box" style={styles.activeTriggersBox}>
@@ -261,6 +261,15 @@ export const CardEditor = () => {
         <EffectParamInputs selectedEffect={selectedEffectType} effectParams={effectParams} setEffectParams={setEffectParams} effectTarget={selectedEffectTarget ?? null} />
       )}
       {(triggerType === "active" || isRiteOrWard) && selectedEffectType && (
+        <OtherwiseEffectInputs setEffectParams={setEffectParams} effectParams={effectParams} currentTrigger={currentTrigger} cardType={cardType} />
+      )}
+      {(triggerType === "active" || isRiteOrWard) && selectedEffectType && (
+        <OrEffectInputs setEffectParams={setEffectParams} effectParams={effectParams} currentTrigger={currentTrigger} cardType={cardType} />
+      )}
+      {(triggerType === "active" || isRiteOrWard) && selectedEffectType && (
+        <ForEachInputs setEffectParams={setEffectParams} effectParams={effectParams} />
+      )}
+      {(triggerType === "active" || isRiteOrWard) && selectedEffectType && (
         <Button leftSection={<IconPlus size={16} />} onClick={addEffectToPending} disabled={!isEffectAndForEachComplete()} styles={{ root: styles.addPendingButton }}>Add to Pending</Button>
       )}
       {(triggerType === "active" || isRiteOrWard) && pendingEffects.length > 0 && (
@@ -286,7 +295,7 @@ export const CardEditor = () => {
       ) : (
         <Button leftSection={<IconPlus size={16} />} onClick={addEffectToSlot} disabled={isRiteOrWard ? pendingEffects.length === 0 : triggerType === "passive" ? !selectedPassiveTrigger : selectedActiveTriggers.size === 0 || pendingEffects.length === 0} styles={{ root: styles.addEffectButton }}>Add Effect with Trigger</Button>
       )}
-      <Button leftSection={<IconDeviceFloppy size={16} />} onClick={handleSave} disabled={!name || !cardType} styles={{ root: styles.saveButton }}>{isEditMode ? "Save Changes" : "Save Card"}</Button>
+      <Button leftSection={<IconDeviceFloppy size={16} />} onClick={handleSave} disabled={!name || !cardType || (cardType === "numen" && !nature)} styles={{ root: styles.saveButton }}>{isEditMode ? "Save Changes" : "Save Card"}</Button>
       <Box data-name="back-to-card-list-box" style={styles.backToCardListBox}>
         <Text c={colors.Black_1} size="md" fw={600} style={styles.clickableText} onClick={() => navigate("/card-list")}>Back to Card List</Text>
       </Box>

@@ -126,6 +126,20 @@ export const artImageOverlay: CSSProperties = {
   zIndex: 1,
 };
 
+export const artTopBlur: CSSProperties = {
+  position: 'absolute',
+  top: 0,
+  left: 0,
+  right: 0,
+  height: '20px',
+  backdropFilter: 'blur(20px)',
+  WebkitBackdropFilter: 'blur(20px)',
+  maskImage: 'linear-gradient(to bottom, black, transparent)',
+  WebkitMaskImage: 'linear-gradient(to bottom, black, transparent)',
+  pointerEvents: 'none',
+  zIndex: 2,
+};
+
 export const descriptionOuterFrameAbsolute: CSSProperties = {
   position: 'absolute',
   bottom: '12px',

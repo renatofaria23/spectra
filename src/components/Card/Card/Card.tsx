@@ -83,7 +83,7 @@ export const Card = React.memo(
 
           {!isNumen && showStats && (
             <div style={S.nonNumenStats}>
-              {c.riteType || c.wardType || 'Unknown'}
+              {c.type || 'Unknown'}
             </div>
           )}
         </Box>

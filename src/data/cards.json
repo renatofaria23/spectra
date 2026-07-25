@@ -22,7 +22,7 @@
     "name": "Coelecanth Warrior",
     "type": "numen",
     "cardType": "Numen",
-    "description": "<b>Before Attack</b>: Gain 50 ATK permanently and lose 50 DEF permanently.",
+    "description": "<b>Before Attack</b>: <i>Gain</i> 50 ATK permanently and Lose 50 DEF permanently.",
     "art": "Coelecanth Warrior.png",
     "triggers": [
       {
@@ -64,7 +64,7 @@
     "name": "Strix",
     "type": "numen",
     "cardType": "Numen",
-    "description": "<b>Veiled</b>\n<b>Before Attack on a numen</b>: Decrease the target's ATK by 400 permanently and decrease the target's DEF by 400 permanently.",
+    "description": "<b>Veiled</b>\n<b>Before Attack on a <i>Numen</i></b>: <i>Decrease</i> the target's ATK by 400 permanently and <i>Decrease</i> the target's DEF by 400 permanently.",
     "art": "Strix.png",
     "triggers": [
       "VEILED",
@@ -102,7 +102,7 @@
     "name": "Lares",
     "type": "numen",
     "cardType": "Numen",
-    "description": "<b>Challenge</b>\n<b>End of Turn</b>: Increase your HP by 100. <b>Testament</b>: Convoke 1 <i>Lares</i>.",
+    "description": "<b>Challenge</b>\n<b>End of Turn</b>: <i>Increase</i> your <i>Health</i> by 100. <b>Testament</b>: <i>Convoke</i> 1 Lares.",
     "art": "Lares.png",
     "triggers": [
       "CHALLENGE",
@@ -143,7 +143,7 @@
     "name": "Camena",
     "type": "numen",
     "cardType": "Numen",
-    "description": "<b>End of Turn</b>: Increase your mana by 50.",
+    "description": "<b>End of Turn</b>: <i>Increase</i> your <i>Mana</i> by 50.",
     "art": "Camena.png",
     "triggers": [
       {
@@ -170,7 +170,7 @@
     "name": "Beget",
     "type": "rite",
     "cardType": "Rite",
-    "description": "<b>Decree</b>: Select a numen from your field. Add 2 copies of it into your deck.",
+    "description": "<b>Decree</b>: Select a <i>Numen</i> from your field. Add 2 copies of it into your deck.",
     "art": "Beget.png",
     "triggers": [
       {
@@ -194,7 +194,7 @@
     "name": "Saturn, the Exiled",
     "type": "numen",
     "cardType": "Numen",
-    "description": "<b>Celerity</b>, <b>Recluse</b>, <b>Veiled</b>\n<b>Decree</b>: Exile all enemy magics, for each magic in both players' exile, while this card is on the field, gain 100 ATK and for each magic in both players' exile, while this card is on the field, gain 100 DEF. <b>Testament</b>: Exile this card.",
+    "description": "<b>Celerity</b>, <b>Recluse</b>, <b>Veiled</b>, <b>Shrouded</b>\n<b>Decree</b>: <i>Exile</i> all enemy <i>Incantations</i> and for each <i>Incantation</i> in both players' <i>Exile</i>, while this card is on the field, <i>Gain</i> 100 ATK and DEF. <b>Testament</b>: <i>Exile</i> this card.",
     "art": "Saturn, the Exiled.png",
     "triggers": [
       "CELERITY",
@@ -206,30 +206,17 @@
           {
             "effect": "EXILE",
             "count": 1,
-            "effectTarget": "all_enemy_magics"
+            "effectTarget": "all_enemy_incantations"
           },
           {
             "effect": "INCREASE",
             "target": "self",
-            "effectTarget": "atk",
+            "effectTarget": "both",
             "amount": 100,
             "duration": "while_on_field",
             "forEach": true,
             "forEachConfig": {
-              "cardType": "magic",
-              "zone": "exile",
-              "owner": "both"
-            }
-          },
-          {
-            "effect": "INCREASE",
-            "target": "self",
-            "effectTarget": "def",
-            "amount": 100,
-            "duration": "while_on_field",
-            "forEach": true,
-            "forEachConfig": {
-              "cardType": "magic",
+              "cardType": "incantation",
               "zone": "exile",
               "owner": "both"
             }
@@ -245,7 +232,8 @@
           }
         ],
         "effectTarget": "self"
-      }
+      },
+      "SHROUDED"
     ],
     "level": 10,
     "nature": "dark",
@@ -259,7 +247,7 @@
     "name": "Void Harvest",
     "type": "rite",
     "cardType": "Rite",
-    "description": "<b>End of Turn</b>: Select and exile an enemy numen and decrease your mana by 150, otherwise exile this card.",
+    "description": "<b>End of Turn</b>: Select and <i>Exile</i> an enemy <i>Numen</i> and <i>Decrease</i> your <i>Mana</i> by 150, otherwise <i>Exile</i> this card.",
     "art": "Void Harvest.png",
     "triggers": [
       {
@@ -293,7 +281,7 @@
     "name": "Pegasus",
     "type": "numen",
     "cardType": "Numen",
-    "description": "<b>Veiled</b>, <b>Celerity</b>\n<b>After Attack</b>: Select and forget an enemy magic.",
+    "description": "<b>Veiled</b>, <b>Celerity</b>\n<b>After Attack</b>: Select and <i>Forget</i> an enemy <i>Incantation</i>.",
     "art": "Pegasus.png",
     "triggers": [
       "VEILED",
@@ -304,7 +292,7 @@
           {
             "effect": "FORGET",
             "count": 1,
-            "effectTarget": "enemy_magic"
+            "effectTarget": "enemy_incantation"
           }
         ],
         "attackTarget": "anything"
@@ -340,7 +328,7 @@
     "name": "Scylla",
     "type": "numen",
     "cardType": "Numen",
-    "description": "<b>Challenge</b>, <b>Relentless</b>\n<b>When Attacked</b>: Convoke 1 Level 2 or lower Water.",
+    "description": "<b>Challenge</b>, <b>Relentless</b>\n<b>When Attacked</b>: <i>Convoke</i> 1 Level 2 or lower Water <i>Numen</i>.",
     "art": "Scylla.png",
     "triggers": [
       "CHALLENGE",
@@ -375,7 +363,7 @@
     "name": "Haruspicy",
     "type": "rite",
     "cardType": "Rite",
-    "description": "<b>Decree</b>: Exile 3 numina from your memora, scry 3 cards from your deck and forget this card.",
+    "description": "<b>Decree</b>: <i>Exile</i> 3 <i>Numina</i> from your <i>Memora</i>, <i>Scry</i> 3 cards from your deck and <i>Forget</i> this card.",
     "art": "Haruspicy.png",
     "triggers": [
       {
@@ -415,7 +403,7 @@
     "name": "Charybdis",
     "type": "numen",
     "cardType": "Numen",
-    "description": "<b>Celerity</b>, <b>Recluse</b>\n<b>After Attack</b>: Convoke 1 Level 2 or lower Water.",
+    "description": "<b>Celerity</b>, <b>Recluse</b>\n<b>After Attack</b>: <i>Convoke</i> 1 Level 2 or lower Water <i>Numen</i>.",
     "art": "Charybdis.png",
     "triggers": [
       "CELERITY",
@@ -450,7 +438,7 @@
     "name": "Odysseus",
     "type": "numen",
     "cardType": "Numen",
-    "description": "<b>Veiled</b>, <b>Legion</b>\n<b>Testament</b>: Return this to your hand.",
+    "description": "<b>Veiled</b>, <b>Legion</b>\n<b>Testament</b>: <i>Return</i> this to your hand.",
     "art": "Odysseus.png",
     "triggers": [
       {
@@ -467,19 +455,19 @@
       "VEILED",
       "LEGION"
     ],
-    "level": 6,
+    "level": 4,
     "nature": "air",
     "family": "human",
     "rarity": "legendary",
-    "attack": 1700,
-    "defense": 1700
+    "attack": 1200,
+    "defense": 1200
   },
   {
     "id": "numen-1781183281783",
     "name": "Jupiter, Optimus Maximus",
     "type": "numen",
     "cardType": "Numen",
-    "description": "<b>Celerity</b>, <b>Veiled</b>\n<b>Start of Turn</b>: Draw 1 card. <b>End of Turn</b>: Decrease the opponent's HP by 500 and decrease the opponent's mana by 100.",
+    "description": "<b>Celerity</b>, <b>Veiled</b>\n<b>Start of Turn</b>: <i>Draw</i> 1 card. <b>End of Turn</b>: <i>Decrease</i> the opponent's <i>Health</i> by 500 and <i>Decrease</i> the opponent's <i>Mana</i> by 100.",
     "art": "Jupiter.png",
     "triggers": [
       "CELERITY",
@@ -565,7 +553,7 @@
     ],
     "level": 1,
     "nature": "light",
-    "family": "lemur",
+    "family": "manes",
     "rarity": "common",
     "attack": 0,
     "defense": 1000
@@ -592,7 +580,7 @@
     "name": "Cataclysm",
     "type": "rite",
     "cardType": "Rite",
-    "description": "<b>Decree</b>: Forget all allied numina, forget all enemy numina, forget all allied magics, forget all enemy magics and forget this card.",
+    "description": "<b>Decree</b>: <i>Forget</i> all allied <i>Numina</i>, <i>Forget</i> all enemy <i>Numina</i>, <i>Forget</i> all allied <i>Incantations</i>, <i>Forget</i> all enemy <i>Incantations</i> and <i>Forget</i> this card.",
     "art": "Cataclysm.png",
     "triggers": [
       {
@@ -611,12 +599,12 @@
           {
             "effect": "FORGET",
             "count": 1,
-            "effectTarget": "all_allied_magics"
+            "effectTarget": "all_allied_incantations"
           },
           {
             "effect": "FORGET",
             "count": 1,
-            "effectTarget": "all_enemy_magics"
+            "effectTarget": "all_enemy_incantations"
           },
           {
             "effect": "FORGET",
@@ -634,7 +622,7 @@
     "name": "Recollection",
     "type": "rite",
     "cardType": "Rite",
-    "description": "<b>Decree</b>: Evoke 1 Level 2 or lower, return 1 numen from your memora to your hand and return 1 numen from your memora to your deck.",
+    "description": "<b>Decree</b>: <i>Evoke</i> 1 Level 2 or lower <i>Numen</i>, <i>Return</i> 1 <i>Numen</i> from your <i>Memora</i> to your hand, <i>Return</i> 1 <i>Numen</i> from your <i>Memora</i> to your deck and <i>Forget</i> this card.",
     "art": "Recollection.png",
     "triggers": [
       {
@@ -661,6 +649,11 @@
             "returnDestination": "deck",
             "count": 1,
             "returnCardType": "numen"
+          },
+          {
+            "effect": "FORGET",
+            "count": 1,
+            "effectTarget": "self"
           }
         ]
       }
@@ -701,5 +694,292 @@
     "rarity": "common",
     "attack": 1000,
     "defense": 0
+  },
+  {
+    "id": "numen-1782316648826",
+    "name": "WIP1",
+    "type": "numen",
+    "cardType": "Numen",
+    "description": "<b>Challenge</b>, <b>Veiled</b>",
+    "art": "placeholder.svg",
+    "triggers": [
+      "CHALLENGE",
+      "VEILED"
+    ],
+    "level": 4,
+    "nature": "dark",
+    "family": "manes",
+    "rarity": "common",
+    "attack": 500,
+    "defense": 2000
+  },
+  {
+    "id": "numen-1782316740551",
+    "name": "WIP2",
+    "type": "numen",
+    "cardType": "Numen",
+    "description": "<b>Legion</b>",
+    "art": "placeholder.svg",
+    "triggers": [
+      "LEGION"
+    ],
+    "level": 1,
+    "nature": "fire",
+    "family": "bug",
+    "rarity": "common",
+    "attack": 750,
+    "defense": 450
+  },
+  {
+    "id": "rite-1782319046788",
+    "name": "WIP3",
+    "type": "rite",
+    "cardType": "Rite",
+    "description": "<b>Decree</b>: <i>Draw</i> 2 cards and <i>Forget</i> this card.",
+    "art": "placeholder.svg",
+    "triggers": [
+      {
+        "trigger": "DECREE",
+        "effects": [
+          {
+            "effect": "DRAW",
+            "count": 2,
+            "target": "player"
+          },
+          {
+            "effect": "FORGET",
+            "count": 1,
+            "effectTarget": "self"
+          }
+        ]
+      }
+    ],
+    "rarity": "common",
+    "mana": 100
+  },
+  {
+    "id": "rite-1782319097843",
+    "name": "WIP4",
+    "type": "rite",
+    "cardType": "Rite",
+    "description": "<b>End of Turn</b>: While this card is on the field, <i>Increase</i> the target's ATK and DEF by 200 and <i>Decrease</i> your <i>Mana</i> by 50, otherwise <i>Forget</i> this card.",
+    "art": "placeholder.svg",
+    "triggers": [
+      {
+        "trigger": "END_OF_TURN",
+        "effects": [
+          {
+            "effect": "INCREASE",
+            "target": "numen",
+            "effectTarget": "both",
+            "amount": 200,
+            "duration": "while_on_field"
+          },
+          {
+            "effect": "DECREASE",
+            "target": "player",
+            "effectTarget": "mana",
+            "amount": 50,
+            "otherwise": true,
+            "otherwise_effect": {
+              "effect": "FORGET",
+              "count": 1,
+              "effectTarget": "self"
+            }
+          }
+        ]
+      }
+    ],
+    "rarity": "rare",
+    "mana": 0
+  },
+  {
+    "id": "rite-1782319135501",
+    "name": "WIP5",
+    "type": "rite",
+    "cardType": "Rite",
+    "description": "<b>Decree</b>: Select and <i>Forget</i> an enemy <i>Numen</i> and <i>Forget</i> this card.",
+    "art": "placeholder.svg",
+    "triggers": [
+      {
+        "trigger": "DECREE",
+        "effects": [
+          {
+            "effect": "FORGET",
+            "count": 1,
+            "effectTarget": "enemy_numen"
+          },
+          {
+            "effect": "FORGET",
+            "count": 1,
+            "effectTarget": "self"
+          }
+        ]
+      }
+    ],
+    "rarity": "common",
+    "mana": 75
+  },
+  {
+    "id": "numen-1782319165738",
+    "name": "WIP6",
+    "type": "numen",
+    "cardType": "Numen",
+    "description": "<b>Locked</b>",
+    "art": "placeholder.svg",
+    "triggers": [
+      "LOCKED"
+    ],
+    "level": 1,
+    "nature": "light",
+    "family": "bug",
+    "rarity": "common",
+    "attack": 300,
+    "defense": 900
+  },
+  {
+    "id": "rite-1782319249732",
+    "name": "WIP6",
+    "type": "rite",
+    "cardType": "Rite",
+    "description": "<b>Start of Turn</b>: <i>Decrease</i> your <i>Mana</i> by 25, otherwise <i>Forget</i> this card. <b>Testament</b>: <i>Draw</i> 2 cards.",
+    "art": "placeholder.svg",
+    "triggers": [
+      {
+        "trigger": "START_OF_TURN",
+        "effects": [
+          {
+            "effect": "DECREASE",
+            "target": "player",
+            "effectTarget": "mana",
+            "amount": 25,
+            "otherwise": true,
+            "otherwise_effect": {
+              "effect": "FORGET",
+              "count": 1,
+              "effectTarget": "self"
+            }
+          }
+        ]
+      },
+      {
+        "trigger": "TESTAMENT",
+        "effects": [
+          {
+            "effect": "DRAW",
+            "count": 2,
+            "target": "player"
+          }
+        ]
+      }
+    ],
+    "rarity": "rare",
+    "mana": 25
+  },
+  {
+    "id": "numen-1782320005218",
+    "name": "WIP8",
+    "type": "numen",
+    "cardType": "Numen",
+    "description": "<b>Veiled</b>\n<b>End of Turn</b>: <i>Forget</i> 1 random enemy <i>Numen</i>.",
+    "art": "placeholder.svg",
+    "triggers": [
+      "VEILED",
+      {
+        "trigger": "END_OF_TURN",
+        "effects": [
+          {
+            "effect": "FORGET",
+            "count": 1,
+            "effectTarget": "enemy_numen",
+            "random": true
+          }
+        ]
+      }
+    ],
+    "level": 6,
+    "nature": "dark",
+    "family": "larva",
+    "rarity": "legendary",
+    "attack": 0,
+    "defense": 0
+  },
+  {
+    "id": "rite-1782320482697",
+    "name": "WIP7",
+    "type": "rite",
+    "cardType": "Rite",
+    "description": "<b>Start of Turn</b>: <i>Decrease</i> your <i>Mana</i> by 50, otherwise <i>Forget</i> this card, <i>Decrease</i> the opponent's <i>Health</i> by 200 and <i>Increase</i> your <i>Health</i> by 200.",
+    "art": "placeholder.svg",
+    "triggers": [
+      {
+        "trigger": "START_OF_TURN",
+        "effects": [
+          {
+            "effect": "DECREASE",
+            "target": "player",
+            "effectTarget": "mana",
+            "amount": 50,
+            "otherwise": true,
+            "otherwise_effect": {
+              "effect": "FORGET",
+              "count": 1,
+              "effectTarget": "self"
+            }
+          },
+          {
+            "effect": "DECREASE",
+            "target": "opponent",
+            "effectTarget": "hp",
+            "amount": 200
+          },
+          {
+            "effect": "INCREASE",
+            "target": "player",
+            "effectTarget": "hp",
+            "amount": 200
+          }
+        ]
+      }
+    ],
+    "rarity": "rare",
+    "mana": 0
+  },
+  {
+    "id": "rite-1782322773546",
+    "name": "WIP10",
+    "type": "rite",
+    "cardType": "Rite",
+    "description": "<b>End of Turn</b>: <i>Convoke</i> 1 Level 2 or lower <i>Numen</i> and <i>Decrease</i> your <i>Mana</i> by 100, otherwise <i>Forget</i> this card.",
+    "art": "placeholder.svg",
+    "triggers": [
+      {
+        "trigger": "END_OF_TURN",
+        "effects": [
+          {
+            "effect": "CONVOKE",
+            "from": "player_deck",
+            "criteria": {
+              "levelMax": 2
+            },
+            "count": 1
+          },
+          {
+            "effect": "DECREASE",
+            "target": "player",
+            "amount": 100,
+            "effectTarget": "mana",
+            "otherwise": true,
+            "otherwise_effect": {
+              "effect": "FORGET",
+              "count": 1,
+              "effectTarget": "self"
+            }
+          }
+        ]
+      }
+    ],
+    "rarity": "rare",
+    "mana": 0
   }
 ]

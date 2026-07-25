@@ -18,8 +18,6 @@ export interface Card {
   level?: number;
   baseAttack?: number;
   baseDefense?: number;
-  riteType?: string;
-  wardType?: string;
   isMythic?: boolean;
   mythicQuest?: MythicQuest;
   [key: string]: unknown;

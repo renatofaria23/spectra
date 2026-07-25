@@ -2,7 +2,7 @@ export const GAME_CONSTANTS = {
   MIN_DECK_SIZE: 40, MAX_DECK_SIZE: 40, MAX_HAND_SIZE: 10,
   STARTING_HP: 10000, STARTING_MANA: 0, BASE_MANA_GAIN: 100,
   FIRST_PLAYER_HAND: 4, SECOND_PLAYER_HAND: 6, NORMAL_INVOKES_PER_TURN: 1,
-  BASE_HP_REGEN: 100, BASE_MANA_REGEN: 50, MAX_NUMEN_SPOTS: 5, MAX_MAGIC_SPOTS: 5,
+  BASE_HP_REGEN: 100, BASE_MANA_REGEN: 50, MAX_NUMEN_SPOTS: 5, MAX_INCANTATION_SPOTS: 5,
 };
 
 export const NATURES = {
@@ -15,7 +15,7 @@ type Nature = (typeof NATURES)[keyof typeof NATURES];
 export const NUMEN_FAMILIES = {
   DEITY: 'deity' as const, BEAST: 'beast' as const, BUG: 'bug' as const,
   LARVA: 'larva' as const, DRAGON: 'dragon' as const, ELEMENTAL: 'elemental' as const,
-  GOD: 'god' as const, HUMAN: 'human' as const, LEMUR: 'lemur' as const,
+  GOD: 'god' as const, HUMAN: 'human' as const, MANES: 'manes' as const,
   PLANT: 'plant' as const, UNDEAD: 'undead' as const,
 };
 
@@ -35,7 +35,7 @@ export const PHASES = {
 type Phase = (typeof PHASES)[keyof typeof PHASES];
 
 export const SACRIFICE_REQUIREMENTS: Record<number, number> = {
-  1: 0, 2: 0, 3: 0, 4: 1, 5: 1, 6: 1, 7: 2, 8: 2, 9: 2, 10: 3,
+  1: 0, 2: 0, 3: 1, 4: 1, 5: 2, 6: 2, 7: 3, 8: 3, 9: 4, 10: 5,
 };
 
 export const RARITY = {

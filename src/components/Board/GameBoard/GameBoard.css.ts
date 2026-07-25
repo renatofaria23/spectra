@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react';
+import { Gray_2 } from '../../../styles/Colors';
 
 export const fieldCardWrapper: CSSProperties = {
   width: 60,
@@ -79,6 +80,7 @@ export const gameBoardRoot: CSSProperties = {
   height: '100vh',
   boxSizing: 'border-box',
   overflow: 'hidden',
+  backgroundColor: Gray_2,
 };
 
 export const mainBoardArea: CSSProperties = {

@@ -32,6 +32,7 @@ import {
   increaseDecreaseTargetOptions,
   isNumenTarget,
   isPlayerTarget,
+  numenTargetDetailOptions,
 } from '../../../logic/CardEditorOptions';
 import * as styles from './EffectParamInputs.css.ts';
 
@@ -60,7 +61,7 @@ const isNumericCriteria = (type: string) =>
 const isMultiSelectCriteria = (type: string) =>
   ['families', 'excludeFamilies', 'natures', 'excludeNatures', 'rarities', 'excludeRarities'].includes(type);
 
-const exileCardTypeCriteria = ['any_numen', 'any_ward', 'any_rite', 'any_magic'];
+const exileCardTypeCriteria = ['any_numen', 'any_ward', 'any_rite', 'any_incantation'];
 
 const isExileCardTypeCriteria = (type: string) =>
   exileCardTypeCriteria.includes(type);
@@ -70,7 +71,7 @@ const exileCriteriaTypeOptions = [
   { value: 'any_numen', label: 'Any numen' },
   { value: 'any_ward', label: 'Any ward' },
   { value: 'any_rite', label: 'Any spell' },
-  { value: 'any_magic', label: 'Any magic' },
+  { value: 'any_incantation', label: 'Any incantation' },
 ];
 
 const getCriteriaDataForType = (type: string) => {
@@ -108,7 +109,7 @@ const getCriteriaLabel = (type: string, value: any): string => {
   if (type === 'any_numen') return 'Any numen';
   if (type === 'any_ward') return 'Any ward';
   if (type === 'any_rite') return 'Any spell';
-  if (type === 'any_magic') return 'Any magic';
+  if (type === 'any_incantation') return 'Any incantation';
   return `${type}: ${value}`;
 };
 
@@ -120,7 +121,7 @@ const durationOptions = [
 
 const ALL_FIELD_TARGETS: EffectTarget[] = [
   'all_allied_numina', 'all_enemy_numina',
-  'all_allied_magics', 'all_enemy_magics',
+  'all_allied_incantations', 'all_enemy_incantations',
   'all_allied_rites', 'all_enemy_rites',
   'all_allied_wards', 'all_enemy_wards',
 ];
@@ -170,26 +171,52 @@ export default function EffectParamInputs({ selectedEffect, effectParams, setEff
           <Select data={scryDeckOptions} value={effectParams.deck} onChange={(val) => setEffectParams(prev => ({ ...prev, deck: val }))} label="Deck" styles={inputStyles} />
         </>
       );
-    case EffectType.FORGET:
-       const ALL_FORGET_TARGETS: EffectTarget[] = [
-        'all_allied_numina', 'all_enemy_numina',
-        'all_allied_magics', 'all_enemy_magics',
-        'all_allied_rites', 'all_enemy_rites',
-        'all_allied_wards', 'all_enemy_wards',
-      ];
-      return (
-        effectTarget && effectTarget !== 'self' && !ALL_FORGET_TARGETS.includes(effectTarget) && (
-          <NumberInput label="Count" value={effectParams.count} onChange={(val) => setEffectParams(prev => ({ ...prev, count: val }))} min={1} styles={inputStyles} />
-        )
-      );
+    case EffectType.FORGET: {
+        const ALL_FORGET_TARGETS: EffectTarget[] = [
+          'all_allied_numina', 'all_enemy_numina',
+          'all_allied_incantations', 'all_enemy_incantations',
+          'all_allied_rites', 'all_enemy_rites',
+          'all_allied_wards', 'all_enemy_wards',
+          'global_allied_numina', 'global_enemy_numina',
+          'global_allied_non_mythic_numina', 'global_enemy_non_mythic_numina',
+        ];
+        const forgetTarget = effectParams._forgetTarget || effectTarget;
+        const isSelectableForgetTarget = forgetTarget && (forgetTarget === 'allied_numen' || forgetTarget === 'enemy_numen');
+        const isAllForgetTarget = forgetTarget && ALL_FORGET_TARGETS.includes(forgetTarget);
+        return (
+          <>
+            <Select data={getEffectTargetOptions(undefined, EffectType.FORGET, undefined)} value={effectParams._forgetTarget ?? null} onChange={(val) => setEffectParams(prev => ({ ...prev, _forgetTarget: val }))} label="Effect Target" styles={inputStyles} />
+            {isSelectableForgetTarget && !isAllForgetTarget && (
+              <Checkbox label="Random" checked={effectParams.random || false} onChange={(e) => setEffectParams(prev => ({ ...prev, random: e.target.checked }))} styles={styles.checkboxStyle} />
+            )}
+            {forgetTarget && forgetTarget !== 'self' && !ALL_FORGET_TARGETS.includes(forgetTarget) && (
+              <NumberInput label="Count" value={effectParams.count} onChange={(val) => setEffectParams(prev => ({ ...prev, count: val }))} min={1} styles={inputStyles} />
+            )}
+          </>
+        );
+      }
     case EffectType.EXILE: {
       const exileFromField = effectParams.exileFromField !== false;
       if (exileFromField) {
+        const ALL_EXILE_TARGETS: EffectTarget[] = [
+          'all_allied_numina', 'all_enemy_numina',
+          'all_allied_incantations', 'all_enemy_incantations',
+          'all_allied_rites', 'all_enemy_rites',
+          'all_allied_wards', 'all_enemy_wards',
+          'global_allied_numina', 'global_enemy_numina',
+          'global_allied_non_mythic_numina', 'global_enemy_non_mythic_numina',
+        ];
+        const exileTarget = effectParams._exileTarget || effectTarget;
+        const isSelectableExileTarget = exileTarget && (exileTarget === 'allied_numen' || exileTarget === 'enemy_numen');
+        const isAllExileTarget = exileTarget && ALL_EXILE_TARGETS.includes(exileTarget);
         return (
           <>
             <Checkbox label="From field?" checked={true} onChange={() => setEffectParams(prev => ({ ...prev, exileFromField: false }))} styles={styles.checkboxStyle} />
             <Select data={getEffectTargetOptions(undefined, EffectType.EXILE, undefined)} value={effectParams._exileTarget ?? null} onChange={(val) => setEffectParams(prev => ({ ...prev, _exileTarget: val }))} label="Effect Target" styles={inputStyles} />
-            {effectTarget && effectTarget !== 'self' && !ALL_FIELD_TARGETS.includes(effectTarget) && (
+            {isSelectableExileTarget && !isAllExileTarget && (
+              <Checkbox label="Random" checked={effectParams.random || false} onChange={(e) => setEffectParams(prev => ({ ...prev, random: e.target.checked }))} styles={styles.checkboxStyle} />
+            )}
+            {exileTarget && exileTarget !== 'self' && !ALL_FIELD_TARGETS.includes(exileTarget) && (
               <NumberInput label="Count" value={effectParams.count} onChange={(val) => setEffectParams(prev => ({ ...prev, count: val }))} min={1} styles={inputStyles} />
             )}
           </>
@@ -254,14 +281,19 @@ export default function EffectParamInputs({ selectedEffect, effectParams, setEff
       return (
         <NumberInput label="Turns" value={effectParams.turns} onChange={(val) => setEffectParams(prev => ({ ...prev, turns: val }))} min={1} styles={inputStyles} />
       );
-    case EffectType.DECREASE:
+    case EffectType.DECREASE: {
       const decreaseTargetType = effectParams._targetType;
+      const decreaseNumenTarget = effectParams._numenTarget;
       const decreaseStatTarget = effectParams.effectTarget;
       const isNumenDecreaseTarget = isNumenTarget(decreaseTargetType);
       const isPlayerDecreaseTarget = isPlayerTarget(decreaseTargetType);
+      const isGenericNumen = decreaseTargetType === 'numen';
       return (
         <>
-          <Select data={increaseDecreaseTargetOptions} value={decreaseTargetType ?? null} onChange={(val) => setEffectParams(prev => ({ ...prev, _targetType: val, effectTarget: undefined }))} label="Target" styles={inputStyles} />
+          <Select data={increaseDecreaseTargetOptions} value={decreaseTargetType ?? null} onChange={(val) => setEffectParams(prev => ({ ...prev, _targetType: val, _numenTarget: undefined, effectTarget: undefined }))} label="Target" styles={inputStyles} />
+          {isGenericNumen && (
+            <Select data={numenTargetDetailOptions} value={decreaseNumenTarget ?? null} onChange={(val) => setEffectParams(prev => ({ ...prev, _numenTarget: val }))} label="Numen Target" styles={inputStyles} />
+          )}
           {isNumenDecreaseTarget && (
             <Select data={numenStatTargetOptions} value={decreaseStatTarget} onChange={(val) => setEffectParams(prev => ({ ...prev, effectTarget: val }))} label="Stat" styles={inputStyles} />
           )}
@@ -277,6 +309,7 @@ export default function EffectParamInputs({ selectedEffect, effectParams, setEff
           <NumberInput label="Amount" value={effectParams.amount} onChange={(val) => setEffectParams(prev => ({ ...prev, amount: val }))} min={0} styles={inputStyles} />
         </>
       );
+    }
     case EffectType.LOCK:
       return (
         <>
@@ -286,14 +319,19 @@ export default function EffectParamInputs({ selectedEffect, effectParams, setEff
           )}
         </>
       );
-    case EffectType.INCREASE:
+    case EffectType.INCREASE: {
       const increaseTargetType = effectParams._targetType;
+      const increaseNumenTarget = effectParams._numenTarget;
       const increaseStatTarget = effectParams.effectTarget;
       const isNumenIncreaseTarget = isNumenTarget(increaseTargetType);
       const isPlayerIncreaseTarget = isPlayerTarget(increaseTargetType);
+      const isGenericNumen = increaseTargetType === 'numen';
       return (
         <>
-          <Select data={increaseDecreaseTargetOptions} value={increaseTargetType ?? null} onChange={(val) => setEffectParams(prev => ({ ...prev, _targetType: val, effectTarget: undefined }))} label="Target" styles={inputStyles} />
+          <Select data={increaseDecreaseTargetOptions} value={increaseTargetType ?? null} onChange={(val) => setEffectParams(prev => ({ ...prev, _targetType: val, _numenTarget: undefined, effectTarget: undefined }))} label="Target" styles={inputStyles} />
+          {isGenericNumen && (
+            <Select data={numenTargetDetailOptions} value={increaseNumenTarget ?? null} onChange={(val) => setEffectParams(prev => ({ ...prev, _numenTarget: val }))} label="Numen Target" styles={inputStyles} />
+          )}
           {isNumenIncreaseTarget && (
             <Select data={numenStatTargetOptions} value={increaseStatTarget} onChange={(val) => setEffectParams(prev => ({ ...prev, effectTarget: val }))} label="Stat" styles={inputStyles} />
           )}
@@ -309,6 +347,7 @@ export default function EffectParamInputs({ selectedEffect, effectParams, setEff
           <NumberInput label="Amount" value={effectParams.amount} onChange={(val) => setEffectParams(prev => ({ ...prev, amount: val }))} min={0} styles={inputStyles} />
         </>
       );
+    }
     case EffectType.ETHEREAL:
       return (
         <>
@@ -531,7 +570,7 @@ export function ForEachInputs({ setEffectParams, effectParams }: ForEachInputsPr
       <Checkbox label="For Each" checked={effectParams.forEach || false} onChange={(e) => setEffectParams(prev => ({ ...prev, forEach: e.target.checked, forEachConfig: e.target.checked ? {} : undefined }))} styles={styles.checkboxStyle} />
       {effectParams.forEach && (
         <>
-          <Select data={[{ value: 'numen', label: 'Numen' }, { value: 'ward', label: 'Ward' }, { value: 'rite', label: 'Rite' }, { value: 'magic', label: 'Magic' }, { value: 'any', label: 'Any Card' }]} value={forEachConfig.cardType || null} onChange={(val) => setEffectParams(prev => ({
+          <Select data={[{ value: 'numen', label: 'Numen' }, { value: 'ward', label: 'Ward' }, { value: 'rite', label: 'Rite' }, { value: 'incantation', label: 'Incantation' }, { value: 'any', label: 'Any Card' }]} value={forEachConfig.cardType || null} onChange={(val) => setEffectParams(prev => ({
               ...prev,
               forEachConfig: { ...prev.forEachConfig, cardType: val },
             }))} label="Count Type" styles={inputStyles} />

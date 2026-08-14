@@ -7,7 +7,7 @@ import { readCards } from "../../services/cardsAPI";
 import { readDecksAsync, saveDeck, type Deck } from "../../services/decksAPI";
 import { validateDeck } from "../../services/decksAPI";
 import type { CardData } from "../../components/Card/CardTemplate/CardTemplate";
-import { generateDescription } from "../../logic/DescriptionEngine";
+import { generateDescription } from "../../logic/descriptionEngine";
 import * as S from "./DeckEditor.css";
 
 interface DeckEntry {

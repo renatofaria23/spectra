@@ -4,15 +4,15 @@ import { Dropzone } from "@mantine/dropzone";
 import { IconPlus, IconDeviceFloppy, IconPhoto, IconUpload, IconX, IconPencil, IconChevronUp, IconChevronDown, IconChevronRight } from "@tabler/icons-react";
 import colors from "../../styles/Colors";
 import { CardTemplate } from "../../components/Card/CardTemplate/CardTemplate";
-import { ConditionalTrigger, isConditionalTrigger, isPassiveTrigger } from "../../logic/Triggers";
-import type { TriggerEntry } from "../../logic/Triggers";
-import type { EffectEntry } from "../../logic/Effects";
+import { ConditionalTrigger, isConditionalTrigger, isPassiveTrigger } from "../../logic/triggers";
+import type { TriggerEntry } from "../../logic/triggers";
+import type { EffectEntry } from "../../logic/effects";
 import { useNavigate, useParams } from "react-router-dom";
 import { readCards, saveCards, saveArt, readArt, addCard } from "../../services/cardsAPI";
 import { useCardEditor } from "../../hooks/useCardEditor";
 import EffectParamInputs, { OtherwiseEffectInputs, OrEffectInputs, ForEachInputs } from "../../components/Card/EffectParamInputs/EffectParamInputs";
-import { triggerTypeOptions, activeTriggerOptions, passiveTriggerOptions, attackTargetOptions, getAttackTargetOptions, getEffectTargetOptions, effectOptions, familyOptions, rarityOptions, natureOptions, cardTypeOptions, inputStyles, isAttackTrigger, isPassiveValue, isDirectValueTarget, isNonAttackTrigger, getEffectTargetLabel, type CardTypeOption, type EffectSlot } from "../../logic/CardEditorOptions";
-import { EffectType } from "../../logic/Effects";
+import { triggerTypeOptions, activeTriggerOptions, passiveTriggerOptions, attackTargetOptions, getAttackTargetOptions, getEffectTargetOptions, effectOptions, familyOptions, rarityOptions, natureOptions, cardTypeOptions, inputStyles, isAttackTrigger, isPassiveValue, isDirectValueTarget, isNonAttackTrigger, getEffectTargetLabel, type CardTypeOption, type EffectSlot } from "../../logic/cardEditorOptions";
+import { EffectType } from "../../logic/effects";
 import * as styles from "./CardEditor.styles";
 
 function triggersToSlots(triggers: TriggerEntry[]): EffectSlot[] {

@@ -1,7 +1,7 @@
-import { ConditionalTrigger, PassiveTrigger } from './Triggers';
-import type { AttackTarget, EffectTarget } from './Triggers';
-import { EffectType } from './Effects';
-import type { EffectEntry } from './Effects';
+import { ConditionalTrigger, PassiveTrigger } from './triggers';
+import type { AttackTarget, EffectTarget } from './triggers';
+import { EffectType } from './effects';
+import type { EffectEntry } from './effects';
 import colors from '../styles/Colors';
 
 export type CardTypeOption = 'numen' | 'rite' | 'ward';

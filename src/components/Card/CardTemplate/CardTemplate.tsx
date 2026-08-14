@@ -5,7 +5,7 @@ import colors from "../../../styles/Colors";
 import * as styles from './CardTemplate.css.ts';
 import { NatureIcon } from "../NatureIcon/NatureIcon";
 import { RaritySymbol } from "../RaritySymbol/RaritySymbol";
-import type { TriggerEntry } from "../../../logic/Triggers";
+import type { TriggerEntry } from "../../../logic/triggers";
 
 type CardType = "numen" | "rite" | "ward";
 type CardSize = "xs" | "sm" | "md" | "lg" | "xl";

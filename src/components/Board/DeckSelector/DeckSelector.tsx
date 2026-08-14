@@ -5,7 +5,7 @@ import * as styles from './DeckSelector.css';
 import { readDecksAsync, type Deck, validateDeck } from '../../../services/decksAPI';
 import { readCards } from '../../../services/cardsAPI';
 import type { CardData } from '../../Card/CardTemplate/CardTemplate';
-import { generateDescription } from '../../../logic/DescriptionEngine';
+import { generateDescription } from '../../../logic/descriptionEngine';
 import type { Card } from '../../../logic/deckConstraints';
 
 interface DeckSelectorProps {

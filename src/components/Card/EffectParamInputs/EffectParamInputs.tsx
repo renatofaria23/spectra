@@ -1,8 +1,8 @@
 import { Box, NumberInput, Select, TextInput, MultiSelect, Badge, Button, Checkbox } from '@mantine/core';
 import { IconPlus, IconX } from '@tabler/icons-react';
-import { EffectType } from '../../../logic/Effects';
-import type { EffectTarget } from '../../../logic/Triggers';
-import { ConditionalTrigger } from '../../../logic/Triggers';
+import { EffectType } from '../../../logic/effects';
+import type { EffectTarget } from '../../../logic/triggers';
+import { ConditionalTrigger } from '../../../logic/triggers';
 import {
   numenStatTargetOptions,
   playerStatTargetOptions,
@@ -33,7 +33,7 @@ import {
   isNumenTarget,
   isPlayerTarget,
   numenTargetDetailOptions,
-} from '../../../logic/CardEditorOptions';
+} from '../../../logic/cardEditorOptions';
 import * as styles from './EffectParamInputs.css.ts';
 
 const invokeCriteriaTypeOptions = [

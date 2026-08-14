@@ -5,7 +5,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { readDecksAsync, deleteDeck, validateDeck, type Deck } from '../../services/decksAPI';
 import { readCards } from '../../services/cardsAPI';
 import type { CardData } from '../../components/Card/CardTemplate/CardTemplate';
-import { generateDescription } from '../../logic/DescriptionEngine';
+import { generateDescription } from '../../logic/descriptionEngine';
 import colors from '../../styles/Colors';
 import * as s from './DeckList.css';
 

@@ -1,15 +1,15 @@
 import { useState, useCallback } from 'react';
-import { EffectType } from '../logic/Effects';
-import { PassiveTrigger, ConditionalTrigger } from '../logic/Triggers';
-import type { EffectEntry } from '../logic/Effects';
-import type { TriggerEntry } from '../logic/Triggers';
-import type { ConditionalTriggerEffect } from '../logic/Triggers';
+import { EffectType } from '../logic/effects';
+import { PassiveTrigger, ConditionalTrigger } from '../logic/triggers';
+import type { EffectEntry } from '../logic/effects';
+import type { TriggerEntry } from '../logic/triggers';
+import type { ConditionalTriggerEffect } from '../logic/triggers';
 import type { CardData } from '../components/Card/CardTemplate/CardTemplate';
-import { generateDescription } from '../logic/DescriptionEngine';
-import { isPassiveValue, isHpManaEffectTarget, isNumenTarget } from '../logic/CardEditorOptions';
-import type { CardTypeOption, EffectSlot } from '../logic/CardEditorOptions';
-import type { AttackTarget } from '../logic/Triggers';
-import type { EffectTarget } from '../logic/Triggers';
+import { generateDescription } from '../logic/descriptionEngine';
+import { isPassiveValue, isHpManaEffectTarget, isNumenTarget } from '../logic/cardEditorOptions';
+import type { CardTypeOption, EffectSlot } from '../logic/cardEditorOptions';
+import type { AttackTarget } from '../logic/triggers';
+import type { EffectTarget } from '../logic/triggers';
 
 export type TriggerType = 'passive' | 'active';
 

@@ -1,5 +1,5 @@
 import cardsData from '../data/cards.json';
-import { regenerateAllDescriptions } from '../logic/DescriptionEngine';
+import { regenerateAllDescriptions } from '../logic/descriptionEngine';
 
 declare global {
   interface Window {

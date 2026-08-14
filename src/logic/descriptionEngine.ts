@@ -6,12 +6,12 @@ import {
   isMentalDebtTrigger,
   isAbsorbTrigger,
   isConditionalTrigger
-} from './Triggers';
-import type { TriggerEntry } from './Triggers';
-import type { EffectTarget } from './Triggers';
-import { EffectType, type InvokeCriteria, type ForEachConfig } from './Effects';
-import { isNumenTarget } from './CardEditorOptions';
-import type { EffectEntry } from './Effects';
+} from './triggers';
+import type { TriggerEntry } from './triggers';
+import type { EffectTarget } from './triggers';
+import { EffectType, type InvokeCriteria, type ForEachConfig } from './effects';
+import { isNumenTarget } from './cardEditorOptions';
+import type { EffectEntry } from './effects';
 
 const passiveDescriptions: Record<PassiveTrigger, string> = {
   [PassiveTrigger.CHALLENGE]: "This Numen must be attacked before other Numina.",

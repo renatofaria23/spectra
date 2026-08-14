@@ -3,7 +3,7 @@ import { Box, Text, Select, Button, TextInput, Group } from '@mantine/core';
 import { IconPlus, IconSearch, IconTrash, IconPencil } from '@tabler/icons-react';
 import colors from '../../styles/Colors';
 import { CardTemplate, type CardData } from '../../components/Card/CardTemplate/CardTemplate';
-import { generateDescription } from '../../logic/DescriptionEngine';
+import { generateDescription } from '../../logic/descriptionEngine';
 import rawCardsData from '../../data/cards.json';
 import { Link, useNavigate } from 'react-router-dom';
 import { readCards, deleteCard } from '../../services/cardsAPI';

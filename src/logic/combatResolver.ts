@@ -1,4 +1,4 @@
-import { PassiveTrigger, hasPassiveTrigger } from './Triggers';
+import { PassiveTrigger, hasPassiveTrigger } from './triggers';
 import type { NatureScaling } from './natureScaling';
 
 export interface Numen {

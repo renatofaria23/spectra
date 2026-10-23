@@ -51,9 +51,9 @@ interface PT {
 }
 
 const FCard: React.FC<{
-  card: Card; uid: string; sel: boolean; onSel: () => void; onInsp: () => void;
+  card: Card; sel: boolean; onSel: () => void; onInsp: () => void;
   faceDown: boolean; isDef: boolean;
-}> = ({ card, uid, sel, onSel, onInsp, faceDown, isDef }) => {
+}> = ({ card, sel, onSel, onInsp, faceDown, isDef }) => {
   const bg = faceDown ? colors.Gray_9 : getBg(card);
   const bd = faceDown ? colors.Gray_5 : getBd(card);
   const [hov, setHov] = useState(false);
@@ -81,10 +81,10 @@ const FCard: React.FC<{
         </Box>
       ) : (
         <Box style={{ flex: 1, width: "100%", display: "flex", alignItems: "center", justifyContent: "center", position: "relative", overflow: "hidden" }}>
-          {getArt((card as any).art) ? (
-            <img src={getArt((card as any).art)!} alt="Card art" style={{ width: "120%", height: "120%", objectFit: "cover" }} />
+          {getArt(card.art) ? (
+            <img src={getArt(card.art)!} alt="Card art" style={{ width: "120%", height: "120%", objectFit: "cover" }} />
           ) : (
-            <NatureIcon type={(card as any).nature || "dark"} size={30} />
+            <NatureIcon type={card.nature || "dark"} size={30} />
           )}
         </Box>
       )}
@@ -109,11 +109,11 @@ const ESlot: React.FC<{ hig: boolean; zone: string; si: number; pid: string }> =
 );
 
 const HCard: React.FC<{
-  card: Card; onInsp: () => void; onDS: (c: Card, s: { x: number; y: number }, i: number) => void;
+  card: Card; _onInsp: () => void; onDS: (c: Card, s: { x: number; y: number }, i: number) => void;
   onDM: (o: { x: number; y: number }) => void; onDE: () => void;
   isDrag: boolean; dOff: { x: number; y: number }; canDrag: boolean;
   dataHandIndex: number; dataHandPlayer: string; onSwapHover: (idx: number) => void;
-}> = ({ card, onInsp, onDS, onDM, onDE, isDrag, dOff, canDrag, dataHandIndex, dataHandPlayer, onSwapHover }) => {
+}> = ({ card, _onInsp, onDS, onDM, onDE, isDrag, dOff, canDrag, dataHandIndex, dataHandPlayer, onSwapHover }) => {
   const bg = getBg(card);
   const bd = getBd(card);
   const [hov, setHov] = useState(false);
@@ -126,7 +126,7 @@ const HCard: React.FC<{
     sRef.current = s;
     onDS(card, s, dataHandIndex);
     const mm = (m: MouseEvent) => onDM({ x: m.clientX - s.x, y: m.clientY - s.y });
-    const mu = (u: MouseEvent) => { document.removeEventListener("mousemove", mm); document.removeEventListener("mouseup", mu); onDE(); };
+    const mu = () => { document.removeEventListener("mousemove", mm); document.removeEventListener("mouseup", mu); onDE(); };
     document.addEventListener("mousemove", mm);
     document.addEventListener("mouseup", mu);
   };
@@ -140,7 +140,7 @@ const HCard: React.FC<{
       data-name="hand-card"
       data-hand-index={dataHandIndex}
       data-hand-player={dataHandPlayer}
-      onMouseEnter={(e) => { setHov(true); handleSwapHover(); }}
+      onMouseEnter={() => { setHov(true); handleSwapHover(); }}
       onMouseLeave={() => setHov(false)}
       onMouseDown={handleMouseDown}
       style={{
@@ -177,7 +177,7 @@ const PField: React.FC<{
   onInsp: (c: Card, isSM?: boolean, opid?: string, si?: number) => void;
   drag: DS; onDrop: (t: PT) => void; onFlip: (p: string, i: number) => void;
   mirrored: boolean;
-}> = ({ player, pid, isCP, onTA, onTD, atk, def, onInsp, drag, onDrop, onFlip, mirrored }) => {
+}> = ({ player, pid, isCP, onTA, onTD, atk, def, onInsp, drag, mirrored }) => {
   const hcc = (c: Card, u: string) => { if (isCP) onTA(u); else onTD(u); };
 
   const getHig = useCallback((zone: string, idx: number): boolean => {
@@ -342,7 +342,7 @@ export const GameBoard = () => {
 
   const [insp, setInsp] = useState<{ card: Card; isSM: boolean; opid: string; si: number } | null>(null);
   const [drag, setDrag] = useState<DS>({ card: null, hid: null, offset: { x: 0, y: 0 }, startPos: { x: 0, y: 0 }, cursorPos: { x: 0, y: 0 }, isDragging: false });
-  const [dragSPid, setDragSPid] = useState<string | null>(null);
+  const [_dragSPid, setDragSPid] = useState<string | null>(null);
   const dOffRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const dCurRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const dCardRef = useRef<Card | null>(null);

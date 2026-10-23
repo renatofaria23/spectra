@@ -4,9 +4,11 @@ import colors from '../../../styles/Colors';
 export const cardOuterFrame: CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
-  borderRadius: '12px',
-  padding: '3px',
+  borderRadius: '2px',
+  padding: '4px',
   overflow: 'hidden',
+  border: `2px solid ${colors.Gray_9}`,
+  boxShadow: '2px 2px 0 rgba(0,0,0,0.8)',
 };
 
 export const cardMainContent: CSSProperties = {
@@ -16,7 +18,7 @@ export const cardMainContent: CSSProperties = {
   flexDirection: 'column',
   overflow: 'hidden',
   position: 'relative',
-  borderRadius: '12px',
+  borderRadius: '2px',
 };
 
 export const levelRaritySection: CSSProperties = {
@@ -27,7 +29,7 @@ export const levelRaritySection: CSSProperties = {
   padding: '2px 6px',
   width: '100%',
   position: 'relative',
-  borderRadius: '12px 12px 0 0',
+  borderRadius: '2px 2px 0 0',
   zIndex: 1,
   gap: '4px',
 };
@@ -74,7 +76,7 @@ export const descriptionOuterFrame: CSSProperties = {
 };
 
 export const descriptionInnerBg: CSSProperties = {
-  borderRadius: '3px',
+  borderRadius: '2px',
   padding: '2px',
 };
 
@@ -159,7 +161,7 @@ export const statsSection: CSSProperties = {
   justifyContent: 'space-between',
   alignItems: 'center',
   padding: '2px 6px',
-  borderRadius: '0 0 12px 12px',
+  borderRadius: '0 0 2px 2px',
 };
 
 export const statsSectionAbsolute: CSSProperties = {

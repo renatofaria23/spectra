@@ -4,7 +4,7 @@ import { Gray_2 } from '../../../styles/Colors';
 export const fieldCardWrapper: CSSProperties = {
   width: 60,
   height: 90,
-  borderRadius: '6px',
+  borderRadius: '2px',
   cursor: 'pointer',
   display: 'flex',
   flexDirection: 'column',
@@ -16,13 +16,13 @@ export const fieldCardWrapper: CSSProperties = {
 export const emptyCardSlot: CSSProperties = {
   width: 60,
   height: 90,
-  borderRadius: '6px',
+  borderRadius: '2px',
 };
 
 export const handCard: CSSProperties = {
   width: 60,
   height: 90,
-  borderRadius: '6px',
+  borderRadius: '2px',
   display: 'flex',
   flexDirection: 'column',
   flexShrink: 0,
@@ -45,7 +45,7 @@ export const playerField: CSSProperties = {
   alignItems: 'center',
   gap: '24px',
   padding: '4px',
-  borderRadius: '6px',
+  borderRadius: '2px',
 };
 
 export const playerInfoBar: CSSProperties = {
@@ -162,7 +162,7 @@ export const gameOverOverlay: CSSProperties = {
 
 export const gameOverDialog: CSSProperties = {
   padding: '2rem',
-  borderRadius: '12px',
+  borderRadius: '2px',
   textAlign: 'center',
   display: 'flex',
   flexDirection: 'column',
@@ -188,7 +188,7 @@ export const fieldCardFaceDown: CSSProperties = {
 export const placementPreviewCard: CSSProperties = {
   width: 80,
   height: 120,
-  borderRadius: '8px',
+  borderRadius: '2px',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',

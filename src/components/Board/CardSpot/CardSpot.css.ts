@@ -5,7 +5,7 @@ export const spotRoot: CSSProperties = {
 };
 
 export const spotWrapper: CSSProperties = {
-  borderRadius: '8px',
+  borderRadius: '2px',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',

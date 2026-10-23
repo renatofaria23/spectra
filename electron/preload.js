@@ -1,4 +1,4 @@
-const { contextBridge, ipcRenderer } = require('electron');
+import { contextBridge, ipcRenderer } from 'electron';
 
 contextBridge.exposeInMainWorld('electronAPI', {
   readCards: () => ipcRenderer.invoke('cards:read'),
@@ -9,4 +9,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   listArt: () => ipcRenderer.invoke('art:list'),
   readDecks: () => ipcRenderer.invoke('decks:read'),
   saveDecks: (decks) => ipcRenderer.invoke('decks:save', decks),
+  setFullscreen: (value) => ipcRenderer.invoke('window:set-fullscreen', value),
+  isFullscreen: () => ipcRenderer.invoke('window:is-fullscreen'),
+  quitApp: () => ipcRenderer.invoke('app:quit'),
 });

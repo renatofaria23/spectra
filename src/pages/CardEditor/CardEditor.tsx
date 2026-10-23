@@ -11,7 +11,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { readCards, saveCards, saveArt, readArt, addCard } from "../../services/cardsAPI";
 import { useCardEditor } from "../../hooks/useCardEditor";
 import EffectParamInputs, { OtherwiseEffectInputs, OrEffectInputs, ForEachInputs } from "../../components/Card/EffectParamInputs/EffectParamInputs";
-import { triggerTypeOptions, activeTriggerOptions, passiveTriggerOptions, attackTargetOptions, getAttackTargetOptions, getEffectTargetOptions, effectOptions, familyOptions, rarityOptions, natureOptions, cardTypeOptions, inputStyles, isAttackTrigger, isPassiveValue, isDirectValueTarget, isNonAttackTrigger, getEffectTargetLabel, type CardTypeOption, type EffectSlot } from "../../logic/cardEditorOptions";
+import { triggerTypeOptions, activeTriggerOptions, passiveTriggerOptions, attackTargetOptions, getAttackTargetOptions, effectOptions, familyOptions, rarityOptions, natureOptions, cardTypeOptions, inputStyles, isAttackTrigger, isPassiveValue, isNonAttackTrigger, getEffectTargetLabel, type CardTypeOption, type EffectSlot } from "../../logic/cardEditorOptions";
 import { EffectType } from "../../logic/effects";
 import * as styles from "./CardEditor.styles";
 
@@ -45,7 +45,7 @@ export const CardEditor = () => {
   const toggleTriggerExpansion = (slotIndex: number) => {
     setExpandedTriggers((prev) => {
       const next = new Set(prev);
-      next.has(slotIndex) ? next.delete(slotIndex) : next.add(slotIndex);
+      if (next.has(slotIndex)) next.delete(slotIndex); else next.add(slotIndex);
       return next;
     });
   };
@@ -78,7 +78,6 @@ export const CardEditor = () => {
     selectedAttackTarget,
     setSelectedAttackTarget,
     selectedEffectTarget,
-    setSelectedEffectTarget,
     selectedEffectType,
     effectParams,
     setEffectParams,
@@ -105,7 +104,6 @@ export const CardEditor = () => {
     replaceEffectSlot,
     addPendingEffectToSlot,
     setArtFilename,
-    isEffectComplete,
     isEffectAndForEachComplete,
     whenTarget,
     setWhenTarget,
@@ -127,7 +125,7 @@ export const CardEditor = () => {
           try {
             const artData = await readArt(card.art);
             if (artData) editor.setArtImage(artData);
-          } catch {}
+          } catch { void 0; }
         }
         if (card.type === "numen") {
           setLevel(card.level ?? "");
@@ -150,7 +148,6 @@ export const CardEditor = () => {
   const hasPassiveTrigger = effectSlots.some((slot) => isPassiveValue(slot.trigger as string));
   const currentTrigger = selectedActiveTriggers.size === 1 ? (Array.from(selectedActiveTriggers)[0] as ConditionalTrigger) : undefined;
   const dynamicAttackTargetOptions = currentTrigger ? getAttackTargetOptions(currentTrigger) : attackTargetOptions;
-  const dynamicEffectTargetOptions = getEffectTargetOptions(currentTrigger, selectedEffectType ?? undefined, cardType);
 
   const handleSave = async () => {
     if (!name || !cardType) return;

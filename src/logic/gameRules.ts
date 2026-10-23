@@ -1,6 +1,6 @@
-import { GAME_CONSTANTS, PHASES, SACRIFICE_REQUIREMENTS } from '../types/constants';
+import { GAME_CONSTANTS, PHASES } from '../types/constants';
 
-export const getSacrificeRequirement = (level: number): number => SACRIFICE_REQUIREMENTS[level] || 0;
+export const getManaRequirement = (level: number): number => (level * 100);
 
 export const canPlayerDraw = (deckSize: number, handSize: number): {
   canDraw: boolean;
@@ -59,15 +59,12 @@ export const checkWinCondition = (playerHP: number, opponentHP: number): {
 export const validateNumenInvoke = (
   numen: unknown,
   count: number,
-  sacrifices: number,
   normal: boolean
 ): { valid: boolean; reason: string } => {
   if (count >= 5) return { valid: false, reason: 'Field numen zone full' };
   if (!normal) return { valid: false, reason: 'Normal invoke already used this turn' };
-  const req = getSacrificeRequirement((numen as any)?.level || 1);
-  return sacrifices < req
-    ? { valid: false, reason: `Need ${req} sacrifices, have ${sacrifices}` }
-    : { valid: true, reason: '' };
+  const req = getManaRequirement((numen as any)?.level || 1);
+  return req > 0 ? { valid: false, reason: `Need ${req} mana` } : { valid: true, reason: '' };
 };
 
 export type FieldPosition = 'attack' | 'defense' | 'face_down';

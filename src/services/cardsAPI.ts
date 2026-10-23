@@ -36,7 +36,7 @@ export const migrateCardDescriptions = async (): Promise<void> => {
     const migrated = regenerateAllDescriptions(cards);
     if (migrated.some((c, i) => c.description !== cards[i]?.description) && isElectron())
       await saveCards(migrated);
-  } catch {}
+  } catch { void 0; }
 };
 
 export const saveArt = async (filename: string, data: string): Promise<boolean> => {
@@ -52,7 +52,7 @@ export const readArt = async (filename: string): Promise<string | null> => {
   try {
     const resp = await fetch(`/src/assets/art/${filename}`);
     if (resp.ok) return URL.createObjectURL(await resp.blob());
-  } catch {}
+  } catch { void 0; }
   return null;
 };
 

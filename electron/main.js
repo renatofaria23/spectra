@@ -7,16 +7,29 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 let mainWindow;
 
-const getCardsPath = () => {
-  return path.join(process.resourcesPath, 'src', 'data', 'cards.json');
-};
-
 const getCwdCardsPath = () => {
   return path.join(process.cwd(), 'src', 'data', 'cards.json');
 };
 
 const getCwdDecksPath = () => {
   return path.join(process.cwd(), 'src', 'data', 'decks.json');
+};
+
+const getSettingsPath = () => {
+  return path.join(app.getPath('userData'), 'settings.json');
+};
+
+const readSettings = async () => {
+  try {
+    const data = await readFile(getSettingsPath(), 'utf-8');
+    return JSON.parse(data);
+  } catch {
+    return {};
+  }
+};
+
+const writeSettings = async (settings) => {
+  await writeFile(getSettingsPath(), JSON.stringify(settings, null, 2), 'utf-8');
 };
 
 const readCards = async () => {
@@ -102,7 +115,24 @@ ipcMain.handle('decks:save', async (_event, decks) => {
   return { success: true };
 });
 
-const createWindow = () => {
+ipcMain.handle('window:set-fullscreen', async (_event, value) => {
+  mainWindow.setFullScreen(Boolean(value));
+  const settings = await readSettings();
+  settings.fullscreen = Boolean(value);
+  await writeSettings(settings);
+  return { success: true, fullscreen: mainWindow.isFullScreen() };
+});
+
+ipcMain.handle('window:is-fullscreen', async () => {
+  return mainWindow.isFullScreen();
+});
+
+ipcMain.handle('app:quit', async () => {
+  app.quit();
+  return { success: true };
+});
+
+const createWindow = async () => {
   mainWindow = new BrowserWindow({
     width: 1280,
     height: 800,
@@ -116,6 +146,11 @@ const createWindow = () => {
   const VITE_DEV_SERVER_URL = process.env.VITE_DEV_SERVER_URL || 'http://localhost:5173';
 
   mainWindow.loadURL(VITE_DEV_SERVER_URL);
+
+  const settings = await readSettings();
+  if (settings.fullscreen !== false) {
+    mainWindow.setFullScreen(true);
+  }
 };
 
 app.whenReady().then(() => {

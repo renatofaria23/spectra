@@ -6,7 +6,7 @@ import type { TriggerEntry } from '../logic/triggers';
 import type { ConditionalTriggerEffect } from '../logic/triggers';
 import type { CardData } from '../components/Card/CardTemplate/CardTemplate';
 import { generateDescription } from '../logic/descriptionEngine';
-import { isPassiveValue, isHpManaEffectTarget, isNumenTarget } from '../logic/cardEditorOptions';
+import { isPassiveValue, isNumenTarget } from '../logic/cardEditorOptions';
 import type { CardTypeOption, EffectSlot } from '../logic/cardEditorOptions';
 import type { AttackTarget } from '../logic/triggers';
 import type { EffectTarget } from '../logic/triggers';
@@ -291,7 +291,7 @@ export function useCardEditor() {
         } else {
           incEffect.effectTarget = effectParams.effectTarget || (incIsNumen ? 'atk' : 'hp');
         }
-        if (incIsNumen) { incEffect.duration = effectParams.duration || 'permanent'; if (effectParams.durationTurns) incEffect.durationTurns = incEffect.durationTurns; }
+        if (incIsNumen) { incEffect.duration = effectParams.duration || 'permanent'; if (effectParams.durationTurns) incEffect.durationTurns = effectParams.durationTurns; }
         effect = incEffect;
         break;
       }
@@ -910,7 +910,7 @@ export function useCardEditor() {
   };
 }
 
-function isNumenEffectTarget(target: EffectTarget | null | undefined): boolean {
+function _isNumenEffectTarget(target: EffectTarget | null | undefined): boolean {
   if (!target) return false;
   const numenTargets: EffectTarget[] = [
     'self', 'attack_target', 'any_numen', 'allied_numen', 'enemy_numen',

@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { resolveBattlePhase, resetNumenStats, type Attack } from '../logic/combatResolver';
+import { resolveBattlePhase, type Attack } from '../logic/combatResolver';
 import { isMythicQuestComplete, updateQuestProgress } from '../logic/mythicSystem';
 
 export interface CombatInteraction {

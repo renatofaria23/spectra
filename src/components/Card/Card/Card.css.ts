@@ -63,7 +63,7 @@ export const cardBadge: CSSProperties = {
   alignItems: 'center',
   justifyContent: 'center',
   padding: '4px 8px',
-  borderRadius: '999px',
+  borderRadius: '2px',
   fontWeight: 'bold',
 };
 
@@ -72,7 +72,7 @@ export const levelTag: CSSProperties = {
   bottom: '4px',
   left: '4px',
   padding: '2px 6px',
-  borderRadius: '4px',
+  borderRadius: '2px',
   fontSize: '12px',
   fontWeight: 'bold',
   backgroundColor: colors.Beige_5,
@@ -84,7 +84,7 @@ export const positionTag: CSSProperties = {
   bottom: '4px',
   right: '4px',
   padding: '2px 6px',
-  borderRadius: '4px',
+  borderRadius: '2px',
   fontSize: '11px',
   fontWeight: 'bold',
   color: colors.White_1,

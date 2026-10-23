@@ -3,7 +3,6 @@ import { Box, Text } from "@mantine/core";
 import { IconApiApp } from "@tabler/icons-react";
 import colors from "../../../styles/Colors";
 import * as styles from './CardTemplate.css.ts';
-import { NatureIcon } from "../NatureIcon/NatureIcon";
 import { RaritySymbol } from "../RaritySymbol/RaritySymbol";
 import type { TriggerEntry } from "../../../logic/triggers";
 
@@ -198,7 +197,7 @@ export const CardTemplate = React.memo(
           width: dims.width,
           height: dims.height,
           background: theme.borderGradient,
-          boxShadow: `0 0 8px ${theme.accentGlow}66, inset 0 0 8px ${theme.accentGlow}33`,
+          boxShadow: `2px 2px 0 ${colors.Black_1}, inset 0 0 0 1px ${theme.borderOuter}`,
           ...style,
         }}
       >

@@ -20,7 +20,7 @@ export const saveDecksAll = async (decks: Deck[]): Promise<boolean> => {
 export async function saveDeck(deck: Deck): Promise<void> {
   const decks = await readDecksAsync();
   const i = decks.findIndex((d) => d.id === deck.id);
-  i >= 0 ? (decks[i] = deck) : decks.push(deck);
+  if (i >= 0) decks[i] = deck; else decks.push(deck);
   await saveDecksAll(decks);
 }
 

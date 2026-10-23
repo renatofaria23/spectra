@@ -147,7 +147,7 @@ export const CardList = () => {
             <Select
               data={[
                 { value: 'all', label: 'All Natures' },
-                ...Object.entries(NATURES).map(([key, val]) => ({
+                ...Object.entries(NATURES).map(([_key, val]) => ({
                   value: val,
                   label: val.charAt(0).toUpperCase() + val.slice(1),
                 })),
@@ -161,7 +161,7 @@ export const CardList = () => {
             <Select
               data={[
                 { value: 'all', label: 'All Families' },
-                ...Object.entries(NUMEN_FAMILIES).map(([key, val]) => ({
+                ...Object.entries(NUMEN_FAMILIES).map(([_key, val]) => ({
                   value: val,
                   label: val.charAt(0).toUpperCase() + val.slice(1),
                 })),

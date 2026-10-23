@@ -58,11 +58,6 @@ import {
   Orange_1 as Orange_1Light,
   Water_7 as Water_7Light,
   Purple_3,
-  Purple_4,
-  Purple_5,
-  Purple_6,
-  Purple_7,
-  Purple_8,
   Dark_1,
   Dark_2,
   Dark_3,
@@ -163,7 +158,7 @@ export const theme = createTheme({
 
   primaryColor: "game-dark",
 
-  fontFamily: "sans-serif",
+  fontFamily: "monospace",
 
   fontSizes: {
     xs: "10px",
@@ -174,11 +169,11 @@ export const theme = createTheme({
   },
 
   radius: {
-    xs: "2px",
-    sm: "4px",
-    md: "8px",
-    lg: "12px",
-    xl: "16px",
+    xs: "0px",
+    sm: "2px",
+    md: "2px",
+    lg: "2px",
+    xl: "2px",
   },
 
   spacing: {
@@ -191,7 +186,7 @@ export const theme = createTheme({
   },
 
   other: {
-    cardBorderRadius: "12px",
+    cardBorderRadius: "2px",
     cardShadow: Card_Shadow_5,
   },
 });

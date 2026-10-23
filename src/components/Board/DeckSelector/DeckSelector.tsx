@@ -59,7 +59,7 @@ export const DeckSelector = ({ opened, onClose, onStartGame }: DeckSelectorProps
     border: `2px solid ${sel ? col : 'transparent'}`,
   });
 
-  const renderDeckList = (selected: string | null, onPick: (id: string) => void, selColor: string, borderColor: string) => (
+  const renderDeckList = (selected: string | null, onPick: (id: string) => void, selColor: string) => (
     <ScrollArea mah={250}>
       <Box data-name="deck-list" style={styles.deckList}>
         {decks.map((deck) => {

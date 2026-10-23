@@ -209,14 +209,14 @@ const describeInvokeCriteria = (criteria: InvokeCriteria, count?: number): strin
   return parts.join(' ');
 };
 
-const describeCopyEffect = (effect: { copyTarget: string; destination: string; count: number }, targetDesc: string): string => {
+const describeCopyEffect = (effect: { copyTarget: string; destination: string; count: number }, _targetDesc: string): string => {
   const countWord = effect.count === 1 ? 'copy' : 'copies';
   const t = effect.copyTarget;
   const copyTargetLabel = t === 'non_mythic_numen' ? 'non-mythic Numen' : t === 'mythic_numen' ? 'mythic Numen' : ['atk', 'def', 'hp'].includes(t) ? t.toUpperCase() : t;
   return `Select a ${copyTargetLabel}. Add ${effect.count} ${countWord} of it into ${destinationToLabel(effect.destination)}`;
 };
 
-const describeAddEffect = (effect: { addFrom: string; destination: string; count: number; addTargetType?: string }, targetDesc: string): string => {
+const describeAddEffect = (effect: { addFrom: string; destination: string; count: number; addTargetType?: string }, _targetDesc: string): string => {
   const countWord = effect.count === 1 ? 'copy' : 'copies';
   const targetTypeLabel = effect.addTargetType && effect.addTargetType !== 'any' ? effect.addTargetType : 'card';
   return `Select a ${targetTypeLabel} from ${describeAddFrom(effect.addFrom)}. Add ${effect.count} ${countWord} of it into ${destinationToLabel(effect.destination)}`;

@@ -178,8 +178,7 @@ export const resolveSoloAttack = (
 };
 
 export const canNumenAttack = (
-  numen: Numen,
-  maxInvokes: number
+  numen: Numen
 ): { canAttack: boolean; reason: string } => {
   if (numen.position === 'defense') return { canAttack: false, reason: 'Numen in defense position' };
   if (hasTrigger(numen, PassiveTrigger.STUNNED)) return { canAttack: false, reason: 'Numen is stunned' };
@@ -202,7 +201,7 @@ export const resetNumenStats = (numina: Numen[]): Numen[] =>
     justInvokeed: false,
   }));
 
-export const getTargetableDefenders = (allDefenders: Numen[], attackers: Numen[]): Numen[] => {
+export const getTargetableDefenders = (allDefenders: Numen[]): Numen[] => {
   const chal = allDefenders.find((n) => hasTrigger(n, PassiveTrigger.CHALLENGE));
   if (chal) return [chal];
   const hasUnveiled = allDefenders.some((d) => !hasTrigger(d, PassiveTrigger.VEILED));

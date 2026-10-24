@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { PHASES, GAME_CONSTANTS, SACRIFICE_REQUIREMENTS } from '../types/constants';
-import { getNextPhase } from '../logic/gameRules';
+import { getNextPhase, getManaRequirement } from '../logic/gameRules';
 import {
   calculateNatureScaling,
   calculateHPRegeneration,
@@ -47,6 +47,9 @@ interface GameState {
 interface CombatStoreState {
   gameState: GameState;
   combatLog: string[];
+  aiEnabled: boolean;
+  aiPlayerId: string;
+  setAiEnabled: (value: boolean) => void;
   initializeGame: (player1Deck: Card[], player2Deck: Card[]) => void;
   drawCard: (playerId: string) => void;
   discardCard: (playerId: string, cardId: string) => void;
@@ -173,6 +176,9 @@ const INITIAL_GAME_STATE: GameState = {
 export const useGameStore = create<CombatStoreState>((set, get) => ({
   gameState: { ...INITIAL_GAME_STATE } as GameState,
   combatLog: [],
+  aiEnabled: false,
+  aiPlayerId: 'player2',
+  setAiEnabled: (value: boolean) => set({ aiEnabled: value }),
 
   initializeGame: (player1Deck: Card[], player2Deck: Card[]) => {
     const p1 = initializePlayerState('player1', true, player1Deck);
@@ -236,6 +242,8 @@ export const useGameStore = create<CombatStoreState>((set, get) => ({
     set((state: any) => {
       const player = state.gameState[playerId];
       if (!player) return state;
+      if (!state.gameState.gameActive) return state;
+      if (state.gameState.currentPlayer !== playerId) return state;
       const cardIndex = player.hand.findIndex((c: Card) => c.id === cardId);
       if (cardIndex === -1) return state;
       const card = player.hand[cardIndex];
@@ -244,12 +252,15 @@ export const useGameStore = create<CombatStoreState>((set, get) => ({
       const level = (card as any).level || 1;
       const isMythic = (card as any).rarity === 'mythic';
       if ((sacrifices?.length || 0) < (SACRIFICE_REQUIREMENTS[level] || 0)) return state;
+      const manaCost = getManaRequirement(level);
+      if (player.currentMana < manaCost) return state;
       const numenInstance = makeNumenInstance(card, cardId);
       return {
         gameState: {
           ...state.gameState,
           [playerId]: {
             ...player,
+            currentMana: player.currentMana - manaCost,
             hand: player.hand.filter((_: Card, idx: number) => idx !== cardIndex),
             fieldNumina: [...player.fieldNumina.filter((n: Card) => !sacrifices?.includes((n as any).uid)), numenInstance],
             numenPositions: { ...player.numenPositions, [(numenInstance as any).uid]: position },
@@ -264,16 +275,22 @@ export const useGameStore = create<CombatStoreState>((set, get) => ({
     set((state: any) => {
       const player = state.gameState[playerId];
       if (!player) return state;
+      if (!state.gameState.gameActive) return state;
+      if (state.gameState.currentPlayer !== playerId) return state;
+      if (state.gameState.currentPhase !== PHASES.PREPARATION) return state;
       const cardIndex = player.hand.findIndex((c: Card) => c.id === riteId);
       if (cardIndex === -1) return state;
       const card = player.hand[cardIndex];
       if (!card || card.type !== 'rite') return state;
       if (player.fieldRites.length >= GAME_CONSTANTS.MAX_INCANTATION_SPOTS) return state;
+      const manaCost = (card as any).mana || 0;
+      if (player.currentMana < manaCost) return state;
       return {
         gameState: {
           ...state.gameState,
           [playerId]: {
             ...player,
+            currentMana: player.currentMana - manaCost,
             hand: player.hand.filter((_: Card, idx: number) => idx !== cardIndex),
             fieldRites: [...player.fieldRites, card],
           },
@@ -287,16 +304,22 @@ export const useGameStore = create<CombatStoreState>((set, get) => ({
     set((state: any) => {
       const player = state.gameState[playerId];
       if (!player) return state;
+      if (!state.gameState.gameActive) return state;
+      if (state.gameState.currentPlayer !== playerId) return state;
+      if (state.gameState.currentPhase !== PHASES.PREPARATION) return state;
       const cardIndex = player.hand.findIndex((c: Card) => c.id === wardId);
       if (cardIndex === -1) return state;
       const card = player.hand[cardIndex];
       if (!card || card.type !== 'ward') return state;
       if (player.fieldWards.length >= GAME_CONSTANTS.MAX_INCANTATION_SPOTS) return state;
+      const manaCost = (card as any).mana || 0;
+      if (player.currentMana < manaCost) return state;
       return {
         gameState: {
           ...state.gameState,
           [playerId]: {
             ...player,
+            currentMana: player.currentMana - manaCost,
             hand: player.hand.filter((_: Card, idx: number) => idx !== cardIndex),
             fieldWards: [...player.fieldWards, card],
           },
@@ -310,12 +333,17 @@ export const useGameStore = create<CombatStoreState>((set, get) => ({
     set((state: any) => {
       const player = state.gameState[playerId];
       if (!player) return state;
+      if (!state.gameState.gameActive) return state;
+      if (state.gameState.currentPlayer !== playerId) return state;
+      if (state.gameState.currentPhase !== PHASES.PREPARATION) return state;
       const cardIndex = player.hand.findIndex((c: Card) => c.id === cardId);
       if (cardIndex === -1) return state;
       const card = player.hand[cardIndex];
       if (!card || card.type !== 'numen') return state;
       if (slotIndex < 0 || slotIndex >= GAME_CONSTANTS.MAX_NUMEN_SPOTS) return state;
       if (player.fieldNumina[slotIndex]) return state;
+      const manaCost = getManaRequirement((card as any).level || 1);
+      if (player.currentMana < manaCost) return state;
       const numenInstance = makeNumenInstance(card, cardId);
       const newField = [...player.fieldNumina];
       newField[slotIndex] = numenInstance;
@@ -324,6 +352,7 @@ export const useGameStore = create<CombatStoreState>((set, get) => ({
           ...state.gameState,
           [playerId]: {
             ...player,
+            currentMana: player.currentMana - manaCost,
             hand: player.hand.filter((_: Card, idx: number) => idx !== cardIndex),
             fieldNumina: newField,
             numenPositions: { ...player.numenPositions, [(numenInstance as any).uid]: position },
@@ -337,11 +366,16 @@ export const useGameStore = create<CombatStoreState>((set, get) => ({
     set((state: any) => {
       const player = state.gameState[playerId];
       if (!player) return state;
+      if (!state.gameState.gameActive) return state;
+      if (state.gameState.currentPlayer !== playerId) return state;
+      if (state.gameState.currentPhase !== PHASES.PREPARATION) return state;
       const cardIndex = player.hand.findIndex((c: Card) => c.id === cardId);
       if (cardIndex === -1) return state;
       const card = player.hand[cardIndex];
       if (!card || (card.type !== 'rite' && card.type !== 'ward')) return state;
       if (slotIndex < 0 || slotIndex >= GAME_CONSTANTS.MAX_INCANTATION_SPOTS) return state;
+      const manaCost = (card as any).mana || 0;
+      if (player.currentMana < manaCost) return state;
       const incantationInstance = { ...card, uid: cardId + '_' + Date.now() + '_' + Math.random(), isFaceDown: faceDown };
       const newFieldRites = [...player.fieldRites];
       const newFieldWards = [...player.fieldWards];
@@ -357,6 +391,7 @@ export const useGameStore = create<CombatStoreState>((set, get) => ({
           ...state.gameState,
           [playerId]: {
             ...player,
+            currentMana: player.currentMana - manaCost,
             hand: player.hand.filter((_: Card, idx: number) => idx !== cardIndex),
             fieldRites: newFieldRites,
             fieldWards: newFieldWards,
@@ -484,26 +519,37 @@ export const useGameStore = create<CombatStoreState>((set, get) => ({
 
   selectAttacker: (numenId: string) => {
     set((state: any) => {
+      if (!state.gameState.gameActive) return state;
+      if (state.gameState.currentPhase !== PHASES.COMBAT) return state;
       const selected = state.gameState.selectedAttackers;
       const idx = selected.indexOf(numenId);
       if (idx >= 0) {
         return { gameState: { ...state.gameState, selectedAttackers: selected.filter((id: string) => id !== numenId) } };
       }
+      if (state.gameState.isFirstTurn) return state;
       const cp = state.gameState.currentPlayer;
       const player = state.gameState[cp];
       const maxInvokes = player ? calculateMaxInvokes(player.natureScaling) : 1;
       if (selected.length >= maxInvokes) return state;
+      const numen = (player?.fieldNumina || []).find((n: Card) => (n as any).uid === numenId);
+      if (!numen) return state;
+      if ((numen as any).hasAttacked) return state;
+      if ((numen as any).justInvoked) return state;
       return { gameState: { ...state.gameState, selectedAttackers: [...selected, numenId] } };
     });
   },
 
   selectDefender: (numenId: string) => {
-    set((state: any) => ({
-      gameState: {
-        ...state.gameState,
-        selectedDefender: state.gameState.selectedDefender === numenId ? null : numenId,
-      },
-    }));
+    set((state: any) => {
+      if (!state.gameState.gameActive) return state;
+      if (state.gameState.currentPhase !== PHASES.COMBAT) return state;
+      return {
+        gameState: {
+          ...state.gameState,
+          selectedDefender: state.gameState.selectedDefender === numenId ? null : numenId,
+        },
+      };
+    });
   },
 
   clearSelections: () => {
@@ -514,6 +560,8 @@ export const useGameStore = create<CombatStoreState>((set, get) => ({
 
   executeAttack: () => {
     set((state: any) => {
+      if (!state.gameState.gameActive) return state;
+      if (state.gameState.currentPhase !== PHASES.COMBAT) return state;
       const currentPlayer = state.gameState.currentPlayer;
       const opponentId = currentPlayer === 'player1' ? 'player2' : 'player1';
       const player = state.gameState[currentPlayer];
@@ -585,19 +633,21 @@ export const useGameStore = create<CombatStoreState>((set, get) => ({
   },
 
   endTurn: () => {
-    set((state: any) => {
-      const currentPlayer = state.gameState.currentPlayer;
+    const state = get();
+    if (!state.gameState.gameActive) return;
+    set((s: any) => {
+      const currentPlayer = s.gameState.currentPlayer;
       const opponentId = currentPlayer === 'player1' ? 'player2' : 'player1';
-      const player = state.gameState[currentPlayer];
-      const opponent = state.gameState[opponentId];
+      const player = s.gameState[currentPlayer];
+      const opponent = s.gameState[opponentId];
       if (player && player.currentHP <= 0) {
         return {
-          gameState: { ...state.gameState, gameActive: false, winner: opponent?.playerId || opponentId },
-          combatLog: [...state.combatLog, `${currentPlayer} has 0 HP. ${opponentId} wins!`],
+          gameState: { ...s.gameState, gameActive: false, winner: opponent?.playerId || opponentId },
+          combatLog: [...s.combatLog, `${currentPlayer} has 0 HP. ${opponentId} wins!`],
         };
       }
       return {
-        gameState: { ...state.gameState, currentPhase: PHASES.END_OF_TURN, selectedAttackers: [], selectedDefender: null },
+        gameState: { ...s.gameState, currentPhase: PHASES.END_OF_TURN, selectedAttackers: [], selectedDefender: null },
       };
     });
     get().changePhase();

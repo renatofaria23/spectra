@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Text, Button, Menu } from '@mantine/core';
+import { Box, Text, Button, Menu, Switch } from '@mantine/core';
 import colors from '../../../styles/Colors';
 import { useNavigate } from 'react-router-dom';
 import useGameStore from '../../../stores/gameStore';
@@ -11,6 +11,8 @@ import { boardRoot, playButton, menuButton, optionsButton, exitButton } from './
 export const Board = () => {
   const gameActive = useGameStore((s) => s.gameState.gameActive);
   const initializeGame = useGameStore((s) => s.initializeGame);
+  const setAiEnabled = useGameStore((s) => s.setAiEnabled);
+  const [vsAi, setVsAi] = useState(false);
   const [selectorOpen, setSelectorOpen] = useState(false);
   const [optionsOpen, setOptionsOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -76,7 +78,8 @@ export const Board = () => {
         </Menu.Dropdown>
       </Menu>
       <Button onClick={exitGame} size='lg' style={exitButton}>Exit Game</Button>
-      <DeckSelector opened={selectorOpen} onClose={() => setSelectorOpen(false)} onStartGame={(p1Deck: Card[], p2Deck: Card[]) => initializeGame(p1Deck, p2Deck)} />
+      <Switch checked={vsAi} onChange={(e) => setVsAi(e.currentTarget.checked)} label="Play vs AI (Player 2)" style={{ marginBottom: 8 }} />
+<DeckSelector opened={selectorOpen} onClose={() => setSelectorOpen(false)} onStartGame={(p1Deck: Card[], p2Deck: Card[]) => { setAiEnabled(vsAi); initializeGame(p1Deck, p2Deck); }} />
     </Box>
   );
 };

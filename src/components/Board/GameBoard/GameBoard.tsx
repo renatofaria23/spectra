@@ -1,9 +1,10 @@
-import React, { useState, useCallback, useRef } from "react";
+import React, { useState, useCallback, useRef, useEffect } from "react";
 import { Box, Text, Button, Group, Badge } from "@mantine/core";
 import { IconArrowBack } from "@tabler/icons-react";
 import colors from "../../../styles/Colors";
 import * as S from './GameBoard.css.ts';
 import useGameStore, { getCurrentPhaseName } from "../../../stores/gameStore";
+import { runAiTurn } from "../../../logic/ai/aiDriver";
 import type { Card, FieldPosition } from "../../../logic/deckConstraints";
 import { NatureIcon } from "../../Card/NatureIcon/NatureIcon";
 import { CardTemplate } from "../../Card/CardTemplate/CardTemplate";
@@ -101,7 +102,7 @@ const ESlot: React.FC<{ hig: boolean; zone: string; si: number; pid: string }> =
     style={{
       ...S.emptyCardSlot,
       backgroundColor: colors.Gray_8,
-      border: `2px solid ${hig ? colors.Blue_11 : colors.Gray_6}`,
+      border: `2px solid ${hig ? colors.Blue_11 : (zone === "numen" ? colors.Blue_8 : colors.Purple_8)}`,
       boxShadow: hig ? `0 0 12px ${colors.Blue_11}88` : "none",
       transition: "border 0.15s ease, box-shadow 0.15s ease",
     }}
@@ -231,8 +232,8 @@ const PField: React.FC<{
       }}
     >
       {mirrored ? <>
-        {renderIncantation()}
         {renderNumen()}
+        {renderIncantation()}
       </> : <>
         {renderNumen()}
         {renderIncantation()}
@@ -329,6 +330,7 @@ export const GameBoard = () => {
   const changePhase = useGameStore((s) => s.changePhase);
   const selectAttacker = useGameStore((s) => s.selectAttacker);
   const selectDefender = useGameStore((s) => s.selectDefender);
+  const executeAttack = useGameStore((s) => s.executeAttack);
   const endTurn = useGameStore((s) => s.endTurn);
   const quitGame = useGameStore((s) => s.quitGame);
   const placeNumen = useGameStore((s) => s.placeNumenFromHand);
@@ -339,6 +341,16 @@ export const GameBoard = () => {
   const p1 = gs.player1;
   const p2 = gs.player2;
   const phase = gs.currentPhase;
+  const aiEnabled = useGameStore((s) => s.aiEnabled);
+  const aiPlayerId = useGameStore((s) => s.aiPlayerId);
+  const aiRunningRef = useRef(false);
+  useEffect(() => {
+    if (!aiEnabled || !gs.gameActive) return;
+    if (gs.currentPlayer !== aiPlayerId) return;
+    if (aiRunningRef.current) return;
+    aiRunningRef.current = true;
+    runAiTurn(aiPlayerId).finally(() => { aiRunningRef.current = false; });
+  }, [gs.gameActive, gs.currentPlayer, aiEnabled, aiPlayerId]);
 
   const [insp, setInsp] = useState<{ card: Card; isSM: boolean; opid: string; si: number } | null>(null);
   const [drag, setDrag] = useState<DS>({ card: null, hid: null, offset: { x: 0, y: 0 }, startPos: { x: 0, y: 0 }, cursorPos: { x: 0, y: 0 }, isDragging: false });
@@ -473,6 +485,9 @@ export const GameBoard = () => {
             <Button size="xs" onClick={changePhase} styles={{ root: { backgroundColor: colors.Blue_5 } }}>Next Phase</Button>
             <Text c={colors.Orange_7} size="xs" fw={700}>TURN {gs.turnNumber}</Text>
             <Badge data-name="phase-badge" size="xs" style={{ backgroundColor: colors.Blue_5 }}>{getCurrentPhaseName(phase)}</Badge>
+              {phase === "combat" && gs.selectedAttackers.length > 0 && (
+                <Button size="xs" onClick={executeAttack} styles={{ root: { backgroundColor: colors.Red_5 } }}>Attack</Button>
+              )}
             <Button size="xs" onClick={endTurn} styles={{ root: { backgroundColor: colors.Orange_7 } }}>End Turn</Button>
           </Group>
           <PField player={p1} pid="player1" isCP={cp === "player1"} onTA={cp === "player1" ? selectAttacker : () => {}} onTD={cp === "player2" ? selectDefender : () => {}} atk={cp === "player1" ? gs.selectedAttackers : []} def={cp === "player1" ? gs.selectedDefender : null} onInsp={hInsp as any} drag={drag} onDrop={hDrop} onFlip={hFlip} mirrored={false} />
@@ -488,6 +503,9 @@ export const GameBoard = () => {
           <Box data-name="card-inspect-card" onClick={(e) => e.stopPropagation()} style={S.cardInspectCard}>
             <CardTemplate card={{ id: (insp.card as any).id || "", name: (insp.card as any).name || "", type: (insp.card as any).type || "numen", cardType: (insp.card as any).cardType || "", description: (insp.card as any).description || "", art: (insp.card as any).art || "", family: (insp.card as any).family, rarity: (insp.card as any).rarity, level: (insp.card as any).level, nature: (insp.card as any).nature, attack: (insp.card as any).attack, defense: (insp.card as any).defense, mana: (insp.card as any).mana, triggers: (insp.card as any).triggers }} size="xl" artImage={getArt((insp.card as any).art)} />
             {insp.isSM && insp.opid === cp && <Button size="sm" onClick={hCastSet} styles={{ root: { backgroundColor: colors.Green_5 } }}>Cast</Button>}
+            {phase === "combat" && insp.opid === cp && (insp.card as any).type === "numen" && !(insp.card as any).hasAttacked && !(insp.card as any).justInvoked && !gs.isFirstTurn && (
+              <Button size="sm" onClick={() => { selectAttacker((insp.card as any).uid); setInsp(null); }} styles={{ root: { backgroundColor: colors.Red_5 } }}>Attack</Button>
+            )}
           </Box>
         </Box>
       )}

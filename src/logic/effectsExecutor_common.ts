@@ -85,9 +85,9 @@ export const getTargetCards = (
   }
 };
 
-export const findCardIndex = (cards: Card[], criteria: any, player: PlayerState): number => {
+export const findCardIndex = (cards: Card[], criteria: any, _player: PlayerState): number => {
   for (let i = 0; i < cards.length; i++) {
-    const card = cards[i];
+    const card = cards[i]!;
     if (criteria.name && card.name !== criteria.name) continue;
     if (criteria.level && (card.level as number) !== criteria.level) continue;
     if (criteria.levelMin !== undefined && (card.level as number) < criteria.levelMin) continue;
@@ -107,7 +107,7 @@ export const findCardIndex = (cards: Card[], criteria: any, player: PlayerState)
   return -1;
 };
 
-const cardsFilter = (cardType: string, cards: Card[], player: PlayerState): Card[] => {
+const cardsFilter = (cardType: string, cards: Card[], _player: PlayerState): Card[] => {
   if (cardType === 'numen') return cards.filter((c) => c.type === 'numen');
   if (cardType === 'rite') return cards.filter((c) => c.type === 'rite');
   if (cardType === 'ward') return cards.filter((c) => c.type === 'ward');

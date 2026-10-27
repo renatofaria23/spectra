@@ -1,4 +1,4 @@
-import { GAME_CONSTANTS, PHASES } from '../types/constants';
+import { GAME_CONSTANTS, PHASES, POSITIONS } from '../types/constants';
 
 export const getManaRequirement = (level: number): number => (level * 100);
 
@@ -25,7 +25,7 @@ export const getNextPhase = (phase: string): string => {
 export const canNormalInvoke = (used: number): boolean => used < GAME_CONSTANTS.NORMAL_INVOKES_PER_TURN;
 
 export const validateFieldPosition = (position: string): { isValid: boolean } => ({
-  isValid: ['attack', 'defense', 'face_down'].includes(position),
+  isValid: Object.values(POSITIONS).includes(position as typeof POSITIONS[keyof typeof POSITIONS]),
 });
 
 export const checkHandCapacity = (size: number): {
@@ -67,6 +67,6 @@ export const validateNumenInvoke = (
   return req > 0 ? { valid: false, reason: `Need ${req} mana` } : { valid: true, reason: '' };
 };
 
-export type FieldPosition = 'attack' | 'defense' | 'face_down';
+export type FieldPosition = (typeof POSITIONS)[keyof typeof POSITIONS];
 
 export type Phase = (typeof PHASES)[keyof typeof PHASES];

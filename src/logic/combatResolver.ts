@@ -73,7 +73,7 @@ export const resolveGroupAttack = (
 
   for (const attacker of attackers) {
     const attackerATK = attacker.currentAttack;
-    const totalATK = attackerATK + defenderNatureScaling.fire.damageBonus;
+    const totalATK = attackerATK + defenderNatureScaling.fire.numenAttackBonus;
     const killed = totalATK >= remainingDefenderStat;
     const mutual = totalATK === remainingDefenderStat;
     const overflow = totalATK > remainingDefenderStat ? totalATK - remainingDefenderStat : 0;
@@ -135,7 +135,7 @@ export const resolveSoloAttack = (
     validationErrors: [],
   };
 
-  const totalATK = attacker.currentAttack + defenderNatureScaling.fire.damageBonus;
+  const totalATK = attacker.currentAttack + defenderNatureScaling.fire.numenAttackBonus;
 
   if (!defender) {
     result.interactions.push({
@@ -209,17 +209,18 @@ export const getTargetableDefenders = (allDefenders: Numen[]): Numen[] => {
 };
 
 const DEFAULT_SCALING: NatureScaling = {
-  fire: { damageBonus: 0, numinaCount: 0 },
-  air: { extraInvokes: 0, numinaCount: 0 },
-  earth: { hpBonus: 0, numinaCount: 0 },
+  fire: { numenAttackBonus: 0, numinaCount: 0 },
+  air: { manaRegenBonus: 0, numinaCount: 0 },
+  earth: { numenDefenseBonus: 0, numinaCount: 0 },
   water: { hpRegenBonus: 0, numinaCount: 0 },
-  light: { manaGainBonus: 0, numinaCount: 0 },
-  dark: { handSizeBonus: 0, numinaCount: 0 },
+  light: { riteCostReduction: 0, numinaCount: 0 },
+  dark: { wardCostReduction: 0, numinaCount: 0 },
 };
 
 export const resolveBattlePhase = (
   attackSequence: Attack[],
-  fieldNumina: Numen[] = []
+  fieldNumina: Numen[] = [],
+  defenderNatureScaling: NatureScaling = DEFAULT_SCALING
 ): BattleResultSummary => {
   const summary: BattleResultSummary = {
     totalDecrease: 0,
@@ -235,14 +236,14 @@ export const resolveBattlePhase = (
       continue;
     }
 
-    const { canAttack, reason } = canNumenAttack(attacker, fieldNumina.length);
+    const { canAttack, reason } = canNumenAttack(attacker);
     if (!canAttack) {
       summary.validationErrors.push(`${attacker.name} cannot attack: ${reason}`);
       continue;
     }
 
     const defender = attack.targetId ? fieldNumina.find((n) => n.id === attack.targetId) ?? null : null;
-    const result = resolveSoloAttack(attacker, defender, DEFAULT_SCALING);
+    const result = resolveSoloAttack(attacker, defender, defenderNatureScaling);
     summary.interactions.push(...result.interactions);
     summary.forgetedNumina.push(...result.forgetedNumina);
     summary.totalDecrease += result.totalOverflowDamage;

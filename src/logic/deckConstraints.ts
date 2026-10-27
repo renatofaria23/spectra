@@ -1,4 +1,4 @@
-import { GAME_CONSTANTS, NATURES } from '../types/constants';
+import { GAME_CONSTANTS, NATURES, POSITIONS } from '../types/constants';
 
 export type Nature = typeof NATURES[keyof typeof NATURES];
 
@@ -63,15 +63,7 @@ export interface CombatInteraction {
 
 export type PlayerId = 'player1' | 'player2';
 
-export type FieldPosition = 'attack' | 'defense' | 'face_down';
-
-export type Position = (typeof POSITIONS)[keyof typeof POSITIONS];
-
-export const POSITIONS = {
-  ATTACK: 'attack' as const,
-  DEFENSE: 'defense' as const,
-  FACE_DOWN: 'face_down' as const,
-} as const;
+export type FieldPosition = (typeof POSITIONS)[keyof typeof POSITIONS];
 
 export const validateDeckComposition = (deck: Card[]): {
   isValid: boolean;
@@ -81,10 +73,20 @@ export const validateDeckComposition = (deck: Card[]): {
   const { MIN_DECK_SIZE: min, MAX_DECK_SIZE: max } = GAME_CONSTANTS;
   if (deck.length < min) errors.push(`Deck too small: ${deck.length}/${min}`);
   if (deck.length > max) errors.push(`Deck too large: ${deck.length}/${max}`);
+  const limits: Record<string, number> = { common: 3, rare: 2, legendary: 1, mythic: 1 };
   const counts: Record<string, number> = {};
-  for (const { id } of deck) counts[id] = (counts[id] || 0) + 1;
+  const rarityById: Record<string, string> = {};
+  let mythicTotal = 0;
+  for (const card of deck) {
+    counts[card.id] = (counts[card.id] || 0) + 1;
+    rarityById[card.id] = card.rarity || 'common';
+    if (card.rarity === 'mythic') mythicTotal++;
+  }
+  if (mythicTotal > 1) errors.push('Deck can only contain 1 Mythic card total.');
   for (const [id, count] of Object.entries(counts)) {
-    if (count > 3) errors.push(`Card ${id} appears ${count} times (max 3)`);
+    const rarity = rarityById[id] ?? 'common';
+    const limit = limits[rarity] ?? 3;
+    if (count > limit) errors.push(`Card ${id} appears ${count} times (max ${limit})`);
   }
   return { isValid: !errors.length, errors };
 };

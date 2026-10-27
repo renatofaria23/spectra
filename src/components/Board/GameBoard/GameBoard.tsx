@@ -5,7 +5,7 @@ import colors from "../../../styles/Colors";
 import * as S from './GameBoard.css.ts';
 import useGameStore, { getCurrentPhaseName } from "../../../stores/gameStore";
 import { runAiTurn } from "../../../logic/ai/aiDriver";
-import type { Card, FieldPosition } from "../../../logic/deckConstraints";
+import type { Card, FieldPosition, NatureScaling } from "../../../logic/deckConstraints";
 import { NatureIcon } from "../../Card/NatureIcon/NatureIcon";
 import { CardTemplate } from "../../Card/CardTemplate/CardTemplate";
 
@@ -53,8 +53,8 @@ interface PT {
 
 const FCard: React.FC<{
   card: Card; sel: boolean; onSel: () => void; onInsp: () => void;
-  faceDown: boolean; isDef: boolean;
-}> = ({ card, sel, onSel, onInsp, faceDown, isDef }) => {
+  faceDown: boolean; isDef: boolean; uid?: string;
+}> = ({ card, sel, onSel, onInsp, faceDown, isDef, uid: _uid }) => {
   const bg = faceDown ? colors.Gray_9 : getBg(card);
   const bd = faceDown ? colors.Gray_5 : getBd(card);
   const [hov, setHov] = useState(false);
@@ -82,8 +82,8 @@ const FCard: React.FC<{
         </Box>
       ) : (
         <Box style={{ flex: 1, width: "100%", display: "flex", alignItems: "center", justifyContent: "center", position: "relative", overflow: "hidden" }}>
-          {getArt(card.art) ? (
-            <img src={getArt(card.art)!} alt="Card art" style={{ width: "120%", height: "120%", objectFit: "cover" }} />
+          {getArt((card as any).art) ? (
+            <img src={getArt((card as any).art)!} alt="Card art" style={{ width: "120%", height: "120%", objectFit: "cover" }} />
           ) : (
             <NatureIcon type={card.nature || "dark"} size={30} />
           )}
@@ -114,10 +114,22 @@ const HCard: React.FC<{
   onDM: (o: { x: number; y: number }) => void; onDE: () => void;
   isDrag: boolean; dOff: { x: number; y: number }; canDrag: boolean;
   dataHandIndex: number; dataHandPlayer: string; onSwapHover: (idx: number) => void;
-}> = ({ card, _onInsp, onDS, onDM, onDE, isDrag, dOff, canDrag, dataHandIndex, dataHandPlayer, onSwapHover }) => {
+  playerScaling?: NatureScaling;
+}> = ({ card, _onInsp, onDS, onDM, onDE, isDrag, dOff, canDrag, dataHandIndex, dataHandPlayer, onSwapHover, playerScaling }) => {
   const bg = getBg(card);
   const bd = getBd(card);
   const [hov, setHov] = useState(false);
+  const sc = playerScaling;
+  const lightReduction = sc?.light?.riteCostReduction ?? 0;
+  const darkReduction = sc?.dark?.wardCostReduction ?? 0;
+  let effCost: number | null = null;
+  let costColor = colors.White_1;
+  if (card.type === "rite" || card.type === "ward") {
+    const original = (card as any).mana ?? 0;
+    const reduction = card.type === "rite" ? lightReduction : darkReduction;
+    effCost = Math.max(0, original - reduction);
+    costColor = effCost < original ? colors.Green_2 : colors.White_1;
+  }
   const sRef = useRef<{ x: number; y: number } | null>(null);
 
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -163,6 +175,11 @@ const HCard: React.FC<{
           <NatureIcon type={(card as any).nature || "dark"} size={30} />
         )}
       </Box>
+      {effCost !== null && (
+        <Box style={{ position: "absolute", top: 2, left: 4, zIndex: 5, pointerEvents: "none" }}>
+          <Text c={costColor} size="xs" fw={700}>{effCost}</Text>
+        </Box>
+      )}
     </Box>
   );
 };
@@ -202,7 +219,7 @@ const PField: React.FC<{
         const c = player.fieldRites[i] || player.fieldWards[i];
         const fd = c ? !!(c as any).isFaceDown : false;
         if (!c) return <Box key={`s${i}`} data-name={`incantation-slot-${i}`}><ESlot hig={getHig("incantation", i)} zone="incantation" si={i} pid={pid} /></Box>;
-        return <Box key={`s${i}`} data-name={`incantation-slot-${i}`}><FCard card={c} uid={(c as any).uid || `spell_${i}`} sel={false} onSel={() => {}} onInsp={() => fd ? onInsp(c, true, pid, i) : onInsp(c)} faceDown={fd} isDef={false} /></Box>;
+        return <Box key={`s${i}`} data-name={`incantation-slot-${i}`}><FCard card={c} uid={(c as any).uid || `rite_${i}`} sel={false} onSel={() => {}} onInsp={() => fd ? onInsp(c, true, pid, i) : onInsp(c)} faceDown={fd} isDef={false} /></Box>;
       })}
     </ZRow>
   );
@@ -242,16 +259,17 @@ const PField: React.FC<{
   );
 };
 
-const NSBadge: React.FC<{ nature: string; label: string; val: string; theme: string[] }> = ({ nature, label, val, theme }) => {
+const NSBadge: React.FC<{ nature: string; label: string; val: string; theme: string[]; positive?: boolean }> = ({ nature, label, val, theme, positive = true }) => {
   const bg = theme[4] ?? theme[2] ?? colors.Gray_6;
   const tc = nature === "light" || nature === "air" ? colors.Gray_9 : colors.White_1;
+  const valColor = positive ? colors.Green_2 : colors.Red_4;
   return (
     <Badge
       data-name={`nature-badge-${nature}`}
       size="xs"
       style={{ backgroundColor: bg, color: tc, fontSize: "9px", padding: "2px 6px", whiteSpace: "nowrap" }}
     >
-      {label}: {val}
+      {label}: <Text c={valColor} size="xs" fw={700}>{val}</Text>
     </Badge>
   );
 };
@@ -260,12 +278,12 @@ const PInfo: React.FC<{ player: any; pid: string; active: boolean }> = ({ player
   const isP1 = pid === "player1";
   const sc = player.natureScaling;
   const badges = [
-    { nature: "light", label: "Light", val: `+${sc.light.manaGainBonus} MG`, theme: colors.LightTheme },
-    { nature: "dark", label: "Dark", val: `+${sc.dark.handSizeBonus} HS`, theme: colors.DarkTheme },
-    { nature: "fire", label: "Fire", val: `+${sc.fire.damageBonus} DMG`, theme: colors.FireTheme },
-    { nature: "water", label: "Water", val: `+${sc.water.hpRegenBonus} HPR`, theme: colors.WaterTheme },
-    { nature: "earth", label: "Earth", val: `+${sc.earth.hpBonus} HP`, theme: colors.EarthTheme },
-    { nature: "air", label: "Air", val: `+${sc.air.extraInvokes} NS`, theme: colors.AirTheme },
+    { nature: "light", label: "Light", val: `-${sc.light.riteCostReduction} SC`, theme: colors.LightTheme, positive: true },
+    { nature: "dark", label: "Dark", val: `-${sc.dark.wardCostReduction} WC`, theme: colors.DarkTheme, positive: true },
+    { nature: "fire", label: "Fire", val: `+${sc.fire.numenAttackBonus} ATK`, theme: colors.FireTheme, positive: true },
+    { nature: "water", label: "Water", val: `+${sc.water.hpRegenBonus} HPR`, theme: colors.WaterTheme, positive: true },
+    { nature: "earth", label: "Earth", val: `+${sc.earth.numenDefenseBonus} DEF`, theme: colors.EarthTheme, positive: true },
+    { nature: "air", label: "Wind", val: `+${sc.air.manaRegenBonus} MR`, theme: colors.AirTheme, positive: true },
   ];
 
   return (
@@ -469,9 +487,13 @@ export const GameBoard = () => {
 
   if (!p1 || !p2) return <Box data-name="no-game-state" style={S.noGameStateMessage}><Text c={colors.Gray_3}>No active game</Text></Box>;
 
-  const renderHand = (hand: Card[], isCP: boolean, pid: string) => hand.map((c: Card, i: number) => (
-    <HCard key={i} card={c} onInsp={() => hInsp(c)} onDS={(card, s) => hDS(card, s, i)} onDM={hDM} onDE={hDE} isDrag={drag.card === c} dOff={drag.card === c ? drag.offset : { x: 0, y: 0 }} canDrag={isCP} dataHandIndex={i} dataHandPlayer={pid} onSwapHover={hSwapHover} />
-  ));
+  const renderHand = (hand: Card[], isCP: boolean, pid: string) => {
+    const owner = pid === "player1" ? p1 : p2;
+    const sc = owner?.natureScaling;
+    return hand.map((c: Card, i: number) => (
+      <HCard key={i} card={c} _onInsp={() => hInsp(c)} onDS={(card, s) => hDS(card, s, i)} onDM={hDM} onDE={hDE} isDrag={drag.card === c} dOff={drag.card === c ? drag.offset : { x: 0, y: 0 }} canDrag={isCP} dataHandIndex={i} dataHandPlayer={pid} onSwapHover={hSwapHover} playerScaling={sc} />
+    ));
+  };
 
   return (
     <Box data-name="game-board-root" style={S.gameBoardRoot}>

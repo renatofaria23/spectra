@@ -1,12 +1,13 @@
+import { GAME_CONSTANTS } from '../types/constants';
 import type { Nature } from '../types/constants';
 
 export interface NatureScaling {
-  fire: { damageBonus: number; numinaCount: number };
-  earth: { hpBonus: number; numinaCount: number };
+  fire: { numenAttackBonus: number; numinaCount: number };
+  earth: { numenDefenseBonus: number; numinaCount: number };
   water: { hpRegenBonus: number; numinaCount: number };
-  air: { extraInvokes: number; numinaCount: number };
-  light: { manaGainBonus: number; numinaCount: number };
-  dark: { handSizeBonus: number; numinaCount: number };
+  air: { manaRegenBonus: number; numinaCount: number };
+  light: { riteCostReduction: number; numinaCount: number };
+  dark: { wardCostReduction: number; numinaCount: number };
 }
 
 export interface Card {
@@ -19,12 +20,12 @@ export interface Card {
 
 export const calculateNatureScaling = (deckCards: Card[]): NatureScaling => {
   const scaling = {
-    fire: { damageBonus: 0, numinaCount: 0 },
-    earth: { hpBonus: 0, numinaCount: 0 },
+    fire: { numenAttackBonus: 0, numinaCount: 0 },
+    earth: { numenDefenseBonus: 0, numinaCount: 0 },
     water: { hpRegenBonus: 0, numinaCount: 0 },
-    air: { extraInvokes: 0, numinaCount: 0 },
-    light: { manaGainBonus: 0, numinaCount: 0 },
-    dark: { handSizeBonus: 0, numinaCount: 0 },
+    air: { manaRegenBonus: 0, numinaCount: 0 },
+    light: { riteCostReduction: 0, numinaCount: 0 },
+    dark: { wardCostReduction: 0, numinaCount: 0 },
   };
 
   deckCards.forEach((card) => {
@@ -32,24 +33,24 @@ export const calculateNatureScaling = (deckCards: Card[]): NatureScaling => {
     if (nature && scaling[nature]) scaling[nature].numinaCount++;
   });
 
-  scaling.fire.damageBonus = scaling.fire.numinaCount * 2;
-  scaling.earth.hpBonus = scaling.earth.numinaCount * 50;
-  scaling.water.hpRegenBonus = scaling.water.numinaCount * 10;
-  scaling.air.extraInvokes = Math.floor(scaling.air.numinaCount / 10);
-  scaling.light.manaGainBonus = scaling.light.numinaCount * 3;
-  scaling.dark.handSizeBonus = Math.floor(scaling.dark.numinaCount / 5);
+  scaling.fire.numenAttackBonus = scaling.fire.numinaCount * 5;
+  scaling.earth.numenDefenseBonus = scaling.earth.numinaCount * 5;
+  scaling.water.hpRegenBonus = scaling.water.numinaCount * 5;
+  scaling.air.manaRegenBonus = scaling.air.numinaCount * 1;
+  scaling.light.riteCostReduction = scaling.light.numinaCount * 1;
+  scaling.dark.wardCostReduction = scaling.dark.numinaCount * 1;
 
   return scaling;
 };
 
 export const calculateHPRegeneration = (scaling: NatureScaling): number => scaling.water.hpRegenBonus;
 
-export const calculateMaxInvokes = (scaling: NatureScaling): number => 1 + scaling.air.extraInvokes;
+export const calculateMaxInvokes = (_scaling: NatureScaling): number => GAME_CONSTANTS.NORMAL_INVOKES_PER_TURN;
 
 export const calculateManaGain = (baseManaGain: number, scaling: NatureScaling): number =>
-  baseManaGain + scaling.light.manaGainBonus;
+  baseManaGain + scaling.air.manaRegenBonus;
 
-export const calculateMaxHandSize = (baseHandSize: number, scaling: NatureScaling, isOpponent = false): number =>
-  isOpponent ? Math.max(1, baseHandSize - scaling.dark.handSizeBonus) : baseHandSize + scaling.dark.handSizeBonus;
+export const calculateMaxHandSize = (_baseHandSize: number, _scaling: NatureScaling, _isOpponent = false): number =>
+  _baseHandSize;
 
-export const calculateDamageBonus = (scaling: NatureScaling): number => scaling.fire.damageBonus;
+export const calculateDamageBonus = (scaling: NatureScaling): number => scaling.fire.numenAttackBonus;

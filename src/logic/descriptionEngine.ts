@@ -12,6 +12,7 @@ import type { EffectTarget } from './triggers';
 import { EffectType, type InvokeCriteria, type ForEachConfig } from './effects';
 import { isNumenTarget } from './cardEditorOptions';
 import type { EffectEntry } from './effects';
+import colors from '../styles/Colors';
 
 const passiveDescriptions: Record<PassiveTrigger, string> = {
   [PassiveTrigger.CHALLENGE]: "This Numen must be attacked before other Numina.",
@@ -114,6 +115,28 @@ const isSelectableNumenTarget = (t: EffectTarget | undefined) => t === 'allied_n
 
 const getSelectPrefix = (t: EffectTarget | undefined) =>
   t === 'allied_numen' ? 'Select an allied Numen.' : t === 'enemy_numen' ? 'Select an enemy Numen.' : '';
+
+const isAllyEntity = (t: string | undefined) =>
+  !!t && (t === 'self' || t === 'player' || t.includes('allied'));
+const isEnemyEntity = (t: string | undefined) =>
+  !!t && (t === 'opponent' || t.includes('enemy'));
+
+type Polarity = 'positive' | 'negative' | 'neutral';
+
+const getStatPolarity = (effectType: EffectType, target: string | undefined): Polarity => {
+  if (effectType !== EffectType.INCREASE && effectType !== EffectType.DECREASE) return 'neutral';
+  const isAlly = isAllyEntity(target);
+  const isEnemy = isEnemyEntity(target);
+  if (!isAlly && !isEnemy) return 'neutral';
+  const isIncrease = effectType === EffectType.INCREASE;
+  return isAlly ? (isIncrease ? 'positive' : 'negative') : (isIncrease ? 'negative' : 'positive');
+};
+
+const wrapPolarity = (text: string, polarity: Polarity): string => {
+  if (polarity === 'positive') return `<span style="color:${colors.Green_2}">${text}</span>`;
+  if (polarity === 'negative') return `<span style="color:${colors.Red_4}">${text}</span>`;
+  return text;
+};
 
 const getEffectTargetDescription = (t: EffectTarget | undefined, sel: EffectTarget | null | undefined, skip = false) =>
   t && effectTargetDescriptions[t] ? (!skip && sel && t === sel ? 'that Numen' : effectTargetDescriptions[t]) : 'the target';
@@ -438,12 +461,16 @@ const describeEffect = (
                  `Lock ${targetDesc}`;
       break;
     }
-    case EffectType.DECREASE:
+    case EffectType.DECREASE: {
       baseText = describeChangeEffect(effect, true, targetDesc);
+      baseText = wrapPolarity(baseText, getStatPolarity(EffectType.DECREASE, effect.target));
       break;
-    case EffectType.INCREASE:
+    }
+    case EffectType.INCREASE: {
       baseText = describeChangeEffect(effect, false, targetDesc);
+      baseText = wrapPolarity(baseText, getStatPolarity(EffectType.INCREASE, effect.target));
       break;
+    }
     case EffectType.ETHEREAL:
       baseText = `Grant Ethereal for ${effect.count} ${effect.count === 1 ? 'turn' : 'turns'} to ${effect.type === 'both' ? 'Rites and Wards' : effect.type + 's'} on ${targetDesc}`;
       break;

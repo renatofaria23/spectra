@@ -70,7 +70,7 @@ const exileCriteriaTypeOptions = [
   ...invokeCriteriaTypeOptions,
   { value: 'any_numen', label: 'Any numen' },
   { value: 'any_ward', label: 'Any ward' },
-  { value: 'any_rite', label: 'Any spell' },
+  { value: 'any_rite', label: 'Any rite' },
   { value: 'any_incantation', label: 'Any incantation' },
 ];
 
@@ -108,7 +108,7 @@ const getCriteriaLabel = (type: string, value: any): string => {
   }
   if (type === 'any_numen') return 'Any numen';
   if (type === 'any_ward') return 'Any ward';
-  if (type === 'any_rite') return 'Any spell';
+  if (type === 'any_rite') return 'Any rite';
   if (type === 'any_incantation') return 'Any incantation';
   return `${type}: ${value}`;
 };

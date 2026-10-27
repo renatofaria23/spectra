@@ -283,7 +283,8 @@ export const useGameStore = create<CombatStoreState>((set, get) => ({
       const card = player.hand[cardIndex];
       if (!card || card.type !== 'rite') return state;
       if (player.fieldRites.length >= GAME_CONSTANTS.MAX_INCANTATION_SPOTS) return state;
-      const manaCost = (card as any).mana || 0;
+      const riteCostReduction = player.natureScaling.light.riteCostReduction;
+      const manaCost = Math.max(0, ((card as any).mana || 0) - riteCostReduction);
       if (player.currentMana < manaCost) return state;
       return {
         gameState: {
@@ -312,7 +313,8 @@ export const useGameStore = create<CombatStoreState>((set, get) => ({
       const card = player.hand[cardIndex];
       if (!card || card.type !== 'ward') return state;
       if (player.fieldWards.length >= GAME_CONSTANTS.MAX_INCANTATION_SPOTS) return state;
-      const manaCost = (card as any).mana || 0;
+      const wardCostReduction = player.natureScaling.dark.wardCostReduction;
+      const manaCost = Math.max(0, ((card as any).mana || 0) - wardCostReduction);
       if (player.currentMana < manaCost) return state;
       return {
         gameState: {
@@ -374,7 +376,11 @@ export const useGameStore = create<CombatStoreState>((set, get) => ({
       const card = player.hand[cardIndex];
       if (!card || (card.type !== 'rite' && card.type !== 'ward')) return state;
       if (slotIndex < 0 || slotIndex >= GAME_CONSTANTS.MAX_INCANTATION_SPOTS) return state;
-      const manaCost = (card as any).mana || 0;
+      const isRite = (card as any).type === 'rite';
+      const costReduction = isRite
+        ? player.natureScaling.light.riteCostReduction
+        : player.natureScaling.dark.wardCostReduction;
+      const manaCost = Math.max(0, ((card as any).mana || 0) - costReduction);
       if (player.currentMana < manaCost) return state;
       const incantationInstance = { ...card, uid: cardId + '_' + Date.now() + '_' + Math.random(), isFaceDown: faceDown };
       const newFieldRites = [...player.fieldRites];
@@ -579,7 +585,7 @@ export const useGameStore = create<CombatStoreState>((set, get) => ({
       let newOpponentHP = opponent.currentHP;
       let newPlayerField = [...player.fieldNumina];
       let newOpponentField = [...opponent.fieldNumina];
-      const damageBonus = player.natureScaling.fire.damageBonus;
+      const damageBonus = player.natureScaling.fire.numenAttackBonus;
 
       if (defenderUid) {
         const defender = newOpponentField.find((n: Card) => (n as any).uid === defenderUid);

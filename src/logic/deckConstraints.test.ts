@@ -44,6 +44,63 @@ describe('validateDeckComposition', () => {
   })
 })
 
+describe('validateDeckComposition rarity limits', () => {
+  const fill = (specials: any[]) => {
+    const deck = [...specials]
+    let i = 0
+    while (deck.length < 40) deck.push(makeCard({ id: `filler-${i++}`, rarity: 'common' }))
+    return deck
+  }
+
+  it('allows 3 copies of a common', () => {
+    const deck = fill(Array.from({ length: 3 }, () => makeCard({ id: 'c1', rarity: 'common' })))
+    expect(validateDeckComposition(deck).isValid).toBe(true)
+  })
+
+  it('rejects 4 copies of a common', () => {
+    const deck = fill(Array.from({ length: 4 }, () => makeCard({ id: 'c1', rarity: 'common' })))
+    const result = validateDeckComposition(deck)
+    expect(result.isValid).toBe(false)
+    expect(result.errors.some((e) => e.includes('max 3'))).toBe(true)
+  })
+
+  it('allows 2 copies of a rare', () => {
+    const deck = fill(Array.from({ length: 2 }, () => makeCard({ id: 'r1', rarity: 'rare' })))
+    expect(validateDeckComposition(deck).isValid).toBe(true)
+  })
+
+  it('rejects 3 copies of a rare', () => {
+    const deck = fill(Array.from({ length: 3 }, () => makeCard({ id: 'r1', rarity: 'rare' })))
+    const result = validateDeckComposition(deck)
+    expect(result.isValid).toBe(false)
+    expect(result.errors.some((e) => e.includes('max 2'))).toBe(true)
+  })
+
+  it('allows 1 copy of each of 3 different legendaries', () => {
+    const deck = fill(['l1', 'l2', 'l3'].map((id) => makeCard({ id, rarity: 'legendary' })))
+    expect(validateDeckComposition(deck).isValid).toBe(true)
+  })
+
+  it('rejects 2 copies of the same legendary', () => {
+    const deck = fill(Array.from({ length: 2 }, () => makeCard({ id: 'l1', rarity: 'legendary' })))
+    const result = validateDeckComposition(deck)
+    expect(result.isValid).toBe(false)
+    expect(result.errors.some((e) => e.includes('max 1'))).toBe(true)
+  })
+
+  it('allows 1 mythic', () => {
+    const deck = fill([makeCard({ id: 'm1', rarity: 'mythic' })])
+    expect(validateDeckComposition(deck).isValid).toBe(true)
+  })
+
+  it('rejects 2 different mythics', () => {
+    const deck = fill([makeCard({ id: 'm1', rarity: 'mythic' }), makeCard({ id: 'm2', rarity: 'mythic' })])
+    const result = validateDeckComposition(deck)
+    expect(result.isValid).toBe(false)
+    expect(result.errors.some((e) => e.includes('1 Mythic card total'))).toBe(true)
+  })
+})
+
 describe('calculateDeckRequirements', () => {
   it('returns empty requirements for a deck with no mythic cards', () => {
     const deck = [makeCard(), makeCard({ type: 'rite' }), makeCard({ type: 'ward' })]
@@ -77,7 +134,7 @@ describe('validateCardRequirements', () => {
     const deck = [makeCard({ id: 'mythic-1', isMythic: true, mythicQuest: { deckRequirements: { beast: 5, rites: 3 } } })]
     const result = validateCardRequirements(deck, ['mythic-1'])
     expect(result.canInvoke['mythic-1']).toBe(false)
-    expect(result.missingRequirements['mythic-1'].length).toBeGreaterThan(0)
+    expect(result.missingRequirements['mythic-1']!.length).toBeGreaterThan(0)
   })
 
   it('handles mythic card not found in deck', () => {

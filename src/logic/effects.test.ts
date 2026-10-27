@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { EffectType, isDrawEffect, isScryEffect, isForgetEffect, isExileEffect, isPetrifyEffect, isDecreaseEffect, isLockEffect, isIncreaseEffect, isEtherealEffect, isFindEffect, isChooseOneEffect, isAddTriggerEffect, isInvokeEffect, isEvokeEffect, isConvokeEffect, isCopyEffect, isAddEffect, isReturnEffect, handleEffect } from './effects'
+import { EffectType, isDrawEffect, isScryEffect, isForgetEffect, isExileEffect, isPetrifyEffect, isDecreaseEffect, isLockEffect, isIncreaseEffect, isEtherealEffect, isFindEffect, isChooseOneEffect, isAddTriggerEffect, isInvokeEffect, isEvokeEffect, isConvokeEffect, isCopyEffect, isAddEffect, isReturnEffect } from './effects'
 
 describe('EffectType enum', () => {
   it('defines all expected effect types', () => {
@@ -14,7 +14,7 @@ describe('EffectType enum', () => {
 describe('isDrawEffect', () => {
   it('identifies draw effects', () => {
     expect(isDrawEffect({ effect: EffectType.DRAW, count: 2 })).toBe(true)
-    expect(isDrawEffect({ effect: EffectType.SCRY, count: 1 })).toBe(false)
+    expect(isDrawEffect({ effect: EffectType.SCRY, count: 1, deck: 'player' })).toBe(false)
   })
 })
 
@@ -42,7 +42,7 @@ describe('isExileEffect', () => {
 describe('isPetrifyEffect', () => {
   it('identifies petrify effects', () => {
     expect(isPetrifyEffect({ effect: EffectType.PETRIFY, turns: 2 })).toBe(true)
-    expect(isPetrifyEffect({ effect: EffectType.DECREASE, amount: 100 })).toBe(false)
+    expect(isPetrifyEffect({ effect: EffectType.DECREASE, target: 'numen', effectTarget: 'atk', amount: 100 })).toBe(false)
   })
 })
 describe('isDecreaseEffect', () => {
@@ -133,25 +133,3 @@ describe('isReturnEffect', () => {
   })
 })
 
-describe('handleEffect', () => {
-  it('returns undefined for all effect types', () => {
-    expect(handleEffect({ effect: EffectType.DRAW, count: 1 })).toBeUndefined()
-    expect(handleEffect({ effect: EffectType.SCRY, count: 1, deck: 'player' })).toBeUndefined()
-    expect(handleEffect({ effect: EffectType.FORGET, count: 1 })).toBeUndefined()
-    expect(handleEffect({ effect: EffectType.EXILE, count: 1 })).toBeUndefined()
-    expect(handleEffect({ effect: EffectType.PETRIFY, turns: 1 })).toBeUndefined()
-    expect(handleEffect({ effect: EffectType.DECREASE, target: 'numen', effectTarget: 'atk', amount: 100 })).toBeUndefined()
-    expect(handleEffect({ effect: EffectType.LOCK, duration: 'temporary' })).toBeUndefined()
-    expect(handleEffect({ effect: EffectType.INCREASE, target: 'numen', effectTarget: 'atk', amount: 100 })).toBeUndefined()
-    expect(handleEffect({ effect: EffectType.ETHEREAL, count: 1, type: 'rite' })).toBeUndefined()
-    expect(handleEffect({ effect: EffectType.FIND, count: 1, source: 'deck' })).toBeUndefined()
-    expect(handleEffect({ effect: EffectType.CHOOSE_ONE, options: ['a'] })).toBeUndefined()
-    expect(handleEffect({ effect: EffectType.ADD_TRIGGER, trigger_type: 'test', duration: 1 })).toBeUndefined()
-    expect(handleEffect({ effect: EffectType.INVOKE, from: 'player_hand', criteria: {}, count: 1 })).toBeUndefined()
-    expect(handleEffect({ effect: EffectType.EVOKE, from: 'player_memora', criteria: {}, count: 1 })).toBeUndefined()
-    expect(handleEffect({ effect: EffectType.CONVOKE, from: 'player_deck', criteria: {}, count: 1 })).toBeUndefined()
-    expect(handleEffect({ effect: EffectType.COPY, copyTarget: 'a', destination: 'b', count: 1 })).toBeUndefined()
-    expect(handleEffect({ effect: EffectType.ADD, addFrom: 'player_field', addTargetType: 'numen', destination: 'player_deck', count: 1 })).toBeUndefined()
-    expect(handleEffect({ effect: EffectType.RETURN })).toBeUndefined()
-  })
-})

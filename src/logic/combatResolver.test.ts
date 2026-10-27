@@ -18,31 +18,31 @@ const makeNumen = (overrides: Record<string, unknown> = {}): any => ({
 
 describe('canNumenAttack', () => {
   it('allows attack for numen in attack position', () => {
-    const result = canNumenAttack(makeNumen(), 5)
+    const result = canNumenAttack(makeNumen())
     expect(result.canAttack).toBe(true)
     expect(result.reason).toBe('')
   })
 
   it('denies attack for numen in defense position', () => {
-    const result = canNumenAttack(makeNumen({ position: 'defense' }), 5)
+    const result = canNumenAttack(makeNumen({ position: 'defense' }))
     expect(result.canAttack).toBe(false)
     expect(result.reason).toContain('defense')
   })
 
   it('denies attack for stunned numen', () => {
-    const result = canNumenAttack(makeNumen({ triggers: [PassiveTrigger.STUNNED] }), 5)
+    const result = canNumenAttack(makeNumen({ triggers: [PassiveTrigger.STUNNED] }))
     expect(result.canAttack).toBe(false)
     expect(result.reason).toContain('stunned')
   })
 
   it('denies attack for freshly invokeed numen without celerity', () => {
-    const result = canNumenAttack(makeNumen({ justInvokeed: true }), 5)
+    const result = canNumenAttack(makeNumen({ justInvokeed: true }))
     expect(result.canAttack).toBe(false)
     expect(result.reason).toContain('Freshly invokeed')
   })
 
   it('allows attack for freshly invokeed numen with celerity', () => {
-    const result = canNumenAttack(makeNumen({ justInvokeed: true, triggers: [PassiveTrigger.CELERITY] }), 5)
+    const result = canNumenAttack(makeNumen({ justInvokeed: true, triggers: [PassiveTrigger.CELERITY] }))
     expect(result.canAttack).toBe(true)
   })
 })
@@ -74,12 +74,12 @@ describe('resetNumenStats', () => {
       makeNumen({ currentAttack: 300, currentDefense: 800, hasAttacked: false, justInvokeed: false }),
     ]
     const result = resetNumenStats(numena)
-    expect(result[0].currentAttack).toBe(1000)
-    expect(result[0].currentDefense).toBe(1000)
-    expect(result[0].hasAttacked).toBe(false)
-    expect(result[0].justInvokeed).toBe(false)
-    expect(result[1].currentAttack).toBe(1000)
-    expect(result[1].currentDefense).toBe(1000)
+    expect(result[0]!.currentAttack).toBe(1000)
+    expect(result[0]!.currentDefense).toBe(1000)
+    expect(result[0]!.hasAttacked).toBe(false)
+    expect(result[0]!.justInvokeed).toBe(false)
+    expect(result[1]!.currentAttack).toBe(1000)
+    expect(result[1]!.currentDefense).toBe(1000)
   })
 })
 
@@ -90,9 +90,9 @@ describe('getTargetableDefenders', () => {
       makeNumen({ id: 'd2' }),
       makeNumen({ id: 'd3' }),
     ]
-    const result = getTargetableDefenders(defenders, [])
+    const result = getTargetableDefenders(defenders)
     expect(result).toHaveLength(1)
-    expect(result[0].id).toBe('d1')
+    expect(result[0]!.id).toBe('d1')
   })
 
   it('returns only veiled numena when all are veiled', () => {
@@ -100,7 +100,7 @@ describe('getTargetableDefenders', () => {
       makeNumen({ id: 'd1', triggers: [PassiveTrigger.VEILED] }),
       makeNumen({ id: 'd2', triggers: [PassiveTrigger.VEILED] }),
     ]
-    const result = getTargetableDefenders(defenders, [])
+    const result = getTargetableDefenders(defenders)
     expect(result).toHaveLength(2)
   })
 
@@ -109,9 +109,9 @@ describe('getTargetableDefenders', () => {
       makeNumen({ id: 'd1', triggers: [PassiveTrigger.VEILED] }),
       makeNumen({ id: 'd2' }),
     ]
-    const result = getTargetableDefenders(defenders, [])
+    const result = getTargetableDefenders(defenders)
     expect(result).toHaveLength(1)
-    expect(result[0].id).toBe('d2')
+    expect(result[0]!.id).toBe('d2')
   })
 })
 
@@ -133,6 +133,6 @@ describe('resolveBattlePhase', () => {
     const result = resolveBattlePhase([{ attackerId: 'numen-1', targetId: null }], field)
     expect(result.validationErrors).toEqual([])
     expect(result.interactions.length).toBe(1)
-    expect(result.interactions[0].attackerId).toBe('numen-1')
+    expect(result.interactions[0]!.attackerId).toBe('numen-1')
   })
 })

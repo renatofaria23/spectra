@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { hasPassiveTrigger, isPassiveTrigger, isCounterTrigger, isMentalDebtTrigger, isAbsorbTrigger, isConditionalTrigger, PassiveTrigger, SemiConfigurableTrigger } from './triggers'
+import { hasPassiveTrigger, isPassiveTrigger, isCounterTrigger, isMentalDebtTrigger, isAbsorbTrigger, isConditionalTrigger, PassiveTrigger, ConditionalTrigger, SemiConfigurableTrigger } from './triggers'
 
 describe('hasPassiveTrigger', () => {
   it('returns true when card has the trigger', () => {
@@ -10,20 +10,21 @@ describe('hasPassiveTrigger', () => {
 
   it('returns false when card does not have the trigger', () => {
     const card = { triggers: [PassiveTrigger.CHALLENGE] }
-    expect(hasPassiveTrigger(card, PassiveTrigger.STOUNNED)).toBe(false)
+    expect(hasPassiveTrigger(card, PassiveTrigger.STUNNED)).toBe(false)
     expect(hasPassiveTrigger(card, PassiveTrigger.RELENTLESS)).toBe(false)
   })
 
   it('returns false when card has no triggers', () => {
     expect(hasPassiveTrigger({}, PassiveTrigger.CHALLENGE)).toBe(false)
-    expect(hasPassiveTrigger({ triggers: undefined }, PassiveTrigger.CHALLENGE)).toBe(false)
+    expect(hasPassiveTrigger({} as { triggers?: string[] }, PassiveTrigger.CHALLENGE)).toBe(false)
+    expect(hasPassiveTrigger({ triggers: [] as string[] }, PassiveTrigger.CHALLENGE)).toBe(false)
   })
 })
 
 describe('isPassiveTrigger', () => {
   it('returns true for string entries', () => {
     expect(isPassiveTrigger(PassiveTrigger.CHALLENGE)).toBe(true)
-    expect(isPassiveTrigger('VEILED')).toBe(true)
+    expect(isPassiveTrigger('VEILED' as PassiveTrigger)).toBe(true)
   })
 
   it('returns false for object entries', () => {
@@ -33,19 +34,19 @@ describe('isPassiveTrigger', () => {
 
 describe('isCounterTrigger', () => {
   it('identifies counter triggers', () => {
-    const entry = { trigger: SemiConfigurableTrigger.COUNTER, count_type: 'test', value: 1 }
+    const entry = { trigger: SemiConfigurableTrigger.COUNTER, count_type: 'test', value: 1 } as any
     expect(isCounterTrigger(entry)).toBe(true)
   })
 
   it('rejects non-counter triggers', () => {
     expect(isCounterTrigger(PassiveTrigger.CHALLENGE)).toBe(false)
-    expect(isCounterTrigger({ trigger: SemiConfigurableTrigger.MENTAL_DEBT, mana_amount: 0, trigger_condition: 'test' })).toBe(false)
+    expect(isCounterTrigger({ trigger: SemiConfigurableTrigger.MENTAL_DEBT, mana_amount: 0, trigger_condition: 'test' } as any)).toBe(false)
   })
 })
 
 describe('isMentalDebtTrigger', () => {
   it('identifies mental debt triggers', () => {
-    const entry = { trigger: SemiConfigurableTrigger.MENTAL_DEBT, mana_amount: 100, trigger_condition: 'test' }
+    const entry = { trigger: SemiConfigurableTrigger.MENTAL_DEBT, mana_amount: 100, trigger_condition: 'test' } as any
     expect(isMentalDebtTrigger(entry)).toBe(true)
   })
 
@@ -56,7 +57,7 @@ describe('isMentalDebtTrigger', () => {
 
 describe('isAbsorbTrigger', () => {
   it('identifies absorb triggers', () => {
-    const entry = { trigger: SemiConfigurableTrigger.ABSORB, count_type: 'test', value: 1 }
+    const entry = { trigger: SemiConfigurableTrigger.ABSORB, count_type: 'test', value: 1 } as any
     expect(isAbsorbTrigger(entry)).toBe(true)
   })
 
@@ -67,7 +68,7 @@ describe('isAbsorbTrigger', () => {
 
 describe('isConditionalTrigger', () => {
   it('identifies conditional trigger effects', () => {
-    const entry = { trigger: 'END_OF_TURN', effects: [] }
+    const entry = { trigger: ConditionalTrigger.END_OF_TURN, effects: [] as any }
     expect(isConditionalTrigger(entry)).toBe(true)
   })
 

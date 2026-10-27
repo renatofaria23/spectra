@@ -10,6 +10,12 @@ export const applyAiAction = (action: any) => {
     case 'placeIncantation':
       s.placeIncantationFromHand(action.playerId, action.cardId, action.slotIndex, action.faceDown);
       break;
+    case 'activateRite':
+      s.activateRite(action.playerId, action.cardId);
+      break;
+    case 'activateWard':
+      s.activateWard(action.playerId, action.cardId);
+      break;
     case 'selectAttacker':
       s.selectAttacker(action.numenId);
       break;

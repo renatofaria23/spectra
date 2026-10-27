@@ -111,9 +111,9 @@ export const DeckSelector = ({ opened, onClose, onStartGame }: DeckSelectorProps
     >
       <Box data-name="deck-selector-root" style={styles.deckSelectorRoot}>
         <Text c={colors.White_1} size="md" fw={600}>Player 1 - Select Deck:</Text>
-        {renderDeckList(p1, setP1, colors.Blue_5, colors.Blue_3)}
+        {renderDeckList(p1, setP1, colors.Blue_5)}
         <Text c={colors.White_1} size="md" fw={600}>Player 2 - Select Deck:</Text>
-        {renderDeckList(p2, setP2, colors.Red_8, colors.Red_5)}
+        {renderDeckList(p2, setP2, colors.Red_8)}
         <Button
           onClick={handleStart}
           disabled={!bothSelected}

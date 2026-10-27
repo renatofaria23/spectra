@@ -1,15 +1,8 @@
 import { create } from 'zustand';
 import { resolveBattlePhase, type Attack } from '../logic/combatResolver';
 import { isMythicQuestComplete, updateQuestProgress } from '../logic/mythicSystem';
+import type { CombatInteraction } from '../logic/deckConstraints';
 
-export interface CombatInteraction {
-  attackerId: string;
-  targetId: string | null;
-  spentATK: number;
-  decreaseDealt: number;
-  killedNumen: boolean;
-  error?: string;
-}
 
 export interface BattleResultSummary {
   totalDecrease: number;
@@ -57,7 +50,7 @@ type CombatState = {
   getBattleResults: () => BattleResultSummary | null;
   getCombatLog: () => CombatInteraction[];
   getQuestProgress: (mythicId: string) => QuestProgressTracker | undefined;
-  isMythicQuestReady: (mythicId: string, progress: QuestProgressTracker) => boolean;
+  isMythicQuestReady: (mythicId: string, mythic: unknown, progress: QuestProgressTracker) => boolean;
 };
 
 export const useCombatStore = create<CombatState>((set, get) => ({
@@ -101,5 +94,5 @@ export const useCombatStore = create<CombatState>((set, get) => ({
   getBattleResults: () => get().battleResults,
   getCombatLog: () => get().combatLog,
   getQuestProgress: (mythicId) => get().questProgress[mythicId],
-  isMythicQuestReady: (_mythicId, progress) => !!progress && isMythicQuestComplete(progress, progress),
+  isMythicQuestReady: (_mythicId, mythic, progress) => !!progress && isMythicQuestComplete(mythic, progress),
 }));

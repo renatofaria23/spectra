@@ -90,13 +90,4 @@ export const isCopyEffect = (e: EffectEntry): e is CopyEffect => e.effect === Ef
 export const isAddEffect = (e: EffectEntry): e is AddEffect => e.effect === EffectType.ADD;
 export const isReturnEffect = (e: EffectEntry): e is ReturnEffect => e.effect === EffectType.RETURN;
 
-export function handleEffect(entry: EffectEntry) {
-  switch (entry.effect) {
-    case EffectType.DRAW: case EffectType.SCRY: case EffectType.FORGET: case EffectType.EXILE:
-    case EffectType.PETRIFY: case EffectType.DECREASE: case EffectType.LOCK: case EffectType.INCREASE:
-    case EffectType.ETHEREAL: case EffectType.FIND: case EffectType.CHOOSE_ONE: case EffectType.ADD_TRIGGER:
-    case EffectType.INVOKE: case EffectType.EVOKE: case EffectType.CONVOKE: case EffectType.COPY:
-    case EffectType.ADD: case EffectType.RETURN:
-      return;
-  }
-}
+
